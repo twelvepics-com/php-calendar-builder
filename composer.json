@@ -1,0 +1,331 @@
+{
+    "name": "twelvepics-com/php-calendar-builder",
+    "description": "Provides a Calendar Builder API.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Björn Hempel",
+            "email": "bjoern@hempel.li",
+            "homepage": "https://www.hempel.li/"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "ixnode/php-api-version-bundle": "^0.1.5",
+        "ixnode/php-checker": "^0.1.8",
+        "ixnode/php-container": "^0.1.7",
+        "ixnode/php-exception": "^0.1.17"
+    },
+    "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^3.4",
+        "friendsofphp/php-cs-fixer": "^3.13",
+        "ixnode/php-branch-diagram-builder": "^1.2",
+        "phpmd/phpmd": "^2.13",
+        "phpstan/phpstan": "^1.9",
+        "phpstan/phpstan-doctrine": "^1.3",
+        "phpunit/phpunit": "^9",
+        "povils/phpmnd": "^3.0",
+        "rector/rector": "^0.15.2",
+        "symfony/browser-kit": "6.3.*",
+        "symfony/css-selector": "6.3.*",
+        "symfony/http-client": "6.3.*",
+        "symfony/maker-bundle": "^1.48",
+        "symfony/phpunit-bridge": "^6.3"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true,
+            "symfony/runtime": true
+        },
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*",
+        "symfony/polyfill-php74": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ],
+
+        "ixno:header": "bin/header/ixno",
+
+        "db:initialize:test:fixture": "bin/header/dbinit 'bin/console db:reinitialize --format=text --env=test' 'Test-DB Initialization'",
+        "db:initialize:main:fixture": "bin/header/dbinit 'bin/console db:reinitialize --format=text --env=dev' 'Test-DB Initialization'",
+        "db:initialize:main:sql": "for dump in fixtures/db/*.sql; do mysql -h127.0.0.1 -P3336 -uroot -psecret-pass --default-character-set=utf8 opa < \"$dump\"; done",
+
+        "doc:build:schema": "bin/console validator:schema data/json/api/private/power/private.power.json --reformat",
+        "doc:build:endpoint": "bin/console document-generator:api --generate",
+        "doc:build": [
+            "@doc:build:schema",
+            "@doc:build:endpoint"
+        ],
+
+        "version:main:patch": "bin/version-manager --patch",
+        "version:main:show": "bin/console version:show",
+
+        "phpmnd:src": "bin/header/phpmnd 'vendor/bin/phpmnd run src --progress --hint --include-numeric-string --ignore-funcs=round,sleep' 'src'",
+        "phpmnd:tests": "bin/header/phpmnd 'vendor/bin/phpmnd run tests --progress --hint --include-numeric-string --ignore-funcs=round,sleep' 'tests'",
+        "phpmnd:all": "bin/header/phpmnd 'vendor/bin/phpmnd run src tests --progress --hint --include-numeric-string --ignore-funcs=round,sleep' 'all'",
+        "phpmnd": [
+            "@phpmnd:all"
+        ],
+
+        "phpunit:api": "bin/header/phpunit 'vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.api.xml' 'API'",
+        "phpunit:functional": "bin/header/phpunit 'vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.functional.xml' 'Functional'",
+        "phpunit:unit": "bin/header/phpunit 'vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.unit.xml' 'Unit'",
+        "phpunit:api:coverage": "bin/header/phpunit 'XDEBUG_MODE=coverage vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.api.xml --coverage-text' 'API'",
+        "phpunit:functional:coverage": "bin/header/phpunit 'XDEBUG_MODE=coverage vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.functional.xml --coverage-text' 'Functional'",
+        "phpunit:unit:coverage": "bin/header/phpunit 'XDEBUG_MODE=coverage vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.unit.xml --coverage-text' 'Unit'",
+        "phpunit:api:debug": "bin/header/phpunit 'PHPUNIT_DEBUG=1 vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.api.xml' 'API'",
+        "phpunit:functional:debug": "bin/header/phpunit 'PHPUNIT_DEBUG=1 vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.functional.xml' 'Functional'",
+        "phpunit:unit:debug": "bin/header/phpunit 'PHPUNIT_DEBUG=1 vendor/bin/phpunit -d memory_limit=512M --configuration .phpunit/phpunit.unit.xml' 'Unit'",
+        "phpunit:all": [
+            "@db:initialize:test:fixture",
+            "@phpunit:unit",
+            "@phpunit:functional",
+            "@phpunit:api"
+        ],
+        "phpunit:all:coverage": [
+            "@db:initialize:test:fixture",
+            "@phpunit:unit:coverage",
+            "@phpunit:functional:coverage",
+            "@phpunit:api:coverage"
+        ],
+        "phpunit:all:debug": [
+            "@db:initialize:test:fixture",
+            "@phpunit:unit:debug",
+            "@phpunit:functional:debug",
+            "@phpunit:api:debug"
+        ],
+        "phpunit": [
+            "@phpunit:all"
+        ],
+
+        "phpstan:run:soft": "bin/header/phpstan 'vendor/bin/phpstan analyse --level 5 --memory-limit 512M --xdebug -c phpstan.dist.neon src tests' 'run'",
+        "phpstan:run": "bin/header/phpstan 'vendor/bin/phpstan analyse --level max --memory-limit 512M --xdebug -c phpstan.dist.neon src tests' 'run'",
+        "phpstan": [
+            "@phpstan:run"
+        ],
+
+        "phpcs:check:src": "bin/header/phpcs 'vendor/bin/php-cs-fixer --dry-run --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose fix src 2>/dev/null' 'src'",
+        "phpcs:check:tests": "bin/header/phpcs 'vendor/bin/php-cs-fixer --dry-run --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose fix tests 2>/dev/null' 'tests'",
+        "phpcs:check:all": "bin/header/phpcs 'vendor/bin/php-cs-fixer --dry-run --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose fix src 2>/dev/null && vendor/bin/php-cs-fixer --dry-run --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose fix tests 2>/dev/null' 'all'",
+        "phpcs": [
+            "@phpcs:check:all"
+        ],
+        "phpcs:fix:src": "bin/header/phpcs 'vendor/bin/php-cs-fixer --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose -v fix src 2>/dev/null' 'src'",
+        "phpcs:fix:tests": "bin/header/phpcs 'vendor/bin/php-cs-fixer --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose -v fix tests 2>/dev/null' 'tests'",
+        "phpcs:fix:all": "bin/header/phpcs 'vendor/bin/php-cs-fixer --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose -v fix src 2>/dev/null && vendor/bin/php-cs-fixer --using-cache=no --rules=@PSR12 --rules=no_unused_imports --verbose -v fix tests 2>/dev/null' 'all'",
+
+        "rector:check:clear": "bin/header/rector 'vendor/bin/rector process --dry-run --clear-cache --memory-limit=512M' 'check, force'",
+        "rector:fix:clear": "bin/header/rector 'vendor/bin/rector process --clear-cache --memory-limit=512M' 'fix, force'",
+        "rector:check": "bin/header/rector 'vendor/bin/rector process --dry-run --memory-limit=512M' 'check'",
+        "rector:fix": "bin/header/rector 'vendor/bin/rector process --memory-limit=512M' 'fix'",
+        "rector": [
+            "@rector:check"
+        ],
+        "rector:clear": [
+            "@rector:check:clear"
+        ],
+
+        "phpmd:cleancode": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/cleancode.xml' 'cleancode, all'",
+        "phpmd:codesize": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/codesize.xml' 'codesize, all'",
+        "phpmd:controversial": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/controversial.xml' 'controversial, all'",
+        "phpmd:design": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/design.xml' 'design, all'",
+        "phpmd:naming": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/naming.xml' 'naming, all'",
+        "phpmd:unusedcode": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/unusedcode.xml' 'unusedcode, all'",
+        "phpmd:all": "bin/header/phpmd 'vendor/bin/phpmd src,tests text .phpmd/all.xml' 'all, all'",
+        "phpmd:cleancode-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/cleancode.xml' 'cleancode, src'",
+        "phpmd:codesize-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/codesize.xml' 'codesize, src'",
+        "phpmd:controversial-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/controversial.xml' 'controversial, src'",
+        "phpmd:design-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/design.xml' 'design, src'",
+        "phpmd:naming-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/naming.xml' 'naming, src'",
+        "phpmd:unusedcode-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/unusedcode.xml' 'unusedcode, src'",
+        "phpmd:all-src": "bin/header/phpmd 'vendor/bin/phpmd src text .phpmd/all.xml' 'all, src'",
+        "phpmd:cleancode-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/cleancode.xml' 'cleancode, tests'",
+        "phpmd:codesize-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/codesize.xml' 'codesize, tests'",
+        "phpmd:controversial-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/controversial.xml' 'controversial, tests'",
+        "phpmd:design-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/design.xml' 'design, tests'",
+        "phpmd:naming-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/naming.xml' 'naming, tests'",
+        "phpmd:unusedcode-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/unusedcode.xml' 'unusedcode, tests'",
+        "phpmd:all-tests": "bin/header/phpmd 'vendor/bin/phpmd tests text .phpmd/all.xml' 'all, tests'",
+        "phpmd": [
+            "@phpmd:all"
+        ],
+
+        ".test:basic": [
+            "@ixno:header",
+            "@phpunit",
+            "@phpstan"
+        ],
+        "test:basic": [
+            "composer .test:basic && bin/header/success || bin/header/error"
+        ],
+        ".test:most": [
+            "@ixno:header",
+            "@phpmnd",
+            "@phpunit",
+            "@phpstan",
+            "@phpcs"
+        ],
+        "test:most": [
+            "composer .test:most && bin/header/success || bin/header/error"
+        ],
+        ".test:all": [
+            "@ixno:header",
+            "@phpmnd",
+            "@phpunit",
+            "@phpstan",
+            "@phpcs",
+            "@phpmd"
+        ],
+        "test:all": [
+            "composer .test:all && bin/header/success || bin/header/error"
+        ],
+        ".test:hardcore": [
+            "@ixno:header",
+            "@phpmnd",
+            "@phpunit",
+            "@phpstan",
+            "@phpcs",
+            "@phpmd",
+            "@rector:clear"
+        ],
+        "test:hardcore": [
+            "composer .test:hardcore && bin/header/success || bin/header/error"
+        ],
+        "test": [
+            "@test:all"
+        ],
+
+        "quick": [
+            "@phpcs:fix:all",
+            "@phpstan"
+        ]
+    },
+    "scripts-descriptions": {
+        ".test:all": " ",
+        ".test:basic": " ",
+        ".test:hardcore": " ",
+        ".test:most": " ",
+
+        "db:initialize:test:fixture": "Initializes the test db via fixtures.",
+        "db:initialize:main:fixture": "Initializes the main db via fixtures.",
+        "db:initialize:main:sql": "Initializes the main db via sql dumps.",
+
+        "doc:build:schema": "Builds schema documents.",
+        "doc:build:endpoint": "Builds endpoint documents.",
+        "doc:build": "Builds all documents.",
+
+        "version:main:patch": "Increases the main patch version.",
+        "version:main:show": "Shows the current versions.",
+
+        "ixno:header": "Prints the ixno header.",
+
+        "phpcs": "Runs PHP Coding Standards Fixer (Dry-Run, all folders).",
+        "phpcs:check:all": "Runs PHP Coding Standards Fixer (Dry-Run, all folders).",
+        "phpcs:check:src": "Runs PHP Coding Standards Fixer (Dry-Run, src folder).",
+        "phpcs:check:tests": "Runs PHP Coding Standards Fixer (Dry-Run, tests folder).",
+        "phpcs:fix:all": "Runs PHP Coding Standards Fixer (Fix, all folders).",
+        "phpcs:fix:src": "Runs PHP Coding Standards Fixer (Fix, src folder).",
+        "phpcs:fix:tests": "Runs PHP Coding Standards Fixer (Fix, tests folder).",
+
+        "phpmd": "Runs PHP Mess Detector and checks all types (all folders).",
+        "phpmd:all": "Runs PHP Mess Detector and checks all types (all folders).",
+        "phpmd:all-src": "Runs PHP Mess Detector and checks all types (src folder).",
+        "phpmd:all-tests": "Runs PHP Mess Detector and checks all types (tests folder).",
+        "phpmd:cleancode": "Runs PHP Mess Detector and checks for cleancode (all folders).",
+        "phpmd:codesize": "Runs PHP Mess Detector and checks for codesize (all folders).",
+        "phpmd:controversial": "Runs PHP Mess Detector and checks for controversial (all folders).",
+        "phpmd:design": "Runs PHP Mess Detector and checks for design (all folders).",
+        "phpmd:naming": "Runs PHP Mess Detector and checks for naming (all folders).",
+        "phpmd:unusedcode": "Runs PHP Mess Detector and checks for unusedcode (all folders).",
+        "phpmd:cleancode-src": "Runs PHP Mess Detector and checks for cleancode (src folder).",
+        "phpmd:codesize-src": "Runs PHP Mess Detector and checks for codesize (src folder).",
+        "phpmd:controversial-src": "Runs PHP Mess Detector and checks for controversial (src folder).",
+        "phpmd:design-src": "Runs PHP Mess Detector and checks for design (src folder).",
+        "phpmd:naming-src": "Runs PHP Mess Detector and checks for naming (src folder).",
+        "phpmd:unusedcode-src": "Runs PHP Mess Detector and checks for unusedcode (src folder).",
+        "phpmd:cleancode-tests": "Runs PHP Mess Detector and checks for cleancode (tests folder).",
+        "phpmd:codesize-tests": "Runs PHP Mess Detector and checks for codesize (tests folder).",
+        "phpmd:controversial-tests": "Runs PHP Mess Detector and checks for controversial (tests folder).",
+        "phpmd:design-tests": "Runs PHP Mess Detector and checks for design (tests folder).",
+        "phpmd:naming-tests": "Runs PHP Mess Detector and checks for naming (tests folder).",
+        "phpmd:unusedcode-tests": "Runs PHP Mess Detector and checks for unusedcode (tests folder).",
+
+        "phpmnd": "Runs PHP Magic Number Detector and detects magic numbers.",
+        "phpmnd:all": "Runs PHP Magic Number Detector and detects magic numbers (all folders).",
+        "phpmnd:src": "Runs PHP Magic Number Detector and detects magic numbers (src folder).",
+        "phpmnd:tests": "Runs PHP Magic Number Detector and detects magic numbers (tests folder).",
+
+        "phpstan": "Runs PHPStan (PHP Static Analysis Tool).",
+        "phpstan:run": "Runs PHPStan (PHP Static Analysis Tool, Level max).",
+        "phpstan:run:soft": "Runs PHPStan (PHP Static Analysis Tool, Level 5).",
+
+        "phpunit": "Runs PHPUnit unit tests (all tests).",
+        "phpunit:all": "Runs PHPUnit unit tests (all tests).",
+        "phpunit:all:coverage": "Runs PHPUnit unit tests with Code Coverage Analysis (all tests).",
+        "phpunit:all:debug": "Runs PHPUnit unit tests (debug mode, all tests).",
+        "phpunit:api": "Runs PHPUnit unit tests (api tests).",
+        "phpunit:api:coverage": "Runs PHPUnit unit tests with Code Coverage Analysis (api tests).",
+        "phpunit:api:debug": "Runs PHPUnit unit tests (debug mode, api tests).",
+        "phpunit:functional": "Runs PHPUnit unit tests (functional tests).",
+        "phpunit:functional:coverage": "Runs PHPUnit unit tests with Code Coverage Analysis (functional tests).",
+        "phpunit:functional:debug": "Runs PHPUnit unit tests (debug mode, functional tests).",
+        "phpunit:unit": "Runs PHPUnit unit tests (unit tests).",
+        "phpunit:unit:coverage": "Runs PHPUnit unit tests with Code Coverage Analysis (unit tests).",
+        "phpunit:unit:debug": "Runs PHPUnit unit tests (debug mode, unit tests).",
+
+        "rector": "Runs PHP Rector (Dry-Run).",
+        "rector:check": "Runs PHP Rector (Dry-Run).",
+        "rector:check:clear": "Runs PHP Rector (Dry-Run, Clear).",
+        "rector:clear": "Runs PHP Rector (Dry-Run, Clear).",
+        "rector:fix": "Runs PHP Rector (Fix).",
+        "rector:fix:clear": "Runs PHP Rector (Fix, Force).",
+
+        "test": "Runs all available tests (phpmnd, phpunit, phpstan, phpcs, rector).",
+        "test:all": "Runs all available tests (phpmnd, phpunit, phpstan, phpcs, phpmd).",
+        "test:hardcore": "Runs the ultimate available tests (phpmnd, phpunit, phpstan, phpcs, rector, phpmd).",
+        "test:most": "Runs most tests (phpmnd, phpunit, phpstan, phpcs).",
+        "test:basic": "Runs basic tests (phpunit, phpstan).",
+
+        "quick": "Does a quick check (PHPStan and PHP Coding Standards Fixer)"
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "6.3.*"
+        }
+    }
+}

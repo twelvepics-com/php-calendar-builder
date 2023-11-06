@@ -1,0 +1,164 @@
+# ===========================================
+# Overwrites the docker-compose.yml file (Dev Mode).
+#
+# @author Björn Hempel <bjoern@hempel.li>
+# @version 0.1.0 (2022-11-06)
+# @since 0.1.0 (2022-11-06) First version.
+# ===========================================
+
+# ===========================================
+# Start app:
+# ----------
+# ❯ docker-compose up -d
+#
+# Show containers:
+# ----------------
+# ❯ docker container ls
+#
+# Build images:
+# -------------
+# ❯ docker-compose build
+#
+# Show logs:
+# ----------------
+# ❯ docker-compose logs -f
+#
+# Login into containers:
+# ----------------------
+# ❯ docker-compose exec nginx bash
+# ❯ docker-compose exec php bash
+#
+# Open app (local - localhost):
+# -----------------
+#
+# With Traefik proxy:
+# - https://www.calendar-builder.localhost/
+# - https://www.calendar-builder.localhost/api/v1/docs.html
+#
+# Without Traefik proxy:
+# - https://localhost:5443/
+# - https://localhost:5443/api/v1/docs.html
+#
+# Restart containers:
+# -------------------
+# ❯ docker-compose restart
+#
+# Shutdown containers:
+# --------------------
+# ❯ docker-compose down
+#
+# Installation:
+# -------------
+# ❯ docker-compose up -d
+# ❯ docker-compose exec php composer install
+#
+# ===========================================
+
+version: "3.8"
+
+# Configures the services
+services:
+
+  # Nginx to serve the app.
+  nginx:
+    ports:
+      - "${PORT_HTTPS_APP_EXPOSE}:${PORT_HTTPS}"
+    networks:
+      - network-internal
+      - network-traefik
+    labels:
+      # enable traefik
+      - "traefik.enable=true"
+      # middleware
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_frame.headers.customFrameOptionsValue=sameorigin"
+      # services (load balancer)
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_https_lb.loadbalancer.server.port=${PORT_HTTPS}"
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_https_lb.loadbalancer.server.scheme=https"
+      # http layer -> redirect https
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_http.entrypoints=web"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_http.rule=Host(`www.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_http.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_https"
+      # https layer
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_https.entrypoints=websecure"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_https.rule=Host(`www.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_https.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_frame"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_https.service=${NAMESPACE_HOSTNAME_UNDERLINE}_https_lb"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_https.tls=true"
+      # network
+      - "traefik.docker.network=${NETWORK_NAME_TRAEFIK_PUBLIC_LOCAL}"
+
+  # MySQL 8.0.31 Server
+  database:
+    ports:
+      - ${PORT_DB_MAIN_EXPOSE}:${MYSQL_SERVER_PORT}
+
+  # MySQL 8.0.31 Server
+  database-test:
+    ports:
+      - ${PORT_DB_TEST_EXPOSE}:${MYSQL_SERVER_PORT}
+
+  # Adminer MySQL Client
+  adminer:
+    ports:
+      - "${PORT_HTTP_ADMINER_EXPOSE}:${PORT_HTTP_ADMINER_INTERNAL}"
+    networks:
+      - network-internal
+      - network-traefik
+    labels:
+      # enable traefik
+      - "traefik.enable=true"
+      # middleware
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_frame.headers.customFrameOptionsValue=sameorigin"
+      # services (load balancer)
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http_lb.loadbalancer.server.port=${PORT_HTTP_ADMINER_INTERNAL}"
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http_lb.loadbalancer.server.scheme=http"
+      # http layer -> redirect https
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http.entrypoints=web"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http.rule=Host(`adminer.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https"
+      # https layer
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.entrypoints=websecure"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.rule=Host(`adminer.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_frame"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.service=${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_http_lb"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_adminer_https.tls=true"
+      # network
+      - "traefik.docker.network=${NETWORK_NAME_TRAEFIK_PUBLIC_LOCAL}"
+
+  # Mailhog (amd64 and arm64 version)
+  mailhog:
+    ports:
+      - "${PORT_HTTP_MAILHOG_EXPOSE}:${PORT_HTTP_MAILHOG_INTERNAL}"
+      - "${PORT_SMTP_MAILHOG_EXPOSE}:${PORT_SMTP_MAILHOG_INTERNAL}"
+    networks:
+      - network-internal
+      - network-traefik
+    labels:
+      # enable traefik
+      - "traefik.enable=true"
+      # middleware
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_frame.headers.customFrameOptionsValue=sameorigin"
+      # services (load balancer)
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http_lb.loadbalancer.server.port=${PORT_HTTP_MAILHOG_INTERNAL}"
+      - "traefik.http.services.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http_lb.loadbalancer.server.scheme=http"
+      # http layer -> redirect https
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http.entrypoints=web"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http.rule=Host(`mailhog.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https"
+      # https layer
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.entrypoints=websecure"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.rule=Host(`mailhog.${URL_LOCAL}`)"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.middlewares=${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_frame"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.service=${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_http_lb"
+      - "traefik.http.routers.${NAMESPACE_HOSTNAME_UNDERLINE}_mailhog_https.tls=true"
+      # network
+      - "traefik.docker.network=${NETWORK_NAME_TRAEFIK_PUBLIC_LOCAL}"
+
+# configure networks
+networks:
+  network-traefik:
+    external: true
+    name: "${NETWORK_NAME_TRAEFIK_PUBLIC_LOCAL}"
