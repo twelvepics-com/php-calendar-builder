@@ -7,6 +7,16 @@
     <description>Custom Ordering Process Api rule set.</description>
 
     <!-- Cleancode -->
-    <rule ref="rulesets/cleancode.xml"/>
-
+    <rule ref="rulesets/cleancode.xml">
+        <exclude name="StaticAccess"/>
+    </rule>
+    <rule ref="rulesets/cleancode.xml/StaticAccess">
+        <properties>
+            <property name="exceptions" description="Comma-separated class name list of exceptions" value="
+                \Symfony\Component\Yaml\Yaml,
+                \DateTimeImmutable
+            " />
+            <property name="ignorepattern" description="Ignore methods matching this regex. Example: /^create/i" value="" />
+        </properties>
+    </rule>
 </ruleset>

@@ -24,3 +24,11 @@
 ###> symfony/phpunit-bridge ###
 /.phpunit/.phpunit.result.cache
 ###< symfony/phpunit-bridge ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+
+###> own ###
+/data/calendar
+###< own ###

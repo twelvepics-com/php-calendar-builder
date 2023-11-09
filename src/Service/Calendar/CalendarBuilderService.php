@@ -1,0 +1,1501 @@
+<?php
+
+/*
+ * This file is part of the twelvepics-com/php-calendar-builder project.
+ *
+ * (c) Björn Hempel <https://www.hempel.li/>
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
+namespace App\Service\Calendar;
+
+use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
+use App\Parameter\Source;
+use App\Parameter\Target;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
+use DateTime;
+use DateTimeImmutable;
+use Exception;
+use GdImage;
+use Ixnode\PhpContainer\File;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpSizeByte\SizeByte;
+use JetBrains\PhpStorm\ArrayShape;
+use LogicException;
+use Symfony\Component\HttpKernel\KernelInterface;
+
+/**
+ * Class CalendarBuilderService
+ *
+ * @author Björn Hempel <bjoern@hempel.li>
+ * @version 0.1.1 (2022-11-22)
+ * @since 0.1.1 (2022-11-22) Add PHP Magic Number Detector (PHPMND).
+ * @since 0.1.0 (2021-12-29) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ * @SuppressWarnings(PHPMD.TooManyFields)
+ * @SuppressWarnings(PHPMD.TooManyMethods)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ */
+class CalendarBuilderService
+{
+    protected float $aspectRatio;
+
+    protected int $width;
+
+    protected int $height;
+
+    protected float $calendarBoxBottomSizeReference = 1/6;
+
+    protected float $calendarBoxBottomSize = 9/48;
+
+    protected int $widthQrCode = 250;
+
+    protected int $heightQrCode = 250;
+
+    protected string $font = 'OpenSansCondensed-Light.ttf';
+
+    protected string $pathRoot;
+
+    protected string $pathData;
+
+    protected string|null $pathSourceAbsolute = null;
+
+    protected string $pathTargetAbsolute;
+
+    protected string $pathFont;
+
+    protected string $title;
+
+    protected string $subtitle;
+
+    protected int $fontSizeTitle = 60;
+
+    protected int $fontSizePosition = 30;
+
+    protected int $fontSizeYear = 100;
+
+    protected int $fontSizeMonth = 220;
+
+    protected int $fontSizeDay = 60;
+
+    protected int $fontSizeTitlePage = 200;
+
+    protected int $fontSizeTitlePageSubtext = 70;
+
+    protected int $fontSizeTitlePageAuthor = 40;
+
+    protected int $padding = 160;
+
+    protected int $maxLength = 28;
+
+    protected string $maxLengthAdd = '...';
+
+    protected string $textPosition;
+
+    protected int $dayDistance = 40;
+
+    protected int $widthSource;
+
+    protected int $heightSource;
+
+    protected int $yCalendarBoxBottom;
+
+    protected int $positionX;
+
+    protected int $positionY;
+
+    /** @var int[] $colors */
+    protected array $colors;
+
+    protected float $zoom = 1.0;
+
+    protected int $valignImage;
+
+    protected string $url;
+
+    /** @var array<string, array{x: int, y: int, align: int, dimension: int[], day: int}> $positionDays */
+    protected array $positionDays = [];
+
+    protected GdImage $imageTarget;
+
+    protected GdImage $imageSource;
+
+    protected bool $test = false;
+
+    private Source|null $source = null;
+
+    private Target|null $target = null;
+
+    protected bool $useCalendarImagePath = false;
+
+    /** @var array<array{name: string[]}> $eventsAndHolidaysRaw */
+    protected array $eventsAndHolidaysRaw = [];
+
+    /** @var array<array{name: string}> $eventsAndHolidays */
+    protected array $eventsAndHolidays = [];
+
+    /** @var array<bool> $holidays */
+    protected array $holidays = [];
+
+    protected int $qrCodeVersion = 5;
+
+    protected bool $deleteTargetImages = false;
+
+    /**
+     * @param KernelInterface $appKernel
+     */
+    public function __construct(
+        protected KernelInterface $appKernel,
+    )
+    {
+    }
+
+    /**
+     * Gets the test mode.
+     *
+     * @return bool
+     */
+    public function isTest(): bool
+    {
+        return $this->test;
+    }
+
+    /**
+     * Sets the test mode.
+     *
+     * @param bool $test
+     * @return self
+     */
+    public function setTest(bool $test): self
+    {
+        $this->test = $test;
+
+        return $this;
+    }
+
+    /**
+     * This is a replacement for imageftbbox within test mode to avoid different dimensions within different versions of gd libs.
+     * These settings are valid for GD Version 2.2.5. Some other versions could return other values for that.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param int $angle
+     * @return array<int, int>
+     * @throws Exception
+     */
+    public function getTestImageftbbox(string $text, int $fontSize, int $angle = 0): array
+    {
+        $data = [
+            "28°08’53.9\"N 15°25’53.0\"W - 6 - 90" => [1, 1, 1, -75, -7, -75, -7, 1, ],
+            "01 - 44 - 0" => [0, 2, 48, 2, 48, -44, 0, -44, ],
+            "2022 - 20 - 0" => [0, 1, 43, 1, 43, -20, 0, -20, ],
+            "16 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "15 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "14 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "13 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "12 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "11 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "10 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "09 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "08 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "07 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "06 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "05 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "04 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "03 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "02 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "01 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "17 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "18 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "19 - 12 - 0" => [0, 1, 14, 1, 14, -13, 0, -13, ],
+            "20 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "21 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "22 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "23 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "24 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "25 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "26 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "27 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "28 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "29 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "30 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "31 - 12 - 0" => [-1, 1, 14, 1, 14, -13, -1, -13, ],
+            "KW 02 > - 6 - 0" => [-1, 1, 22, 1, 22, -7, -1, -7, ],
+            "KW 01 > - 6 - 0" => [-1, 1, 22, 1, 22, -7, -1, -7, ],
+            "KW 03 > - 6 - 0" => [-1, 1, 22, 1, 22, -7, -1, -7, ],
+            "KW 04 > - 6 - 0" => [-1, 1, 22, 1, 22, -7, -1, -7, ],
+            "KW 05 > - 6 - 0" => [-1, 1, 22, 1, 22, -7, -1, -7, ],
+            "Neujahr - 8 - 80" => [3, 1, 9, -28, -4, -30, -9, 0, ],
+        ];
+
+        $key = sprintf('%s - %s - %s', $text, $fontSize, $angle);
+
+        if (!array_key_exists($key, $data)) {
+            throw new Exception(sprintf('Data settings missing for key "%s" (%s:%d).', $key, __FILE__, __LINE__));
+        }
+
+        return $data[$key];
+    }
+
+    /**
+     * Init function.
+     *
+     * @param Source $source
+     * @param Target $target
+     * @param int $qrCodeVersion
+     * @param bool $useCalendarImagePath
+     * @param bool $deleteTargetImages
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    public function init(
+        Source $source,
+        Target $target,
+        int $qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION,
+        bool $useCalendarImagePath = false,
+        bool $deleteTargetImages = false
+    ): void
+    {
+        $this->source = $source;
+        $this->target = $target;
+
+        /* Clear positions */
+        $this->positionDays = [];
+
+        /* Use CalendarImage path */
+        $this->useCalendarImagePath = $useCalendarImagePath;
+
+        /* Set qr code version */
+        $this->qrCodeVersion = $qrCodeVersion;
+
+        /* Set delete target images */
+        $this->deleteTargetImages = $deleteTargetImages;
+
+        /* sizes */
+        $this->aspectRatio = 3 / 2;
+        $this->height = CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
+        $this->width = intval(floor($this->height * $this->aspectRatio));
+
+        /* Root path */
+        $this->pathRoot = $this->appKernel->getProjectDir();
+
+        /* Font path */
+        $this->pathData = sprintf('%s/data', $this->pathRoot);
+        $this->pathFont = sprintf('%s/font/%s', $this->pathData, $this->font);
+
+        /* Calculate zoom */
+        $this->zoom = $this->height / CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
+
+        /* Calculate sizes */
+        $this->fontSizeTitle = $this->getSize($this->fontSizeTitle);
+        $this->fontSizePosition = $this->getSize($this->fontSizePosition);
+        $this->fontSizeYear = $this->getSize($this->fontSizeYear);
+        $this->fontSizeMonth = $this->getSize($this->fontSizeMonth);
+        $this->fontSizeDay = $this->getSize($this->fontSizeDay);
+        $this->fontSizeTitlePage = $this->getSize($this->fontSizeTitlePage);
+        $this->fontSizeTitlePageSubtext = $this->getSize($this->fontSizeTitlePageSubtext);
+        $this->fontSizeTitlePageAuthor = $this->getSize($this->fontSizeTitlePageAuthor);
+        $this->padding = $this->getSize($this->padding);
+        $this->heightQrCode = $this->getSize($this->heightQrCode);
+        $this->widthQrCode = $this->getSize($this->widthQrCode);
+        $this->dayDistance = $this->getSize($this->dayDistance);
+    }
+
+    /**
+     * Returns the size depending on the zoom.
+     *
+     * @param int $size
+     * @return int
+     */
+    protected function getSize(int $size): int
+    {
+        return intval(round($size * $this->zoom));
+    }
+
+    /**
+     * Returns the dimension of given text, font size and angle.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param int $angle
+     * @return array{width: int, height: int}
+     * @throws Exception
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    #[ArrayShape(['width' => "int", 'height' => "int"])]
+    protected function getDimension(string $text, int $fontSize, int $angle = 0): array
+    {
+        $boundingBox = $this->test ? $this->getTestImageftbbox($text, $fontSize, $angle) : imageftbbox($fontSize, $angle, $this->pathFont, $text);
+
+        if ($boundingBox === false) {
+            throw new Exception(sprintf('Unable to get bounding box (%s:%d', __FILE__, __LINE__));
+        }
+
+        [$leftBottomX, $leftBottomY, $rightBottomX, $rightBottomY, $rightTopX, $rightTopY, $leftTopX, $leftTopY] = $boundingBox;
+
+        return [
+            'width' => $rightBottomX - $leftBottomX,
+            'height' => $leftBottomY - $rightTopY,
+        ];
+    }
+
+    /**
+     * Prepare method.
+     *
+     * @throws Exception
+     */
+    protected function prepare(): void
+    {
+        $this->createImages();
+        $this->createColors();
+        $this->calculateVariables();
+        $this->createEventsAndHolidays();
+    }
+
+    /**
+     * Writes target image.
+     */
+    protected function writeImage(): void
+    {
+        if (is_null($this->target)) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Write image */
+        imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->target->getQuality());
+    }
+
+    /**
+     * Destroys all images.
+     */
+    protected function destroy(): void
+    {
+        /* Destroy image */
+        imagedestroy($this->imageTarget);
+        imagedestroy($this->imageSource);
+    }
+
+    /**
+     * Init x and y.
+     *
+     * @param int $positionX
+     * @param int $positionY
+     */
+    protected function initXY(int $positionX = 0, int $positionY = 0): void
+    {
+        $this->positionX = $positionX;
+        $this->positionY = $positionY;
+    }
+
+    /**
+     * Set x
+     *
+     * @param int $positionX
+     */
+    protected function setPositionX(int $positionX): void
+    {
+        $this->positionX = $positionX;
+    }
+
+    /**
+     * Set y
+     *
+     * @param int $positionY
+     */
+    protected function setPositionY(int $positionY): void
+    {
+        $this->positionY = $positionY;
+    }
+
+    /**
+     * Add x
+     *
+     * @param int $positionX
+     */
+    protected function addX(int $positionX): void
+    {
+        $this->positionX += $positionX;
+    }
+
+    /**
+     * Add y
+     *
+     * @param int $positionY
+     */
+    protected function addY(int $positionY): void
+    {
+        $this->positionY += $positionY;
+    }
+
+    /**
+     * Creates an empty image.
+     *
+     * @param int $width
+     * @param int $height
+     * @return GdImage
+     * @throws Exception
+     */
+    protected function createImage(int $width, int $height): GdImage
+    {
+        $image = imagecreatetruecolor($width, $height);
+
+        if ($image === false) {
+            throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
+        }
+
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+
+        return $image;
+    }
+
+    /**
+     * Creates image from given filename.
+     *
+     * @param string $filename
+     * @param string|null $type
+     * @return GdImage
+     * @throws Exception
+     */
+    protected function createImageFromImage(string $filename, string $type = null): GdImage
+    {
+        if (!file_exists($filename)) {
+            throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
+        }
+
+        if (is_null($type)) {
+            $type = pathinfo($filename, PATHINFO_EXTENSION);
+        }
+
+        $image = match ($type) {
+            CalendarBuilderServiceConstants::IMAGE_JPG => imagecreatefromjpeg($filename),
+            CalendarBuilderServiceConstants::IMAGE_PNG => imagecreatefrompng($filename),
+            default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $type, __FILE__, __LINE__)),
+        };
+
+        if ($image === false) {
+            throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
+        }
+
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+
+        return $image;
+    }
+
+    /**
+     * Creates the GdImage instances.
+     * @throws Exception
+     */
+    protected function createImages(): void
+    {
+        if (is_null($this->pathSourceAbsolute)) {
+            throw new LogicException('$this->pathSourceAbsolute is not initialized');
+        }
+
+        $this->imageTarget = $this->createImage($this->width, $this->height);
+        $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute);
+    }
+
+    /**
+     * Create color from given red, green, blue and alpha value.
+     *
+     * @param GdImage $image
+     * @param int $red
+     * @param int $green
+     * @param int $blue
+     * @param int|null $alpha
+     * @return int
+     * @throws Exception
+     */
+    protected function createColor(GdImage $image, int $red, int $green, int $blue, ?int $alpha = null): int
+    {
+        $color = match(true) {
+            $alpha === null => imagecolorallocate($image, $red, $green, $blue),
+            default => imagecolorallocatealpha($image, $red, $green, $blue, $alpha),
+        };
+
+        if ($color === false) {
+            throw new Exception(sprintf('Unable to create color (%s:%d)', __FILE__, __LINE__));
+        }
+
+        return $color;
+    }
+
+    /**
+     * Create the colors and save the integer values to color.
+     *
+     * @throws Exception
+     */
+    protected function createColors(): void
+    {
+        if (is_null($this->target)) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        $this->colors = [
+            'black' => $this->createColor($this->imageTarget, 0, 0, 0),
+            'blackTransparency' => $this->createColor($this->imageTarget, 0, 0, 0, $this->target->getTransparency()),
+            'white' => $this->createColor($this->imageTarget, 255, 255, 255),
+            'whiteTransparency' => $this->createColor($this->imageTarget, 255, 255, 255, $this->target->getTransparency()),
+            'red' => $this->createColor($this->imageTarget, 255, 0, 0),
+            'redTransparency' => $this->createColor($this->imageTarget, 255, 0, 0, $this->target->getTransparency()),
+        ];
+    }
+
+    /**
+     * Calculate variables.
+     *
+     * @throws Exception
+     */
+    protected function calculateVariables(): void
+    {
+        if (is_null($this->pathSourceAbsolute)) {
+            throw new LogicException('$this->pathSourceAbsolute is not initialized');
+        }
+
+        $propertiesSource = getimagesize($this->pathSourceAbsolute);
+
+        if ($propertiesSource === false) {
+            throw new Exception(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
+        }
+
+        $this->widthSource = $propertiesSource[0];
+        $this->heightSource = $propertiesSource[1];
+
+        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - $this->calendarBoxBottomSize)));
+    }
+
+    /**
+     * Get days for left and write.
+     *
+     * @return array{left: array<int>, right: array<int>}
+     * @throws Exception
+     */
+    #[ArrayShape(['left' => "array", 'right' => "array"])]
+    protected function getDays(): array
+    {
+        if (is_null($this->target)) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        $days = intval((new DateTime(sprintf('%d%02d01', $this->target->getYear(), $this->target->getMonth())))->format('t'));
+
+        $dayToLeft = intval(ceil($days / 2));
+
+        return [
+            'left' => [
+                'from' => 1,
+                'to' => $dayToLeft,
+            ],
+            'right' => [
+                'from' => $dayToLeft + 1,
+                'to' => $days,
+            ]
+        ];
+    }
+
+    /**
+     * Return timestamp from given year, month and year.
+     *
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     * @return int
+     * @throws Exception
+     */
+    protected function getTimestamp(int $year, int $month, int $day): int
+    {
+        $timestamp = mktime(12, 0, 0, $month, $day, $year);
+
+        if ($timestamp === false) {
+            throw new Exception(sprintf('Unable to create timestamp (%s:%d)', __FILE__, __LINE__));
+        }
+
+        return $timestamp;
+    }
+
+    /**
+     * Returns the day of week.
+     * 0 - Sunday
+     * 6 - Saturday
+     *
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     * @return int
+     * @throws Exception
+     */
+    protected function getDayOfWeek(int $year, int $month, int $day): int
+    {
+        return intval(date('w', $this->getTimestamp($year, $month, $day)));
+    }
+
+    /**
+     * Returns the color of given day.
+     *
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     * @return int
+     * @throws Exception
+     */
+    protected function getDayColor(int $year, int $month, int $day): int
+    {
+        /* Print day in red if sunday */
+        if ($this->getDayOfWeek($year, $month, $day) === CalendarBuilderServiceConstants::DAY_SUNDAY) {
+            return $this->colors['red'];
+        }
+
+        /* Print day in red if holiday */
+        $dayKey = $this->getDayKey($day);
+        if (array_key_exists($dayKey, $this->holidays) && $this->holidays[$dayKey] === true) {
+            return $this->colors['red'];
+        }
+
+        /* Print day in white otherwise */
+        return $this->colors['white'];
+    }
+
+    /**
+     * Returns the number of week.
+     *
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     * @return int
+     * @throws Exception
+     */
+    protected function getWeekNumber(int $year, int $month, int $day): int
+    {
+        return intval(date('W', $this->getTimestamp($year, $month, $day)));
+    }
+
+    /**
+     * Returns the number of week if monday. Otherwise, null.
+     *
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     * @return int|null
+     * @throws Exception
+     */
+    protected function getCalendarWeekIfMonday(int $year, int $month, int $day): ?int
+    {
+        $dayOfWeek = $this->getDayOfWeek($year, $month, $day);
+
+        if ($dayOfWeek !== CalendarBuilderServiceConstants::DAY_MONDAY) {
+            return null;
+        }
+
+        return $this->getWeekNumber($year, $month, $day);
+    }
+
+    /**
+     * Returns the y correction for all calendar box.
+     *
+     * $this->calendarBoxBottomSizeReference is the reference for all positions. Move some elements to keep valign: bottom.
+     *
+     * @return int
+     */
+    protected function getCalendarBoxYCorrection(): int
+    {
+        if ($this->calendarBoxBottomSize === $this->calendarBoxBottomSizeReference) {
+            return 0;
+        }
+
+        return intval(round($this->height * ($this->calendarBoxBottomSize - $this->calendarBoxBottomSizeReference)));
+    }
+
+    /**
+     * Returns the day key.
+     *
+     * @param int $day
+     * @return string
+     */
+    protected function getDayKey(int $day): string
+    {
+        if (is_null($this->target)) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        return sprintf('%04d-%02d-%02d', $this->target->getYear(), $this->target->getMonth(), $day);
+    }
+
+    /**
+     * Checks and creates given directory or directory for given file
+     *
+     * @param string $path
+     * @param bool $isFile
+     * @return string
+     * @throws Exception
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    protected function checkAndCreateDirectory(string $path, bool $isFile = false): string
+    {
+        $pathToCheck = match (true) {
+            $isFile => dirname($path),
+            default => $path,
+        };
+
+        if (!file_exists($pathToCheck)) {
+            mkdir($pathToCheck, 0775, true);
+        }
+
+        if (!file_exists($pathToCheck)) {
+            throw new Exception(sprintf('Unable to create directory "%s" (%s:%d)', $pathToCheck, __FILE__, __LINE__));
+        }
+
+        return $pathToCheck;
+    }
+
+    /**
+     * Add text.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param ?int $color
+     * @param int $paddingTop
+     * @param int $align
+     * @param int $valign
+     * @param int $angle
+     * @return array{width: int, height: int}
+     * @throws Exception
+     */
+    #[ArrayShape(['width' => "int", 'height' => "int"])]
+    protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array
+    {
+        if ($color === null) {
+            $color = $this->colors['white'];
+        }
+
+        $dimension = $this->getDimension($text, $fontSize, $angle);
+
+        $positionX = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
+            default => $this->positionX,
+        };
+
+        $positionY = match ($valign) {
+            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
+            default => $this->positionY,
+        };
+
+        imagettftext($this->imageTarget, $fontSize, $angle, $positionX, $positionY + $paddingTop, $color, $this->pathFont, $text);
+
+        return [
+            'width' => $dimension['width'],
+            'height' => $fontSize,
+        ];
+    }
+
+    /**
+     * Add image
+     */
+    protected function addImage(): void
+    {
+        $positionY = match ($this->valignImage) {
+            CalendarBuilderServiceConstants::VALIGN_BOTTOM => $this->yCalendarBoxBottom - $this->height,
+            default => 0,
+        };
+
+        $positionX = 0;
+
+        imagecopyresampled($this->imageTarget, $this->imageSource, $positionX, $positionY, 0, 0, $this->width, $this->height, $this->widthSource, $this->heightSource);
+    }
+
+    /**
+     * Add bottom calendar box.
+     */
+    protected function addRectangle(): void
+    {
+        /* Add calendar area (rectangle) */
+        imagefilledrectangle($this->imageTarget, 0, $this->yCalendarBoxBottom, $this->width, $this->height, $this->colors['blackTransparency']);
+    }
+
+    /**
+     * Add the title and position.
+     *
+     * @throws Exception
+     */
+    protected function addImageDescriptionAndPositionOnCalendarPage(): void
+    {
+        if (is_null($this->target)) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Start y */
+        $positionX = $this->padding;
+        $positionY = $this->yCalendarBoxBottom + $this->padding;
+
+        /* Add title */
+        $fontSizeTitle = $this->fontSizeTitle;
+        $angleAll = 0;
+        imagettftext($this->imageTarget, $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->target->getPageTitle());
+
+        /* Add position */
+        $anglePosition = 90;
+        $dimensionPosition = $this->getDimension($this->target->getCoordinate(), $this->fontSizePosition, $anglePosition);
+        $xPosition = $this->padding + $dimensionPosition['width'] + $this->fontSizePosition;
+        $yPosition = $this->yCalendarBoxBottom - $this->padding;
+        imagettftext($this->imageTarget, $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->target->getCoordinate());
+    }
+
+    /**
+     * Adds the title page elements (instead of the calendar).
+     *
+     * @throws Exception
+     */
+    protected function addTitleOnTitlePage(): void
+    {
+        $target = $this->target;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Set x and y */
+        $xCenterCalendar = intval(round($this->width / 2));
+        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->padding + $this->getCalendarBoxYCorrection());
+
+        $paddingTopYear = $this->getSize(0);
+        $dimensionYear = $this->addText(sprintf('%s', $target->getTitle()), $this->fontSizeTitlePage, $this->colors['white'], $paddingTopYear, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $this->addY($dimensionYear['height'] + $paddingTopYear);
+
+        $paddingTopSubtext = $this->getSize(40);
+        $dimensionYear = $this->addText(sprintf('%s', $target->getSubtitle()), $this->fontSizeTitlePageSubtext, $this->colors['white'], $paddingTopSubtext, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $this->addY($dimensionYear['height'] + $paddingTopSubtext);
+    }
+
+    /**
+     * Add day to calendar.
+     *
+     * @param int $day
+     * @param int $align
+     * @throws Exception
+     */
+    protected function addDay(int $day, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT): void
+    {
+        $target = $this->target;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Add distance for next day and between calendar weeks */
+        $calendarWeekDistance = $this->getDayOfWeek($target->getYear(), $target->getMonth(), $day) === CalendarBuilderServiceConstants::DAY_MONDAY ? $this->dayDistance : 0;
+
+        /* Add x for next day */
+        $this->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? ($this->dayDistance + $calendarWeekDistance) : -1 * $this->dayDistance);
+
+        /* Add day */
+        $color = $this->getDayColor($target->getYear(), $target->getMonth(), $day);
+        $dimension = $this->addText(sprintf('%02d', $day), $this->fontSizeDay, $color, align: $align);
+
+        /* Save position */
+        $this->positionDays[$this->getDayKey($day)] = [
+            'x' => $this->positionX,
+            'y' => $this->positionY,
+            'align' => $align,
+            'dimension' => $dimension,
+            'day' => $day,
+        ];
+
+        /* Add x for next day */
+        $this->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? $dimension['width'] : -1 * ($dimension['width'] + $calendarWeekDistance));
+    }
+
+    /**
+     * Adds the calendar (year, month and days).
+     *
+     * @throws Exception
+     */
+    protected function addYearMonthAndDays(): void
+    {
+        $target = $this->target;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Set x and y */
+        $xCenterCalendar = intval(round($this->width / 2) + round($this->width / 8));
+        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->padding + $this->getCalendarBoxYCorrection());
+
+        /* Add month */
+        $paddingTop = $this->getSize(0);
+        $dimensionMonth = $this->addText(sprintf('%02d', $target->getMonth()), $this->fontSizeMonth, $this->colors['white'], $paddingTop, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $this->addY($dimensionMonth['height'] + $paddingTop);
+
+        /* Add year */
+        $paddingTop = $this->getSize(20);
+        $dimensionYear = $this->addText(sprintf('%s', $target->getYear()), $this->fontSizeYear, $this->colors['white'], $paddingTop, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $this->addY($dimensionYear['height'] + $paddingTop);
+
+        /* Add days */
+        $days = $this->getDays();
+
+        /* Add first days (left side) */
+        $this->setPositionX($xCenterCalendar - intval(round($dimensionYear['width'] / 2)));
+        $this->addX(-$this->dayDistance);
+        for ($day = $days['left']['to']; $day >= $days['left']['from']; $day--) {
+            $this->addDay($day, CalendarBuilderServiceConstants::ALIGN_RIGHT);
+        }
+
+        /* Add second part of days (right side) */
+        $this->setPositionX($xCenterCalendar + intval(round($dimensionYear['width'] / 2)));
+        $this->addX($this->dayDistance);
+        for ($day = $days['right']['from']; $day <= $days['right']['to']; $day++) {
+            $this->addDay($day);
+        }
+    }
+
+    /**
+     * Adds calendar week to day.
+     *
+     * @param string $dayKey
+     * @throws Exception
+     */
+    protected function addCalendarWeek(string $dayKey): void
+    {
+        $target = $this->target;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        $positionDay = $this->positionDays[$dayKey];
+        $day = $positionDay['day'];
+        $dimensionDay = $positionDay['dimension'];
+        $align = $positionDay['align'];
+
+        $weekNumber = $this->getCalendarWeekIfMonday($target->getYear(), $target->getMonth(), $day);
+
+        /* Add calendar week, if day is monday */
+        if ($weekNumber === null) {
+            return;
+        }
+
+        /* Set x and y */
+        $this->setPositionX($positionDay['x']);
+        $this->setPositionY($positionDay['y']);
+
+        /* Set calendar week position (ALIGN_LEFT -> right side) */
+        $this->positionX -= $align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width'];
+        $this->positionY += intval(round(1.0 * $this->fontSizeDay));
+
+        /* Build calendar week text */
+        $weekNumberText = sprintf('KW %02d >', $weekNumber);
+
+        /* Add calendar week */
+        $this->addText($weekNumberText, intval(ceil($this->fontSizeDay * 0.5)), $this->colors['white']);
+
+        /* Add line */
+        $positionX = $this->positionX - intval(round($this->dayDistance / 1));
+        imageline($this->imageTarget, $positionX, $this->positionY, $positionX, $positionDay['y'] - $this->fontSizeDay, $this->colors['white']);
+    }
+
+    /**
+     * Adds calendar week to days.
+     *
+     * @throws Exception
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    protected function addCalendarWeeks(): void
+    {
+        foreach ($this->positionDays as $dayKey => $positionDay) {
+            $this->addCalendarWeek($dayKey);
+        }
+    }
+
+    /**
+     * Add holiday or event to day.
+     *
+     * @param string $dayKey
+     * @throws Exception
+     */
+    protected function addHolidayOrEvent(string $dayKey): void
+    {
+        $positionDay = $this->positionDays[$dayKey];
+        $day = $positionDay['day'];
+        $dimensionDay = $positionDay['dimension'];
+        $align = $positionDay['align'];
+
+        $dayKey = $this->getDayKey($day);
+
+        if (!array_key_exists($dayKey, $this->eventsAndHolidays)) {
+            return;
+        }
+
+        $eventOrHoliday = $this->eventsAndHolidays[$dayKey];
+
+        /* Set x and y */
+        $this->setPositionX($positionDay['x']);
+        $this->setPositionY($positionDay['y']);
+
+        /* Angle and font size */
+        $angleEvent = 80;
+        $fontSizeEvent = intval(ceil($this->fontSizeDay * 0.6));
+
+        /* Get name */
+        $name = strlen($eventOrHoliday['name']) > $this->maxLength ?
+            substr($eventOrHoliday['name'], 0, $this->maxLength - strlen($this->maxLengthAdd)).$this->maxLengthAdd :
+            $eventOrHoliday['name'];
+
+        /* Dimension Event */
+        $xEvent = $fontSizeEvent + intval(round(($dimensionDay['width'] - $fontSizeEvent) / 2));
+
+        /* Set event position */
+        $this->positionX -= $align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width'];
+        $this->positionX += $xEvent;
+        $this->positionY -= intval(round(1.5 * $this->fontSizeDay));
+
+        /* Add Event */
+        $this->addText(text: $name, fontSize: $fontSizeEvent, color: $this->colors['white'], angle: $angleEvent);
+    }
+
+    /**
+     * Adds holidays and events to days.
+     *
+     * @throws Exception
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    protected function addHolidaysAndEvents(): void
+    {
+        foreach ($this->positionDays as $dayKey => $positionDay) {
+            $this->addHolidayOrEvent($dayKey);
+        }
+    }
+
+    /**
+     * Adds QR Code.
+     *
+     * @throws Exception
+     */
+    protected function addQrCode(): void
+    {
+        /* Set background color */
+        $backgroundColor = [255, 0, 0];
+
+        /* Matrix length of qrCode */
+        $matrixLength = 37;
+
+        /* Wanted width (and height) of qrCode */
+        $width = 800;
+
+        /* Calculate scale of qrCode */
+        $scale = intval(ceil($width / $matrixLength));
+
+        /* Set options for qrCode */
+        $options = [
+            'eccLevel' => QRCode::ECC_H,
+            'outputType' => QRCode::OUTPUT_IMAGICK,
+            'version' => $this->qrCodeVersion,
+            'addQuietzone' => false,
+            'scale' => $scale,
+            'markupDark' => '#fff',
+            'markupLight' => '#f00',
+        ];
+
+        /* Get blob from qrCode image */
+        $qrCodeBlob = (new QRCode(new QROptions($options)))->render($this->url);
+
+        if (!is_string($qrCodeBlob)) {
+            throw new LogicException('$qrCodeBlob must be a string');
+        }
+
+        /* Create GDImage from blob */
+        $imageQrCode = imagecreatefromstring(strval($qrCodeBlob));
+
+        /* Check creating image. */
+        if ($imageQrCode === false) {
+            throw new Exception(sprintf('An error occurred while creating GDImage from blob (%s:%d)', __FILE__, __LINE__));
+        }
+
+        /* Get height from $imageQrCode */
+        $widthQrCode  = imagesx($imageQrCode);
+        $heightQrCode = imagesy($imageQrCode);
+
+        /* Create transparent color */
+        $transparentColor = imagecolorexact($imageQrCode, $backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+
+        /* Set background color to transparent */
+        imagecolortransparent($imageQrCode, $transparentColor);
+
+        /* Add dynamically generated qr image to main image */
+        imagecopyresized($this->imageTarget, $imageQrCode, $this->padding, $this->height - $this->padding - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
+
+        /* Destroy image. */
+        imagedestroy($imageQrCode);
+    }
+
+    /**
+     * Returns image properties from given image.
+     *
+     * @param string $pathAbsolute
+     * @param string $keyPostfix
+     * @return array<string, int|string|null>
+     * @throws Exception
+     */
+    protected function getImageProperties(string $pathAbsolute, string $keyPostfix = 'Target'): array
+    {
+        /* Check created image */
+        if (!file_exists($pathAbsolute)) {
+            throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
+        }
+
+        /* Get image properties */
+        $image = getimagesize($pathAbsolute);
+
+        /* Check image properties */
+        if ($image === false) {
+            throw new Exception(sprintf('Unable to get file information from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
+        }
+
+        /* Get file size */
+        $sizeByte = filesize($pathAbsolute);
+
+        /* Check image properties */
+        if ($sizeByte === false) {
+            throw new Exception(sprintf('Unable to get file size from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
+        }
+
+        /* Return the image properties */
+        return [
+            sprintf('path%s', $keyPostfix) => $pathAbsolute,
+            sprintf('pathRelative%s', $keyPostfix) => preg_replace('~^'.$this->appKernel->getProjectDir().'/~', '', $pathAbsolute),
+            sprintf('width%s', $keyPostfix) => intval($image[0]),
+            sprintf('height%s', $keyPostfix) => intval($image[1]),
+            sprintf('mime%s', $keyPostfix) => strval($image['mime']),
+            sprintf('size%s', $keyPostfix) => $sizeByte,
+            sprintf('sizeHuman%s', $keyPostfix) => (new SizeByte($sizeByte))->getHumanReadable(),
+        ];
+    }
+
+
+    /**
+     * Returns the year month key.
+     *
+     * @param int $year
+     * @param int $month
+     * @return string
+     */
+    protected function getYearMonthKey(int $year, int $month): string
+    {
+        return sprintf('%04d-%02d', $year, $month);
+    }
+
+    /**
+     * Adds given event.
+     *
+     * @param string $key
+     * @param string $name
+     * @param bool $holiday
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    protected function addEventOrHoliday(string $key, string $name, bool $holiday = false): void
+    {
+        /* Add new key */
+        if (!array_key_exists($key, $this->eventsAndHolidaysRaw)) {
+            $this->eventsAndHolidaysRaw[$key] = [
+                'name' => [],
+            ];
+        }
+
+        /* Add name */
+        $this->eventsAndHolidaysRaw[$key]['name'][] = $name;
+
+        /* Add holiday */
+        $this->holidays[$key] = $holiday;
+    }
+
+    /**
+     * Adds all events according to this month.
+     *
+     * @throws Exception
+     */
+    protected function addEvents(): void
+    {
+        $target = $this->target;
+        $source = $this->source;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+        if (!$source instanceof Source) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /* Build current year and month */
+        $yearMonthPage = $this->getYearMonthKey($target->getYear(), $target->getMonth());
+
+        foreach ($source->getBirthdays() as $birthday) {
+            /** @var DateTimeImmutable $date */
+            $date = $birthday['date'];
+
+            /** @var string $title */
+            $title = $birthday['title'];
+
+            /* Get event key */
+            $eventKey = $this->getDayKey(intval($date->format('j')));
+
+            /* Get year from event */
+            $year = intval($date->format('Y'));
+
+            /* This event does not fit the month → Skip */
+            if ($yearMonthPage !== $this->getYearMonthKey($target->getYear(), intval($date->format('n')))) {
+                continue;
+            }
+
+            /* Birthday event → But no year given */
+            if ($year === CalendarBuilderServiceConstants::BIRTHDAY_YEAR_NOT_GIVEN) {
+                $this->addEventOrHoliday($eventKey, $title);
+                continue;
+            }
+
+            /* Calculate age from event */
+            $age = $target->getYear() - $year;
+
+            /* Birthday event → Age must be greater than 0 */
+            if ($age <= 0) {
+                $this->addEventOrHoliday($eventKey, $title);
+                continue;
+            }
+
+            /* Birthday event → Add age to name */
+            $this->addEventOrHoliday($eventKey, sprintf('%s (%d)', $title, $age));
+        }
+    }
+
+    /**
+     * Add holidays to this month.
+     *
+     * @throws Exception
+     */
+    public function addHolidays(): void
+    {
+        $target = $this->target;
+        $source = $this->source;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+        if (!$source instanceof Source) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        /** @var array{date: DateTimeImmutable, title: string} $holiday */
+        foreach ($source->getHolidays() as $holiday) {
+            /** @var DateTimeImmutable $date */
+            $date = $holiday['date'];
+
+            /** @var string $title */
+            $title = $holiday['title'];
+
+            /* Get event key */
+            $holidayKey = $this->getDayKey(intval($date->format('j')));
+
+            /* Get year and month */
+            $month = intval($date->format('n'));
+
+            /* Check holiday (month) → Skip if not equal */
+            if ($target->getMonth() !== $month) {
+                continue;
+            }
+
+            /* Add event or holiday label */
+            $this->addEventOrHoliday($holidayKey, $title, true);
+        }
+    }
+
+    /**
+     * Combine entries from $this->eventsAndHolidaysRaw to $this->eventsAndHolidays
+     *
+     * @return array<array{name: string}>
+     */
+    protected function combineEventsAndHolidays(): array
+    {
+        $eventsAndHolidays = [];
+
+        foreach ($this->eventsAndHolidaysRaw as $key => $eventOrHoliday) {
+            $eventsAndHolidays[$key] = [
+                'name' => implode(', ', $eventOrHoliday['name']),
+            ];
+        }
+
+        /* Return events and holidays. */
+        return $eventsAndHolidays;
+    }
+
+    /**
+     * Build all events and holidays according to this month.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function createEventsAndHolidays(): void
+    {
+        /* Reset events and holidays. */
+        $this->eventsAndHolidaysRaw = [];
+
+        /* Add events. */
+        $this->addEvents();
+
+        /* Add holidays */
+        $this->addHolidays();
+
+        /* Combine events and holidays */
+        $this->eventsAndHolidays = $this->combineEventsAndHolidays();
+    }
+
+    /**
+     * Sets the QR Code version.
+     *
+     * @param int $qrCodeVersion
+     * @return void
+     */
+    public function setQrCodeVersion(int $qrCodeVersion): void
+    {
+        $this->qrCodeVersion = $qrCodeVersion;
+    }
+
+    /**
+     * Gets all target paths.
+     *
+     * @param string $pathTargetAbsolute
+     * @return string[]
+     * @throws Exception
+     */
+    protected function getAllTargetImages(string $pathTargetAbsolute): array
+    {
+        $pathTargetAbsolutePattern = preg_replace('~\.([a-z][a-z0-9]+)$~i', '.*.$1', $pathTargetAbsolute);
+
+        if (!is_string($pathTargetAbsolutePattern)) {
+            throw new Exception(sprintf('Unable to replace string (%s:%d).', __FILE__, __LINE__));
+        }
+
+        $imageFiles = glob($pathTargetAbsolutePattern);
+
+        if ($imageFiles === false) {
+            throw new Exception(sprintf('Unable to get files via glob (%s:%d).', __FILE__, __LINE__));
+        }
+
+        $imageFiles[] = $pathTargetAbsolute;
+
+        return $imageFiles;
+    }
+
+    /**
+     * Removes target images.
+     *
+     * @param string $pathTargetAbsolute
+     * @return bool
+     * @throws Exception
+     */
+    protected function removeTargetImages(string $pathTargetAbsolute): bool
+    {
+        if (file_exists($pathTargetAbsolute)) {
+            unlink($pathTargetAbsolute);
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the target path from given source.
+     *
+     * @param File $source
+     * @return string
+     * @throws FileNotFoundException
+     */
+    private function getTargetPathFromSource(File $source): string
+    {
+        $target = $this->target;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        $extension = pathinfo($source->getPathReal(), PATHINFO_EXTENSION);
+
+        return sprintf('%s/%s-%s.%s', $source->getDirectoryPath(), $target->getYear(), $target->getMonth(), $extension);
+    }
+
+    /**
+     * Builds the given source image to a calendar page.
+     *
+     * @return array<string, int|string|null>
+     * @throws Exception
+     */
+    public function build(): array
+    {
+        $target = $this->target;
+        $source = $this->source;
+
+        if (!$target instanceof Target) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        if (!$source instanceof Source) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
+
+        $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
+        $this->url = 'https://github.com/';
+
+        $this->pathSourceAbsolute = $source->getImage()->getPathReal();
+        $this->pathTargetAbsolute = $this->getTargetPathFromSource($source->getImage());
+
+        if ($this->deleteTargetImages) {
+            $this->removeTargetImages($this->pathTargetAbsolute);
+        }
+
+        /* Check target path */
+        $this->checkAndCreateDirectory($this->pathTargetAbsolute, true);
+
+        /* Init */
+        $this->prepare();
+
+        /* Add main image */
+        $this->addImage();
+
+        /* Add calendar area */
+        $this->addRectangle();
+
+        /* Add title, position, etc. */
+        $this->addImageDescriptionAndPositionOnCalendarPage();
+
+        /* Add calendar */
+        switch (true) {
+            case $target->getMonth() === 0:
+                $this->addTitleOnTitlePage();
+                break;
+
+            default:
+                $this->addYearMonthAndDays();
+                $this->addCalendarWeeks();
+                $this->addHolidaysAndEvents();
+                break;
+        }
+
+        /* Add qr code */
+        $this->addQrCode();
+
+        /* Write image */
+        $this->writeImage();
+
+        /* Destroy image */
+        $this->destroy();
+
+        if (is_null($this->pathSourceAbsolute)) {
+            throw new LogicException('$this->pathSourceAbsolute is not initialized');
+        }
+
+        return [...$this->getImageProperties($this->pathSourceAbsolute, 'Source'), ...$this->getImageProperties($this->pathTargetAbsolute)];
+    }
+}
