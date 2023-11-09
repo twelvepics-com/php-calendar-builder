@@ -11,14 +11,14 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Calendar;
+namespace App\Service;
 
+use App\Calendar\Design\GdImage\Base\DesignBase;
 use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\ImageContainer;
 use App\Objects\Parameter\Source;
 use App\Objects\Parameter\Target;
-use App\Service\Calendar\Design\DesignDefault;
 use DateTime;
 use DateTimeImmutable;
 use Exception;
@@ -46,11 +46,11 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 class CalendarBuilderService
 {
-    private DesignDefault $design;
+    private DesignBase $design;
 
-    private Source $source;
+    private Source $parameterSource;
 
-    private Target $target;
+    private Target $parameterTarget;
 
     /** @var array<array{name: string[]}> $eventsAndHolidaysRaw */
     protected array $eventsAndHolidaysRaw = [];
@@ -66,45 +66,43 @@ class CalendarBuilderService
     /**
      * @param KernelInterface $appKernel
      */
-    public function __construct(
-        protected KernelInterface $appKernel,
-    )
+    public function __construct(protected KernelInterface $appKernel)
     {
     }
 
     /**
      * @return Source
      */
-    public function getSource(): Source
+    public function getParameterSource(): Source
     {
-        return $this->source;
+        return $this->parameterSource;
     }
 
     /**
-     * @param Source $source
+     * @param Source $parameterSource
      * @return CalendarBuilderService
      */
-    public function setSource(Source $source): CalendarBuilderService
+    public function setParameterSource(Source $parameterSource): CalendarBuilderService
     {
-        $this->source = $source;
+        $this->parameterSource = $parameterSource;
         return $this;
     }
 
     /**
      * @return Target
      */
-    public function getTarget(): Target
+    public function getParameterTarget(): Target
     {
-        return $this->target;
+        return $this->parameterTarget;
     }
 
     /**
-     * @param Target $target
+     * @param Target $parameterTarget
      * @return CalendarBuilderService
      */
-    public function setTarget(Target $target): CalendarBuilderService
+    public function setParameterTarget(Target $parameterTarget): CalendarBuilderService
     {
-        $this->target = $target;
+        $this->parameterTarget = $parameterTarget;
         return $this;
     }
 
@@ -127,19 +125,21 @@ class CalendarBuilderService
     /**
      * Init function.
      *
-     * @param Source $source
-     * @param Target $target
+     * @param Source $parameterSource
+     * @param Target $parameterTarget
+     * @param DesignBase $design
      */
     public function init(
-        Source $source,
-        Target $target
+        Source $parameterSource,
+        Target $parameterTarget,
+        DesignBase $design
     ): void
     {
-        $this->design = new DesignDefault($this->appKernel);
+        $this->design = $design;
         $this->design->init(calendarBuilderService: $this);
 
-        $this->setSource($source);
-        $this->setTarget($target);
+        $this->setParameterSource($parameterSource);
+        $this->setParameterTarget($parameterTarget);
     }
 
     /**
@@ -151,7 +151,7 @@ class CalendarBuilderService
     #[ArrayShape(['left' => "array", 'right' => "array"])]
     public function getDays(): array
     {
-        $days = intval((new DateTime(sprintf('%d%02d01', $this->target->getYear(), $this->target->getMonth())))->format('t'));
+        $days = intval((new DateTime(sprintf('%d%02d01', $this->parameterTarget->getYear(), $this->parameterTarget->getMonth())))->format('t'));
 
         $dayToLeft = intval(ceil($days / 2));
 
@@ -245,7 +245,7 @@ class CalendarBuilderService
      */
     public function getDayKey(int $day): string
     {
-        return sprintf('%04d-%02d-%02d', $this->target->getYear(), $this->target->getMonth(), $day);
+        return sprintf('%04d-%02d-%02d', $this->parameterTarget->getYear(), $this->parameterTarget->getMonth(), $day);
     }
 
     /**
@@ -318,8 +318,8 @@ class CalendarBuilderService
      */
     protected function addEvents(): void
     {
-        $target = $this->getTarget();
-        $source = $this->getSource();
+        $target = $this->getParameterTarget();
+        $source = $this->getParameterSource();
 
         /* Build current year and month */
         $yearMonthPage = $this->getYearMonthKey($target->getYear(), $target->getMonth());
@@ -369,8 +369,8 @@ class CalendarBuilderService
      */
     public function addHolidays(): void
     {
-        $target = $this->getTarget();
-        $source = $this->getSource();
+        $target = $this->getParameterTarget();
+        $source = $this->getParameterSource();
 
         /** @var array{date: DateTimeImmutable, title: string} $holiday */
         foreach ($source->getHolidays() as $holiday) {
@@ -467,8 +467,8 @@ class CalendarBuilderService
      */
     private function getTargetPathFromSource(File $sourceImage): string
     {
-        $target = $this->getTarget();
-        $source = $this->getSource();
+        $target = $this->getParameterTarget();
+        $source = $this->getParameterSource();
 
         $extension = pathinfo($sourceImage->getPathReal(), PATHINFO_EXTENSION);
 
@@ -489,7 +489,7 @@ class CalendarBuilderService
      */
     public function build(): ImageContainer
     {
-        $pathTargetAbsolute = $this->getTargetPathFromSource($this->source->getImage());
+        $pathTargetAbsolute = $this->getTargetPathFromSource($this->parameterSource->getImage());
 
         if ($this->deleteTargetImages) {
             $this->removeTargetImages($pathTargetAbsolute);

@@ -11,14 +11,14 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Calendar\Design;
+namespace App\Calendar\Design\GdImage;
 
+use App\Calendar\Design\GdImage\Base\DesignBase;
 use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
-use App\Objects\Parameter\Target;
-use App\Service\Calendar\CalendarBuilderService;
+use App\Service\CalendarBuilderService;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
@@ -46,17 +46,9 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class DesignDefault
+class DesignDefault extends DesignBase
 {
     private const FONT = 'OpenSansCondensed-Light.ttf';
-
-    private CalendarBuilderService $calendarBuilderService;
-
-    protected float $aspectRatio;
-
-    protected int $width;
-
-    protected int $height;
 
     protected float $calendarBoxBottomSizeReference = 1/6;
 
@@ -100,15 +92,7 @@ class DesignDefault
 
     protected int $dayDistance = 40;
 
-    protected int $widthSource;
-
-    protected int $heightSource;
-
     protected int $yCalendarBoxBottom;
-
-    protected int $positionX;
-
-    protected int $positionY;
 
     /** @var int[] $colors */
     protected array $colors;
@@ -122,10 +106,6 @@ class DesignDefault
     /** @var array<string, array{x: int, y: int, align: int, dimension: int[], day: int}> $positionDays */
     protected array $positionDays = [];
 
-    protected GdImage $imageTarget;
-
-    protected GdImage $imageSource;
-
     protected bool $useCalendarImagePath = false;
 
     protected int $qrCodeVersion = 5;
@@ -135,19 +115,12 @@ class DesignDefault
     /**
      * @param KernelInterface $appKernel
      */
-    public function __construct(
-        protected KernelInterface $appKernel,
-    )
+    public function __construct(protected KernelInterface $appKernel)
     {
     }
 
     /**
-     * Init function.
-     *
-     * @param CalendarBuilderService $calendarBuilderService
-     * @param int $qrCodeVersion
-     * @param bool $useCalendarImagePath
-     * @param bool $deleteTargetImages
+     * @inheritdoc
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function init(
@@ -213,58 +186,6 @@ class DesignDefault
     }
 
     /**
-     * Init x and y.
-     *
-     * @param int $positionX
-     * @param int $positionY
-     */
-    protected function initXY(int $positionX = 0, int $positionY = 0): void
-    {
-        $this->positionX = $positionX;
-        $this->positionY = $positionY;
-    }
-
-    /**
-     * Set x
-     *
-     * @param int $positionX
-     */
-    protected function setPositionX(int $positionX): void
-    {
-        $this->positionX = $positionX;
-    }
-
-    /**
-     * Set y
-     *
-     * @param int $positionY
-     */
-    protected function setPositionY(int $positionY): void
-    {
-        $this->positionY = $positionY;
-    }
-
-    /**
-     * Add x
-     *
-     * @param int $positionX
-     */
-    protected function addX(int $positionX): void
-    {
-        $this->positionX += $positionX;
-    }
-
-    /**
-     * Add y
-     *
-     * @param int $positionY
-     */
-    protected function addY(int $positionY): void
-    {
-        $this->positionY += $positionY;
-    }
-
-    /**
      * Returns the dimension of given text, font size and angle.
      *
      * @param string $text
@@ -309,7 +230,7 @@ class DesignDefault
     protected function writeImage(): void
     {
         /* Write image */
-        imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->calendarBuilderService->getTarget()->getQuality());
+        imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getQuality());
     }
 
     /**
@@ -420,7 +341,7 @@ class DesignDefault
      */
     protected function createColors(): void
     {
-        $target = $this->calendarBuilderService->getTarget();
+        $target = $this->calendarBuilderService->getParameterTarget();
 
         $this->colors = [
             'black' => $this->createColor($this->imageTarget, 0, 0, 0),
@@ -573,14 +494,14 @@ class DesignDefault
         /* Add title */
         $fontSizeTitle = $this->fontSizeTitle;
         $angleAll = 0;
-        imagettftext($this->imageTarget, $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getTarget()->getPageTitle());
+        imagettftext($this->imageTarget, $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getPageTitle());
 
         /* Add position */
         $anglePosition = 90;
-        $dimensionPosition = $this->getDimension($this->calendarBuilderService->getTarget()->getCoordinate(), $this->fontSizePosition, $anglePosition);
+        $dimensionPosition = $this->getDimension($this->calendarBuilderService->getParameterTarget()->getCoordinate(), $this->fontSizePosition, $anglePosition);
         $xPosition = $this->padding + $dimensionPosition['width'] + $this->fontSizePosition;
         $yPosition = $this->yCalendarBoxBottom - $this->padding;
-        imagettftext($this->imageTarget, $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getTarget()->getCoordinate());
+        imagettftext($this->imageTarget, $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getCoordinate());
     }
 
     /**
@@ -590,7 +511,7 @@ class DesignDefault
      */
     protected function addTitleOnTitlePage(): void
     {
-        $target = $this->calendarBuilderService->getTarget();
+        $target = $this->calendarBuilderService->getParameterTarget();
 
         /* Set x and y */
         $xCenterCalendar = intval(round($this->width / 2));
@@ -614,7 +535,7 @@ class DesignDefault
      */
     protected function addDay(int $day, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT): void
     {
-        $target = $this->calendarBuilderService->getTarget();
+        $target = $this->calendarBuilderService->getParameterTarget();
 
         /* Add distance for next day and between calendar weeks */
         $calendarWeekDistance = $this->calendarBuilderService->getDayOfWeek($target->getYear(), $target->getMonth(), $day) === CalendarBuilderServiceConstants::DAY_MONDAY ? $this->dayDistance : 0;
@@ -646,7 +567,7 @@ class DesignDefault
      */
     protected function addYearMonthAndDays(): void
     {
-        $target = $this->calendarBuilderService->getTarget();
+        $target = $this->calendarBuilderService->getParameterTarget();
 
         /* Set x and y */
         $xCenterCalendar = intval(round($this->width / 2) + round($this->width / 8));
@@ -688,7 +609,7 @@ class DesignDefault
      */
     protected function addCalendarWeek(string $dayKey): void
     {
-        $target = $this->calendarBuilderService->getTarget();
+        $target = $this->calendarBuilderService->getParameterTarget();
 
         $positionDay = $this->positionDays[$dayKey];
         $day = $positionDay['day'];
@@ -912,8 +833,8 @@ class DesignDefault
      */
     private function getTargetPathFromSource(File $sourceImage): string
     {
-        $target = $this->calendarBuilderService->getTarget();
-        $source = $this->calendarBuilderService->getSource();
+        $target = $this->calendarBuilderService->getParameterTarget();
+        $source = $this->calendarBuilderService->getParameterSource();
 
         $extension = pathinfo($sourceImage->getPathReal(), PATHINFO_EXTENSION);
 
@@ -934,8 +855,8 @@ class DesignDefault
      */
     public function build(): ImageContainer
     {
-        $target = $this->calendarBuilderService->getTarget();
-        $source = $this->calendarBuilderService->getSource();
+        $target = $this->calendarBuilderService->getParameterTarget();
+        $source = $this->calendarBuilderService->getParameterSource();
 
         $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
         $this->url = 'https://github.com/';

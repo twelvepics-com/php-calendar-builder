@@ -13,13 +13,14 @@ declare(strict_types=1);
 
 namespace App\Command\Calendar;
 
+use App\Calendar\Design\GdImage\DesignDefault;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
 use App\Objects\Parameter\Source;
 use App\Objects\Parameter\Target;
-use App\Service\Calendar\CalendarBuilderService;
+use App\Service\CalendarBuilderService;
 use Exception;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -28,6 +29,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class CreatePageCommand
@@ -53,13 +55,15 @@ class CreatePageCommand extends Command
      * CreatePageCommand constructor
      *
      * @param CalendarBuilderService $calendarBuilderService
+     * @param KernelInterface $appKernel
      * @param Source $source
      * @param Target $target
      */
     public function __construct(
         private readonly CalendarBuilderService $calendarBuilderService,
-        private readonly Source $source,
-        private readonly Target $target
+        private readonly KernelInterface        $appKernel,
+        private readonly Source                 $source,
+        private readonly Target                 $target
     )
     {
         parent::__construct();
@@ -198,8 +202,9 @@ EOT
 
         /* Initialize calendar image */
         $this->calendarBuilderService->init(
-            source: $this->source,
-            target: $this->target,
+            parameterSource: $this->source,
+            parameterTarget: $this->target,
+            design: new DesignDefault($this->appKernel)
         );
 
         /* Create calendar image */
