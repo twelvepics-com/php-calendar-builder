@@ -38,6 +38,8 @@ use Symfony\Component\HttpKernel\KernelInterface;
 /**
  * Class DesignDefault
  *
+ * Creates the default calendar design.
+ *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.1 (2023-11-09)
  * @since 0.1.0 (2023-11-09) First version.
@@ -48,25 +50,22 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 class DesignDefault extends DesignBase
 {
+    /**
+     * Constants.
+     */
     private const FONT = 'OpenSansCondensed-Light.ttf';
 
-    protected float $calendarBoxBottomSizeReference = 1/6;
+    private const CALENDAR_BOX_BOTTOM_SIZE = 9/48;
 
-    protected float $calendarBoxBottomSize = 9/48;
+    protected const MAX_LENGTH_EVENT_CAPTION = 28;
 
-    protected int $widthQrCode = 250;
+    private const MAX_LENGTH_ADD = '...';
 
-    protected int $heightQrCode = 250;
 
-    protected string $pathRoot;
-
-    protected string $pathData;
-
-    protected string $pathSourceAbsolute;
-
-    protected string $pathTargetAbsolute;
-
-    protected string $pathFont;
+    /**
+     * Calculated values (by zoom).
+     */
+    protected float $zoom = 1.0;
 
     protected int $fontSizeTitle = 60;
 
@@ -84,33 +83,40 @@ class DesignDefault extends DesignBase
 
     protected int $fontSizeTitlePageAuthor = 40;
 
-    protected int $padding = 160;
-
-    protected int $maxLength = 28;
-
-    protected string $maxLengthAdd = '...';
-
     protected int $dayDistance = 40;
 
+    protected int $paddingCalendarDays = 160;
+
+    protected int $qrCodeVersion = 5;
+
+    protected int $widthQrCode = 250;
+
+    protected int $heightQrCode = 250;
+
+
+
+    /**
+     * Class cached values.
+     */
+    protected string $pathSourceAbsolute;
+
+    protected string $pathTargetAbsolute;
+
+    protected string $pathFont;
+
+    protected int $valignImage;
+
     protected int $yCalendarBoxBottom;
+
+    protected string $url;
 
     /** @var int[] $colors */
     protected array $colors;
 
-    protected float $zoom = 1.0;
-
-    protected int $valignImage;
-
-    protected string $url;
-
     /** @var array<string, array{x: int, y: int, align: int, dimension: int[], day: int}> $positionDays */
     protected array $positionDays = [];
 
-    protected bool $useCalendarImagePath = false;
 
-    protected int $qrCodeVersion = 5;
-
-    protected bool $deleteTargetImages = false;
 
     /**
      * @param KernelInterface $appKernel
@@ -135,26 +141,17 @@ class DesignDefault extends DesignBase
         /* Clear positions */
         $this->positionDays = [];
 
-        /* Use CalendarImage path */
-        $this->useCalendarImagePath = $useCalendarImagePath;
-
         /* Set qr code version */
         $this->qrCodeVersion = $qrCodeVersion;
-
-        /* Set delete target images */
-        $this->deleteTargetImages = $deleteTargetImages;
 
         /* sizes */
         $this->aspectRatio = 3 / 2;
         $this->height = CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
         $this->width = intval(floor($this->height * $this->aspectRatio));
 
-        /* Root path */
-        $this->pathRoot = $this->appKernel->getProjectDir();
-
         /* Font path */
-        $this->pathData = sprintf('%s/data', $this->pathRoot);
-        $this->pathFont = sprintf('%s/font/%s', $this->pathData, self::FONT);
+        $pathData = sprintf('%s/data', $this->appKernel->getProjectDir());
+        $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT);
 
         /* Calculate zoom */
         $this->zoom = $this->height / CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
@@ -168,7 +165,7 @@ class DesignDefault extends DesignBase
         $this->fontSizeTitlePage = $this->getSize($this->fontSizeTitlePage);
         $this->fontSizeTitlePageSubtext = $this->getSize($this->fontSizeTitlePageSubtext);
         $this->fontSizeTitlePageAuthor = $this->getSize($this->fontSizeTitlePageAuthor);
-        $this->padding = $this->getSize($this->padding);
+        $this->paddingCalendarDays = $this->getSize($this->paddingCalendarDays);
         $this->heightQrCode = $this->getSize($this->heightQrCode);
         $this->widthQrCode = $this->getSize($this->widthQrCode);
         $this->dayDistance = $this->getSize($this->dayDistance);
@@ -369,7 +366,7 @@ class DesignDefault extends DesignBase
         $this->widthSource = $propertiesSource[0];
         $this->heightSource = $propertiesSource[1];
 
-        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - $this->calendarBoxBottomSize)));
+        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
     }
 
     /**
@@ -397,22 +394,6 @@ class DesignDefault extends DesignBase
 
         /* Print day in white otherwise */
         return $this->colors['white'];
-    }
-
-    /**
-     * Returns the y correction for all calendar box.
-     *
-     * $this->calendarBoxBottomSizeReference is the reference for all positions. Move some elements to keep valign: bottom.
-     *
-     * @return int
-     */
-    protected function getCalendarBoxYCorrection(): int
-    {
-        if ($this->calendarBoxBottomSize === $this->calendarBoxBottomSizeReference) {
-            return 0;
-        }
-
-        return intval(round($this->height * ($this->calendarBoxBottomSize - $this->calendarBoxBottomSizeReference)));
     }
 
     /**
@@ -488,8 +469,8 @@ class DesignDefault extends DesignBase
     protected function addImageDescriptionAndPositionOnCalendarPage(): void
     {
         /* Start y */
-        $positionX = $this->padding;
-        $positionY = $this->yCalendarBoxBottom + $this->padding;
+        $positionX = $this->paddingCalendarDays;
+        $positionY = $this->yCalendarBoxBottom + $this->paddingCalendarDays;
 
         /* Add title */
         $fontSizeTitle = $this->fontSizeTitle;
@@ -499,8 +480,8 @@ class DesignDefault extends DesignBase
         /* Add position */
         $anglePosition = 90;
         $dimensionPosition = $this->getDimension($this->calendarBuilderService->getParameterTarget()->getCoordinate(), $this->fontSizePosition, $anglePosition);
-        $xPosition = $this->padding + $dimensionPosition['width'] + $this->fontSizePosition;
-        $yPosition = $this->yCalendarBoxBottom - $this->padding;
+        $xPosition = $this->paddingCalendarDays + $dimensionPosition['width'] + $this->fontSizePosition;
+        $yPosition = $this->yCalendarBoxBottom - $this->paddingCalendarDays;
         imagettftext($this->imageTarget, $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getCoordinate());
     }
 
@@ -515,7 +496,7 @@ class DesignDefault extends DesignBase
 
         /* Set x and y */
         $xCenterCalendar = intval(round($this->width / 2));
-        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->padding + $this->getCalendarBoxYCorrection());
+        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         $paddingTopYear = $this->getSize(0);
         $dimensionYear = $this->addText(sprintf('%s', $target->getTitle()), $this->fontSizeTitlePage, $this->colors['white'], $paddingTopYear, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
@@ -571,7 +552,7 @@ class DesignDefault extends DesignBase
 
         /* Set x and y */
         $xCenterCalendar = intval(round($this->width / 2) + round($this->width / 8));
-        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->padding + $this->getCalendarBoxYCorrection());
+        $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         /* Add month */
         $paddingTop = $this->getSize(0);
@@ -687,8 +668,8 @@ class DesignDefault extends DesignBase
         $fontSizeEvent = intval(ceil($this->fontSizeDay * 0.6));
 
         /* Get name */
-        $name = strlen($eventOrHoliday['name']) > $this->maxLength ?
-            substr($eventOrHoliday['name'], 0, $this->maxLength - strlen($this->maxLengthAdd)).$this->maxLengthAdd :
+        $name = strlen($eventOrHoliday['name']) > self::MAX_LENGTH_EVENT_CAPTION ?
+            substr($eventOrHoliday['name'], 0, self::MAX_LENGTH_EVENT_CAPTION - strlen(self::MAX_LENGTH_ADD)).self::MAX_LENGTH_ADD :
             $eventOrHoliday['name'];
 
         /* Dimension Event */
@@ -772,7 +753,7 @@ class DesignDefault extends DesignBase
         imagecolortransparent($imageQrCode, $transparentColor);
 
         /* Add dynamically generated qr image to main image */
-        imagecopyresized($this->imageTarget, $imageQrCode, $this->padding, $this->height - $this->padding - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
+        imagecopyresized($this->imageTarget, $imageQrCode, $this->paddingCalendarDays, $this->height - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
 
         /* Destroy image. */
         imagedestroy($imageQrCode);

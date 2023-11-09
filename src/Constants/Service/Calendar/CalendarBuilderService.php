@@ -44,15 +44,5 @@ class CalendarBuilderService
 
     final public const IMAGE_JPG = 'jpg';
 
-    final public const EVENT_TYPE_BIRTHDAY = 0;
-
-    final public const EVENT_TYPE_EVENT = 1;
-
-    final public const EVENT_TYPE_EVENT_GROUP = 2;
-
     final public const DEFAULT_QR_CODE_VERSION = 5;
-
-    final public const PATH_TYPE_SOURCE = 'source';
-
-    final public const PATH_TYPE_TARGET = 'target';
 }
