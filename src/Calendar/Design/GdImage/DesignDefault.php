@@ -43,9 +43,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.1 (2023-11-09)
  * @since 0.1.0 (2023-11-09) First version.
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class DesignDefault extends DesignBase
