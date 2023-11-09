@@ -15,8 +15,10 @@ namespace App\Command\Calendar;
 
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
-use App\Parameter\Source;
-use App\Parameter\Target;
+use App\Objects\Image\Image;
+use App\Objects\Image\ImageContainer;
+use App\Objects\Parameter\Source;
+use App\Objects\Parameter\Target;
 use App\Service\Calendar\CalendarBuilderService;
 use Exception;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -33,7 +35,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-06)
  * @since 0.1.0 (2023-11-06) First version.
- * @example bin/console calendar:create-page --email "user1@domain.tld" --name "Calendar 1" --year 2022 --month 0
+ * @example bin/console calendar:create-page data/calendar/bcb37ef651a1814c091c8a24d8f550ee/DSC03740.png --year 2024 --month 1 --page-title 'Scotland, Edinburgh' --title Edinburgh --subtitle 'With love' --coordinate '55.948815, -3.193105'
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
@@ -69,15 +71,16 @@ class CreatePageCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption(Option::QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_QUALITY)
-
-            ->addOption(Option::YEAR, 'y', InputOption::VALUE_REQUIRED, 'The year with which the page will be created.', date('Y'))
-            ->addOption(Option::MONTH, 'm', InputOption::VALUE_REQUIRED, 'The month with which the page will be created.', date('m'))
+            ->addOption(Option::YEAR, null, InputOption::VALUE_REQUIRED, 'The year with which the page will be created.', date('Y'))
+            ->addOption(Option::MONTH, null, InputOption::VALUE_REQUIRED, 'The month with which the page will be created.', date('m'))
 
             ->addOption(Option::PAGE_TITLE, null, InputOption::VALUE_REQUIRED, 'The page title of the page.', Target::DEFAULT_PAGE_TITLE)
             ->addOption(Option::TITLE, null, InputOption::VALUE_REQUIRED, 'The title of the page.', Target::DEFAULT_TITLE)
             ->addOption(Option::SUBTITLE, null, InputOption::VALUE_REQUIRED, 'The subtitle of the page.', Target::DEFAULT_SUBTITLE)
             ->addOption(Option::COORDINATE, null, InputOption::VALUE_REQUIRED, 'The position/coordinate of the picture.', Target::DEFAULT_COORDINATE)
+
+            ->addOption(Option::QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_QUALITY)
+            ->addOption(Option::TRANSPARENCY, null, InputOption::VALUE_REQUIRED, 'The output transparency.', Target::DEFAULT_TRANSPARENCY)
 
             ->addArgument(Argument::SOURCE, InputArgument::REQUIRED, 'The path to the source image.')
             ->setHelp(
@@ -109,17 +112,21 @@ EOT
         $this->output->writeln('');
         $this->output->writeln('Source');
         $this->output->writeln('------');
-        $this->output->writeln(sprintf('Path:            %s', $this->source->getPath()));
+        $this->output->writeln(sprintf('Path:            %s', $this->source->getImage()->getPath()));
         $this->output->writeln('');
 
         $this->output->writeln('Target');
         $this->output->writeln('------');
         $this->output->writeln(sprintf('Year:            %s', $this->target->getYear()));
         $this->output->writeln(sprintf('Month:           %s', $this->target->getMonth()));
-        $this->output->writeln(sprintf('Quality:         %s', $this->target->getQuality()));
-        $this->output->writeln(sprintf('Title:           %s', $this->target->getTitle()));
-        $this->output->writeln(sprintf('Subtitle:        %s', $this->target->getSubtitle()));
+        $this->output->writeln('');
+        $this->output->writeln(sprintf('Title:           %s', $this->target->getTitle() ?? 'n/a'));
+        $this->output->writeln(sprintf('Subtitle:        %s', $this->target->getSubtitle() ?? 'n/a'));
+        $this->output->writeln(sprintf('Page-Title:      %s', $this->target->getPageTitle()));
         $this->output->writeln(sprintf('Coordinate:      %s', $this->target->getCoordinate()));
+        $this->output->writeln('');
+        $this->output->writeln(sprintf('Quality:         %s', $this->target->getQuality()));
+        $this->output->writeln(sprintf('Transparency:    %s', $this->target->getTransparency()));
     }
 
     /**
@@ -137,28 +144,32 @@ EOT
     /**
      * Prints the build information.
      *
-     * @param array<string, string|int|null> $buildInformation
+     * @param ImageContainer $buildInformation
      * @param float $timeTaken
      * @return void
+     * @throws Exception
      */
-    private function printBuildInformation(array $buildInformation, float $timeTaken): void
+    private function printBuildInformation(ImageContainer $buildInformation, float $timeTaken): void
     {
         $this->output->writeln('');
         $this->output->writeln(sprintf('→ Time taken: %.2fs', $timeTaken));
 
-        $this->output->writeln('');
-        $this->output->writeln('Calendar page built from:');
-        $this->output->writeln(sprintf('→ Path:      %s', $buildInformation['pathSource']));
-        $this->output->writeln(sprintf('→ Mime:      %s', $buildInformation['mimeSource']));
-        $this->output->writeln(sprintf('→ Size:      %s (%d Bytes)', $buildInformation['sizeHumanSource'], $buildInformation['sizeSource']));
-        $this->output->writeln(sprintf('→ Dimension: %dx%d', $buildInformation['widthSource'], $buildInformation['heightSource']));
+        $source = $buildInformation->getSource();
+        $target = $buildInformation->getTarget();
 
-        $this->output->writeln('');
-        $this->output->writeln('Calendar page written to:');
-        $this->output->writeln(sprintf('→ Path:      %s', $buildInformation['pathTarget']));
-        $this->output->writeln(sprintf('→ Mime:      %s', $buildInformation['mimeTarget']));
-        $this->output->writeln(sprintf('→ Size:      %s (%d Bytes)', $buildInformation['sizeHumanTarget'], $buildInformation['sizeTarget']));
-        $this->output->writeln(sprintf('→ Dimension: %dx%d', $buildInformation['widthTarget'], $buildInformation['heightTarget']));
+        /** @var Image $image */
+        foreach ([$source, $target] as $image) {
+            $caption = $image->getType() === ImageContainer::TYPE_SOURCE ?
+                'Calendar page built from:' :
+                'Calendar page written to:';
+
+            $this->output->writeln('');
+            $this->output->writeln($caption);
+            $this->output->writeln(sprintf('→ Path:      %s', $image->getPathRelative()));
+            $this->output->writeln(sprintf('→ Mime:      %s', $image->getMimeType()));
+            $this->output->writeln(sprintf('→ Size:      %s (%d Bytes)', $image->getSizeHuman(), $image->getSizeByte()));
+            $this->output->writeln(sprintf('→ Dimension: %dx%d', $image->getWidth(), $image->getHeight()));
+        }
 
         $this->output->writeln('');
     }
@@ -179,7 +190,7 @@ EOT
         $this->source->readParameter($input);
 
         /* Read arguments (Target). */
-        $this->target->readParameter($input);
+        $this->target->readParameter($input, $this->source->getConfig());
 
         /* Print details */
         $this->printParameter();

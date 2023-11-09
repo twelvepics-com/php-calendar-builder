@@ -23,16 +23,15 @@ namespace App\Constants\Parameter;
 class Option
 {
     final public const MONTH = 'month';
-
-    final public const QUALITY = 'quality';
-
     final public const YEAR = 'year';
 
+    final public const SOURCE = 'source';
+    final public const TARGET = 'target';
     final public const PAGE_TITLE = 'page-title';
-
     final public const TITLE = 'title';
-
     final public const SUBTITLE = 'subtitle';
-
     final public const COORDINATE = 'coordinate';
+
+    final public const QUALITY = 'quality';
+    final public const TRANSPARENCY = 'transparency';
 }

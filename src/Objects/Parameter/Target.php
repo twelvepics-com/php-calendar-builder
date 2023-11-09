@@ -11,12 +11,21 @@
 
 declare(strict_types=1);
 
-namespace App\Parameter;
+namespace App\Objects\Parameter;
 
 use App\Constants\Parameter\Option;
+use App\Objects\Parameter\Base\BaseParameter;
+use Ixnode\PhpContainer\Json;
 use Ixnode\PhpCoordinate\Coordinate;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
 use UnexpectedValueException;
@@ -28,16 +37,8 @@ use UnexpectedValueException;
  * @version 0.1.0 (2023-11-08)
  * @since 0.1.0 (2023-11-08) First version.
  */
-class Target
+class Target extends BaseParameter
 {
-    /* Year of the page. */
-    final public const DEFAULT_YEAR = 2024;
-    private int $year = self::DEFAULT_YEAR;
-
-    /* Month of the page. */
-    final public const DEFAULT_MONTH = 1;
-    private int $month = self::DEFAULT_MONTH;
-
     /* Quality from bad 0 to best 100. */
     final public const DEFAULT_QUALITY = 100;
     private int $quality = self::DEFAULT_QUALITY;
@@ -52,47 +53,15 @@ class Target
 
     /* Title of the page. */
     final public const DEFAULT_TITLE = 'Title';
-    private string $title = self::DEFAULT_TITLE;
+    private string|null $title = self::DEFAULT_TITLE;
 
     /* Subtitle of the page. */
     final public const DEFAULT_SUBTITLE = 'Subtitle';
-    private string $subtitle = self::DEFAULT_SUBTITLE;
+    private string|null $subtitle = self::DEFAULT_SUBTITLE;
 
     /* Coordinate of the picture. */
     final public const DEFAULT_COORDINATE = 'Coordinate';
     private string $coordinate = self::DEFAULT_COORDINATE;
-
-    /**
-     * @return int
-     */
-    public function getYear(): int
-    {
-        return $this->year;
-    }
-
-    /**
-     * @param int $year
-     */
-    private function setYear(int $year): void
-    {
-        $this->year = $year;
-    }
-
-    /**
-     * @return int
-     */
-    public function getMonth(): int
-    {
-        return $this->month;
-    }
-
-    /**
-     * @param int $month
-     */
-    private function setMonth(int $month): void
-    {
-        $this->month = $month;
-    }
 
     /**
      * @return int
@@ -143,33 +112,33 @@ class Target
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getTitle(): string
+    public function getTitle(): string|null
     {
         return $this->title;
     }
 
     /**
-     * @param string $title
+     * @param string|null $title
      */
-    private function setTitle(string $title): void
+    private function setTitle(string|null $title): void
     {
         $this->title = $title;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getSubtitle(): string
+    public function getSubtitle(): string|null
     {
         return $this->subtitle;
     }
 
     /**
-     * @param string $subtitle
+     * @param string|null $subtitle
      */
-    private function setSubtitle(string $subtitle): void
+    private function setSubtitle(string|null $subtitle): void
     {
         $this->subtitle = $subtitle;
     }
@@ -205,23 +174,28 @@ class Target
      * @param InputInterface $input
      * @param string $name
      * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
      * @throws CaseUnsupportedException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
-    private function setOption(InputInterface $input, string $name): void
+    private function setOptionFromParameter(InputInterface $input, string $name): void
     {
-        $value = $input->getOption($name);
+        $value = match (true) {
+            $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
+            $this->hasConfig($name) => $this->getOptionFromConfig($name),
+            default => $this->getOptionFromParameter($input, $name),
+        };
 
         if (is_null($value)) {
             return;
         }
 
-        if (!is_int($value) && !is_string($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
         match ($name) {
-            Option::QUALITY => $this->setQuality((int) $value),
-
             Option::YEAR => $this->setYear((int) $value),
             Option::MONTH => $this->setMonth((int) $value),
 
@@ -229,6 +203,9 @@ class Target
             Option::TITLE => $this->setTitle((string) $value),
             Option::SUBTITLE => $this->setSubtitle((string) $value),
             Option::COORDINATE => $this->setCoordinate((string) $value),
+
+            Option::QUALITY => $this->setQuality((int) $value),
+            Option::TRANSPARENCY => $this->setTransparency((int) $value),
 
             default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
         };
@@ -238,22 +215,38 @@ class Target
      * Reads and sets the parameter to this class.
      *
      * @param InputInterface $input
+     * @param Json|null $config
      * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
      * @throws CaseUnsupportedException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
-    public function readParameter(InputInterface $input): void
+    public function readParameter(InputInterface $input, Json|null $config = null): void
     {
-        /* Set calendar options. */
-        $this->setOption($input, Option::QUALITY);
+        $this->config = $config;
 
-        /* Set calendar month and year. */
-        $this->setOption($input, Option::YEAR);
-        $this->setOption($input, Option::MONTH);
+        /* Set calendar month and year (must be called first!). */
+        $this->setOptionFromParameter($input, Option::YEAR);
+        $this->setOptionFromParameter($input, Option::MONTH);
 
         /* Set calendar texts. */
-        $this->setOption($input, Option::PAGE_TITLE);
-        $this->setOption($input, Option::TITLE);
-        $this->setOption($input, Option::SUBTITLE);
-        $this->setOption($input, Option::COORDINATE);
+        $this->setOptionFromParameter($input, Option::PAGE_TITLE);
+        $this->setOptionFromParameter($input, Option::TITLE);
+        $this->setOptionFromParameter($input, Option::SUBTITLE);
+        $this->setOptionFromParameter($input, Option::COORDINATE);
+
+        /* Set calendar options. */
+        $this->setOptionFromParameter($input, Option::QUALITY);
+        $this->setOptionFromParameter($input, Option::TRANSPARENCY);
+
+        if ($this->getMonth() !== 0) {
+            $this->setTitle(null);
+            $this->setSubtitle(null);
+        }
     }
 }

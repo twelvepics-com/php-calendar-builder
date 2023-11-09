@@ -13,9 +13,12 @@ declare(strict_types=1);
 
 namespace App\Service\Calendar;
 
+use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
-use App\Parameter\Source;
-use App\Parameter\Target;
+use App\Objects\Image\Image;
+use App\Objects\Image\ImageContainer;
+use App\Objects\Parameter\Source;
+use App\Objects\Parameter\Target;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use DateTime;
@@ -23,9 +26,14 @@ use DateTimeImmutable;
 use Exception;
 use GdImage;
 use Ixnode\PhpContainer\File;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
-use Ixnode\PhpSizeByte\SizeByte;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
 use JetBrains\PhpStorm\ArrayShape;
+use JsonException;
 use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -1138,11 +1146,10 @@ class CalendarBuilderService
      * Returns image properties from given image.
      *
      * @param string $pathAbsolute
-     * @param string $keyPostfix
-     * @return array<string, int|string|null>
+     * @return Image
      * @throws Exception
      */
-    protected function getImageProperties(string $pathAbsolute, string $keyPostfix = 'Target'): array
+    protected function getImageProperties(string $pathAbsolute): Image
     {
         /* Check created image */
         if (!file_exists($pathAbsolute)) {
@@ -1166,15 +1173,13 @@ class CalendarBuilderService
         }
 
         /* Return the image properties */
-        return [
-            sprintf('path%s', $keyPostfix) => $pathAbsolute,
-            sprintf('pathRelative%s', $keyPostfix) => preg_replace('~^'.$this->appKernel->getProjectDir().'/~', '', $pathAbsolute),
-            sprintf('width%s', $keyPostfix) => intval($image[0]),
-            sprintf('height%s', $keyPostfix) => intval($image[1]),
-            sprintf('mime%s', $keyPostfix) => strval($image['mime']),
-            sprintf('size%s', $keyPostfix) => $sizeByte,
-            sprintf('sizeHuman%s', $keyPostfix) => (new SizeByte($sizeByte))->getHumanReadable(),
-        ];
+        return (new Image($this->appKernel))
+            ->setPathAbsolute($pathAbsolute)
+            ->setWidth((int) $image[0])
+            ->setHeight((int) $image[1])
+            ->setMimeType((string) $image['mime'])
+            ->setSizeByte($sizeByte)
+        ;
     }
 
 
@@ -1409,30 +1414,47 @@ class CalendarBuilderService
     /**
      * Returns the target path from given source.
      *
-     * @param File $source
+     * @param File $sourceImage
      * @return string
      * @throws FileNotFoundException
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
      */
-    private function getTargetPathFromSource(File $source): string
+    private function getTargetPathFromSource(File $sourceImage): string
     {
         $target = $this->target;
+        $source = $this->source;
 
         if (!$target instanceof Target) {
             throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
         }
 
-        $extension = pathinfo($source->getPathReal(), PATHINFO_EXTENSION);
+        if (!$source instanceof Source) {
+            throw new LogicException(sprintf('Execute CalendarBuilderService::init before calling "%s"', __METHOD__));
+        }
 
-        return sprintf('%s/%s-%s.%s', $source->getDirectoryPath(), $target->getYear(), $target->getMonth(), $extension);
+        $extension = pathinfo($sourceImage->getPathReal(), PATHINFO_EXTENSION);
+
+        $targetPath = $source->getOptionFromConfig(Option::TARGET);
+
+        if (is_null($targetPath)) {
+            $targetPath = sprintf('%s-%s.%s', $target->getYear(), $target->getMonth(), $extension);
+        }
+
+        return sprintf('%s/%s', $sourceImage->getDirectoryPath(), $targetPath);
     }
 
     /**
      * Builds the given source image to a calendar page.
      *
-     * @return array<string, int|string|null>
+     * @return ImageContainer
      * @throws Exception
      */
-    public function build(): array
+    public function build(): ImageContainer
     {
         $target = $this->target;
         $source = $this->source;
@@ -1496,6 +1518,9 @@ class CalendarBuilderService
             throw new LogicException('$this->pathSourceAbsolute is not initialized');
         }
 
-        return [...$this->getImageProperties($this->pathSourceAbsolute, 'Source'), ...$this->getImageProperties($this->pathTargetAbsolute)];
+        return (new ImageContainer())
+            ->setSource($this->getImageProperties($this->pathSourceAbsolute))
+            ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
+        ;
     }
 }
