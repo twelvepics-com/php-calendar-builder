@@ -126,7 +126,7 @@ class DesignDefault extends DesignBase
         $this->widthQrCode = $this->getSize($this->widthQrCode);
         $this->dayDistance = $this->getSize($this->dayDistance);
 
-        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
+        $this->yCalendarBoxBottom = intval(floor($this->heightTarget * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
 
         $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
         $this->url = 'https://github.com/';
@@ -315,13 +315,13 @@ class DesignDefault extends DesignBase
     protected function addImage(): void
     {
         $positionY = match ($this->valignImage) {
-            CalendarBuilderServiceConstants::VALIGN_BOTTOM => $this->yCalendarBoxBottom - $this->height,
+            CalendarBuilderServiceConstants::VALIGN_BOTTOM => $this->yCalendarBoxBottom - $this->heightTarget,
             default => 0,
         };
 
         $positionX = 0;
 
-        imagecopyresampled($this->imageTarget, $this->imageSource, $positionX, $positionY, 0, 0, $this->width, $this->height, $this->widthSource, $this->heightSource);
+        imagecopyresampled($this->imageTarget, $this->imageSource, $positionX, $positionY, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
     }
 
     /**
@@ -330,7 +330,7 @@ class DesignDefault extends DesignBase
     protected function addRectangle(): void
     {
         /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->imageTarget, 0, $this->yCalendarBoxBottom, $this->width, $this->height, $this->colors['blackTransparency']);
+        imagefilledrectangle($this->imageTarget, 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->colors['blackTransparency']);
     }
 
     /**
@@ -367,7 +367,7 @@ class DesignDefault extends DesignBase
         $target = $this->calendarBuilderService->getParameterTarget();
 
         /* Set x and y */
-        $xCenterCalendar = intval(round($this->width / 2));
+        $xCenterCalendar = intval(round($this->widthTarget / 2));
         $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         $paddingTopYear = $this->getSize(0);
@@ -423,7 +423,7 @@ class DesignDefault extends DesignBase
         $target = $this->calendarBuilderService->getParameterTarget();
 
         /* Set x and y */
-        $xCenterCalendar = intval(round($this->width / 2) + round($this->width / 8));
+        $xCenterCalendar = intval(round($this->widthTarget / 2) + round($this->widthTarget / 8));
         $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         /* Add month */
@@ -625,7 +625,7 @@ class DesignDefault extends DesignBase
         imagecolortransparent($imageQrCode, $transparentColor);
 
         /* Add dynamically generated qr image to main image */
-        imagecopyresized($this->imageTarget, $imageQrCode, $this->paddingCalendarDays, $this->height - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
+        imagecopyresized($this->imageTarget, $imageQrCode, $this->paddingCalendarDays, $this->heightTarget - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
 
         /* Destroy image. */
         imagedestroy($imageQrCode);

@@ -34,7 +34,7 @@ class CalendarBuilderService
 
     final public const VALIGN_BOTTOM = 2;
 
-    final public const ZOOM_HEIGHT_100 = 4000;
+    final public const TARGET_HEIGHT = 4000;
 
     final public const DAY_SUNDAY = 0;
 

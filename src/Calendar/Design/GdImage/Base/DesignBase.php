@@ -45,7 +45,7 @@ abstract class DesignBase
     /**
      * Calculated values (by zoom).
      */
-    protected float $zoom = 1.0;
+    protected float $zoomTarget = 1.0;
 
 
     /**
@@ -65,9 +65,9 @@ abstract class DesignBase
 
     protected GdImage $imageSource;
 
-    protected int $width;
+    protected int $widthTarget;
 
-    protected int $height;
+    protected int $heightTarget;
 
     protected int $widthSource;
 
@@ -109,33 +109,19 @@ abstract class DesignBase
         CalendarBuilderService $calendarBuilderService
     ): void
     {
+        /* Sets calendar builder service. */
         $this->calendarBuilderService = $calendarBuilderService;
 
-        /* Check if the source image exists. */
-        if (!$this->getSourceImage()->exist()) {
-            throw new LogicException(sprintf('Given source image was not found: "%s"', $this->getSourceImage()->getPath()));
-        }
+        /* Sets image paths */
+        $this->setSourcePath();
+        $this->setTargetPath();
 
-        /* Sets the source and target image paths. */
-        $this->pathSourceAbsolute = $this->getSourceImage()->getPath();
-        $this->pathTargetAbsolute = $this->getTargetImage()->getPath();
+        /* Calculate all dimensions. */
+        $this->setSourceDimensions();
+        $this->setTargetDimensions();
+        $this->setTargetZoom();
 
-        /* Calculate the width and height of the new image. */
-        $this->height = CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
-        $this->width = intval(floor($this->height * self::ASPECT_RATIO));
-
-        /* Calculate zoom */
-        $this->zoom = $this->height / CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
-
-        $propertySources = getimagesize($this->pathSourceAbsolute);
-
-        if ($propertySources === false) {
-            throw new LogicException(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
-        }
-
-        $this->widthSource = $propertySources[0];
-        $this->heightSource = $propertySources[1];
-
+        /* Do some customs initializations. */
         $this->doInit();
     }
 
@@ -184,6 +170,70 @@ abstract class DesignBase
     protected function getTargetImage(): File
     {
         return $this->calendarBuilderService->getParameterTarget()->getImage();
+    }
+
+    /**
+     * Sets the source image path.
+     *
+     * @return void
+     */
+    protected function setSourcePath(): void
+    {
+        /* Check if the source image exists. */
+        if (!$this->getSourceImage()->exist()) {
+            throw new LogicException(sprintf('Given source image was not found: "%s"', $this->getSourceImage()->getPath()));
+        }
+
+        /* Sets the source and target image paths. */
+        $this->pathSourceAbsolute = $this->getSourceImage()->getPath();
+    }
+
+    /**
+     * Sets the target image path.
+     *
+     * @return void
+     */
+    protected function setTargetPath(): void
+    {
+        $this->pathTargetAbsolute = $this->getTargetImage()->getPath();
+    }
+
+    /**
+     * Sets the source dimensions.
+     *
+     * @return void
+     */
+    protected function setSourceDimensions(): void
+    {
+        $propertySources = getimagesize($this->pathSourceAbsolute);
+
+        if ($propertySources === false) {
+            throw new LogicException(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
+        }
+
+        $this->widthSource = $propertySources[0];
+        $this->heightSource = $propertySources[1];
+    }
+
+    /**
+     * Sets the target dimensions.
+     *
+     * @return void
+     */
+    protected function setTargetDimensions(): void
+    {
+        $this->heightTarget = CalendarBuilderServiceConstants::TARGET_HEIGHT;
+        $this->widthTarget = intval(floor($this->heightTarget * self::ASPECT_RATIO));
+    }
+
+    /**
+     * Sets the zoom of the current image.
+     *
+     * @return void
+     */
+    protected function setTargetZoom(): void
+    {
+        $this->zoomTarget = $this->heightTarget / CalendarBuilderServiceConstants::TARGET_HEIGHT;
     }
 
     /**
@@ -246,7 +296,7 @@ abstract class DesignBase
      */
     protected function getSize(int $size): int
     {
-        return intval(round($size * $this->zoom));
+        return intval(round($size * $this->zoomTarget));
     }
 
     /**
@@ -350,7 +400,7 @@ abstract class DesignBase
      */
     protected function createImages(): void
     {
-        $this->imageTarget = $this->createImage($this->width, $this->height);
+        $this->imageTarget = $this->createImage($this->widthTarget, $this->heightTarget);
         $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute);
     }
 
@@ -359,7 +409,7 @@ abstract class DesignBase
      */
     protected function addImage(): void
     {
-        imagecopyresampled($this->imageTarget, $this->imageSource, 0, 0, 0, 0, $this->width, $this->height, $this->widthSource, $this->heightSource);
+        imagecopyresampled($this->imageTarget, $this->imageSource, 0, 0, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
     }
 
     /**
