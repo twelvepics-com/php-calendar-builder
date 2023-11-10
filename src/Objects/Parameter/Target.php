@@ -15,6 +15,7 @@ namespace App\Objects\Parameter;
 
 use App\Constants\Parameter\Option;
 use App\Objects\Parameter\Base\BaseParameter;
+use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -39,6 +40,8 @@ use UnexpectedValueException;
  */
 class Target extends BaseParameter
 {
+    private File $image;
+
     /* Quality from bad 0 to best 100. */
     final public const DEFAULT_QUALITY = 100;
     private int $quality = self::DEFAULT_QUALITY;
@@ -62,6 +65,25 @@ class Target extends BaseParameter
     /* Coordinate of the picture. */
     final public const DEFAULT_COORDINATE = 'Coordinate';
     private string $coordinate = self::DEFAULT_COORDINATE;
+
+    /**
+     * @return File
+     */
+    public function getImage(): File
+    {
+        return $this->image;
+    }
+
+    /**
+     * @param File $image
+     * @return self
+     */
+    public function setImage(File $image): self
+    {
+        $this->image = $image;
+
+        return $this;
+    }
 
     /**
      * @return int
@@ -244,9 +266,13 @@ class Target extends BaseParameter
         $this->setOptionFromParameter($input, Option::QUALITY);
         $this->setOptionFromParameter($input, Option::TRANSPARENCY);
 
+        /* Reset title and subtitle if the main calendar page is currently generated. */
         if ($this->getMonth() !== 0) {
             $this->setTitle(null);
             $this->setSubtitle(null);
         }
+
+        /* Sets the target image. */
+        $this->setImage(new File($this->getTargetPath($input, $this->getYear(), $this->getMonth()), $this->appKernel->getProjectDir()));
     }
 }

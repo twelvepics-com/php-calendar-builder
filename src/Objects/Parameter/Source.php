@@ -13,13 +13,10 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter;
 
-use App\Constants\Parameter\Argument;
-use App\Constants\Parameter\Option;
 use App\Objects\Parameter\Base\BaseParameter;
 use DateTimeImmutable;
 use Ixnode\PhpCliImage\CliImage;
 use Ixnode\PhpContainer\File;
-use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -30,8 +27,6 @@ use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Yaml\Yaml;
 use UnexpectedValueException;
 
 /**
@@ -43,8 +38,6 @@ use UnexpectedValueException;
  */
 class Source extends BaseParameter
 {
-    private const CONFIG_NAME = 'config.yml';
-
     private File $image;
 
     private CliImage $cliImage;
@@ -54,13 +47,6 @@ class Source extends BaseParameter
 
     /** @var array<int, array{date: DateTimeImmutable, title: string}> $birthdays */
     private array $birthdays = [];
-
-    /**
-     * @param KernelInterface $appKernel
-     */
-    public function __construct(private readonly KernelInterface $appKernel)
-    {
-    }
 
     /**
      * @return File
@@ -118,34 +104,6 @@ class Source extends BaseParameter
     public function getBirthdays(): array
     {
         return $this->birthdays;
-    }
-
-    /**
-     * @param File $config
-     * @return void
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function addConfig(File $config): void
-    {
-        /* Check if the config file exists. */
-        try {
-            $config->getPathReal();
-
-            $parsedConfig = Yaml::parse($config->getContentAsText());
-
-            if (!is_array($parsedConfig)) {
-                throw new LogicException('Invalid configuration');
-            }
-
-            $this->setConfig(new Json($parsedConfig));
-        } catch (FileNotFoundException) {
-            $this->setConfig(null);
-            return;
-        }
     }
 
     /**
@@ -231,40 +189,6 @@ class Source extends BaseParameter
     }
 
     /**
-     * Sets the option to this class.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return void
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    private function setOptionFromParameter(InputInterface $input, string $name): void
-    {
-        $value = match (true) {
-            $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
-            $this->hasConfig($name) => $this->getOptionFromConfig($name),
-            default => $this->getOptionFromParameter($input, $name),
-        };
-
-        if (is_null($value)) {
-            return;
-        }
-
-        match ($name) {
-            Option::YEAR => $this->setYear((int) $value),
-            Option::MONTH => $this->setMonth((int) $value),
-
-            default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
-        };
-    }
-
-    /**
      * Reads and sets the parameter to this class.
      *
      * @param InputInterface $input
@@ -281,40 +205,14 @@ class Source extends BaseParameter
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
     {
-        $source = $input->getArgument(Argument::SOURCE);
+        $sourcePath = $this->getSourcePath($input);
 
-        if (!is_string($source) && !is_int($source)) {
-            throw new LogicException(sprintf('Invalid argument for source "%s".', Argument::SOURCE));
-        }
-
-        $path = (string) $source;
-
-        $directoryGiven = is_dir($path);
-
-        if ($directoryGiven) {
-            $pathConfig = sprintf('%s/%s', $path, self::CONFIG_NAME);
-
-            $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
-
-            if (is_null($this->config)) {
-                throw new LogicException('The config.yml file was not found.');
-            }
-
-            /* Set calendar month and year (must be called first!). */
-            $this->setOptionFromParameter($input, Option::YEAR);
-            $this->setOptionFromParameter($input, Option::MONTH);
-
-            $source = $this->getOptionFromConfig(Option::SOURCE);
-
-            $path = sprintf('%s/%s', $path, $source);
-        }
-
-        $this->setImage(new File($path, $this->appKernel->getProjectDir()));
+        $this->setImage(new File($sourcePath, $this->appKernel->getProjectDir()));
 
         $this->setCliImage(new CliImage($this->getImage(), $sourceCliWidth));
 
         if (is_null($this->config)) {
-            $pathConfig = sprintf('%s/%s', pathinfo($path, PATHINFO_DIRNAME), self::CONFIG_NAME);
+            $pathConfig = sprintf('%s/%s', pathinfo($sourcePath, PATHINFO_DIRNAME), self::CONFIG_NAME);
 
             $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
         }

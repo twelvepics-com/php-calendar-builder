@@ -128,6 +128,7 @@ class CalendarBuilderService
      * @param Source $parameterSource
      * @param Target $parameterTarget
      * @param DesignBase $design
+     * @throws Exception
      */
     public function init(
         Source $parameterSource,
@@ -135,11 +136,11 @@ class CalendarBuilderService
         DesignBase $design
     ): void
     {
-        $this->design = $design;
-        $this->design->init(calendarBuilderService: $this);
-
         $this->setParameterSource($parameterSource);
         $this->setParameterTarget($parameterTarget);
+
+        $this->design = $design;
+        $this->design->init(calendarBuilderService: $this);
     }
 
     /**
@@ -188,7 +189,7 @@ class CalendarBuilderService
     }
 
     /**
-     * Returns the day of week.
+     * Returns the day of the week.
      * 0 - Sunday
      * 6 - Saturday
      *
@@ -204,7 +205,7 @@ class CalendarBuilderService
     }
 
     /**
-     * Returns the number of week.
+     * Returns the number of the week.
      *
      * @param int $year
      * @param int $month
@@ -218,7 +219,7 @@ class CalendarBuilderService
     }
 
     /**
-     * Returns the number of week if monday. Otherwise, null.
+     * Returns the number of the week if current day is monday. Otherwise, null.
      *
      * @param int $year
      * @param int $month
@@ -453,7 +454,7 @@ class CalendarBuilderService
     }
 
     /**
-     * Returns the target path from given source.
+     * Returns the target path from the given source.
      *
      * @param File $sourceImage
      * @return string

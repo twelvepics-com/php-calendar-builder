@@ -15,8 +15,6 @@ namespace App\Calendar\Design\GdImage;
 
 use App\Calendar\Design\GdImage\Base\DesignBase;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
-use App\Objects\Image\ImageContainer;
-use App\Service\CalendarBuilderService;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
@@ -98,26 +96,17 @@ class DesignDefault extends DesignBase
     /** @var array<string, array{x: int, y: int, align: int, dimension: int[], day: int}> $positionDays */
     protected array $positionDays = [];
 
-
-
     /**
      * @inheritdoc
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     * @throws Exception
      */
-    public function init(
-        CalendarBuilderService $calendarBuilderService,
-        int $qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION,
-        bool $useCalendarImagePath = false,
-        bool $deleteTargetImages = false
-    ): void
+    public function doInit(): void
     {
-        parent::init($calendarBuilderService, $qrCodeVersion, $useCalendarImagePath, $deleteTargetImages);
-
         /* Clear positions */
         $this->positionDays = [];
 
         /* Set qr code version */
-        $this->qrCodeVersion = $qrCodeVersion;
+        $this->qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION;
 
         /* Font path */
         $pathData = sprintf('%s/data', $this->appKernel->getProjectDir());
@@ -136,7 +125,50 @@ class DesignDefault extends DesignBase
         $this->heightQrCode = $this->getSize($this->heightQrCode);
         $this->widthQrCode = $this->getSize($this->widthQrCode);
         $this->dayDistance = $this->getSize($this->dayDistance);
+
+        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
+
+        $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
+        $this->url = 'https://github.com/';
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function doBuild(): void
+    {
+        /* Creates some needed colors. */
+        $this->createColors();
+
+        /* Adds the main image */
+        $this->addImage();
+
+        /* Add calendar area */
+        $this->addRectangle();
+
+        /* Add title, position, etc. */
+        $this->addImageDescriptionAndPositionOnCalendarPage();
+
+        $target = $this->calendarBuilderService->getParameterTarget();
+
+        /* Add calendar */
+        switch (true) {
+            case $target->getMonth() === 0:
+                $this->addTitleOnTitlePage();
+                break;
+
+            default:
+                $this->addYearMonthAndDays();
+                $this->addCalendarWeeks();
+                $this->addHolidaysAndEvents();
+                break;
+        }
+
+        /* Add qr code */
+        $this->addQrCode();
+    }
+
+
 
     /**
      * Returns the dimension of given text, font size and angle.
@@ -163,18 +195,6 @@ class DesignDefault extends DesignBase
             'width' => $rightBottomX - $leftBottomX,
             'height' => $leftBottomY - $rightTopY,
         ];
-    }
-
-    /**
-     * Prepare method.
-     *
-     * @throws Exception
-     */
-    protected function prepare(): void
-    {
-        $this->createImages();
-        $this->createColors();
-        $this->calculateVariables();
     }
 
     /**
@@ -219,25 +239,6 @@ class DesignDefault extends DesignBase
             'red' => $this->createColor($this->imageTarget, 255, 0, 0),
             'redTransparency' => $this->createColor($this->imageTarget, 255, 0, 0, $target->getTransparency()),
         ];
-    }
-
-    /**
-     * Calculate variables.
-     *
-     * @throws Exception
-     */
-    protected function calculateVariables(): void
-    {
-        $propertiesSource = getimagesize($this->pathSourceAbsolute);
-
-        if ($propertiesSource === false) {
-            throw new Exception(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
-        }
-
-        $this->widthSource = $propertiesSource[0];
-        $this->heightSource = $propertiesSource[1];
-
-        $this->yCalendarBoxBottom = intval(floor($this->height * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
     }
 
     /**
@@ -628,62 +629,5 @@ class DesignDefault extends DesignBase
 
         /* Destroy image. */
         imagedestroy($imageQrCode);
-    }
-
-    /**
-     * Builds the given source image to a calendar page.
-     *
-     * @return ImageContainer
-     * @throws Exception
-     */
-    public function build(): ImageContainer
-    {
-        $target = $this->calendarBuilderService->getParameterTarget();
-        $source = $this->calendarBuilderService->getParameterSource();
-
-        $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
-        $this->url = 'https://github.com/';
-
-        $this->pathSourceAbsolute = $source->getImage()->getPathReal();
-        $this->pathTargetAbsolute = $this->getTargetPathFromSource($source->getImage());
-
-        /* Init */
-        $this->prepare();
-
-        /* Add main image */
-        $this->addImage();
-
-        /* Add calendar area */
-        $this->addRectangle();
-
-        /* Add title, position, etc. */
-        $this->addImageDescriptionAndPositionOnCalendarPage();
-
-        /* Add calendar */
-        switch (true) {
-            case $target->getMonth() === 0:
-                $this->addTitleOnTitlePage();
-                break;
-
-            default:
-                $this->addYearMonthAndDays();
-                $this->addCalendarWeeks();
-                $this->addHolidaysAndEvents();
-                break;
-        }
-
-        /* Add qr code */
-        $this->addQrCode();
-
-        /* Write image */
-        $this->writeImage();
-
-        /* Destroy image */
-        $this->destroy();
-
-        return (new ImageContainer())
-            ->setSource($this->getImageProperties($this->pathSourceAbsolute))
-            ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
-        ;
     }
 }

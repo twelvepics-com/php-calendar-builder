@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\GdImage\Base;
 
-use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
@@ -21,13 +20,7 @@ use App\Service\CalendarBuilderService;
 use Exception;
 use GdImage;
 use Ixnode\PhpContainer\File;
-use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
-use Ixnode\PhpException\Case\CaseInvalidException;
-use Ixnode\PhpException\File\FileNotFoundException;
-use Ixnode\PhpException\File\FileNotReadableException;
-use Ixnode\PhpException\Function\FunctionJsonEncodeException;
-use Ixnode\PhpException\Type\TypeInvalidException;
-use JsonException;
+use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -53,7 +46,6 @@ abstract class DesignBase
      * Calculated values (by zoom).
      */
     protected float $zoom = 1.0;
-
 
 
     /**
@@ -86,7 +78,6 @@ abstract class DesignBase
     protected int $positionY;
 
 
-
     /**
      * @param KernelInterface $appKernel
      */
@@ -95,32 +86,58 @@ abstract class DesignBase
     }
 
     /**
+     * Additional init tasks.
+     */
+    abstract public function doInit(): void;
+
+    /**
+     * Additional build tasks.
+     *
+     * @throws Exception
+     */
+    abstract public function doBuild(): void;
+
+    /**
      * Init function.
      *
      * @param CalendarBuilderService $calendarBuilderService
-     * @param int $qrCodeVersion
-     * @param bool $useCalendarImagePath
-     * @param bool $deleteTargetImages
      * @return void
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-     public function init(
-        CalendarBuilderService $calendarBuilderService,
-        int $qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION,
-        bool $useCalendarImagePath = false,
-        bool $deleteTargetImages = false
-     ): void
-     {
-         $this->calendarBuilderService = $calendarBuilderService;
+    public function init(
+        CalendarBuilderService $calendarBuilderService
+    ): void
+    {
+        $this->calendarBuilderService = $calendarBuilderService;
 
-         /* sizes */
-         $this->height = CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
-         $this->width = intval(floor($this->height * self::ASPECT_RATIO));
+        /* Check if the source image exists. */
+        if (!$this->getSourceImage()->exist()) {
+            throw new LogicException(sprintf('Given source image was not found: "%s"', $this->getSourceImage()->getPath()));
+        }
 
-         /* Calculate zoom */
-         $this->zoom = $this->height / CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
-     }
+        /* Sets the source and target image paths. */
+        $this->pathSourceAbsolute = $this->getSourceImage()->getPath();
+        $this->pathTargetAbsolute = $this->getTargetImage()->getPath();
+
+        /* Calculate the width and height of the new image. */
+        $this->height = CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
+        $this->width = intval(floor($this->height * self::ASPECT_RATIO));
+
+        /* Calculate zoom */
+        $this->zoom = $this->height / CalendarBuilderServiceConstants::ZOOM_HEIGHT_100;
+
+        $propertySources = getimagesize($this->pathSourceAbsolute);
+
+        if ($propertySources === false) {
+            throw new LogicException(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
+        }
+
+        $this->widthSource = $propertySources[0];
+        $this->heightSource = $propertySources[1];
+
+        $this->doInit();
+    }
 
     /**
      * Builds the given source image to a calendar page.
@@ -128,7 +145,46 @@ abstract class DesignBase
      * @return ImageContainer
      * @throws Exception
      */
-    abstract public function build(): ImageContainer;
+    public function build(): ImageContainer
+    {
+        /* Creates the source and target GDImages */
+        $this->createImages();
+
+        /* Do the custom-builds */
+        $this->doBuild();
+
+        /* Write image */
+        $this->writeImage();
+
+        /* Destroy image */
+        $this->destroy();
+
+        /* Returns the properties of the created and source image */
+        return (new ImageContainer())
+            ->setSource($this->getImageProperties($this->pathSourceAbsolute))
+            ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
+        ;
+    }
+
+    /**
+     * Returns the source image.
+     *
+     * @return File
+     */
+    protected function getSourceImage(): File
+    {
+        return $this->calendarBuilderService->getParameterSource()->getImage();
+    }
+
+    /**
+     * Returns the target image.
+     *
+     * @return File
+     */
+    protected function getTargetImage(): File
+    {
+        return $this->calendarBuilderService->getParameterTarget()->getImage();
+    }
 
     /**
      * Init x and y.
@@ -226,40 +282,10 @@ abstract class DesignBase
         /* Return the image properties */
         return (new Image($this->appKernel))
             ->setPathAbsolute($pathAbsolute)
-            ->setWidth((int) $image[0])
-            ->setHeight((int) $image[1])
-            ->setMimeType((string) $image['mime'])
-            ->setSizeByte($sizeByte)
-            ;
-    }
-
-    /**
-     * Returns the target path from given source.
-     *
-     * @param File $sourceImage
-     * @return string
-     * @throws FileNotFoundException
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
-     * @throws JsonException
-     */
-    protected function getTargetPathFromSource(File $sourceImage): string
-    {
-        $target = $this->calendarBuilderService->getParameterTarget();
-        $source = $this->calendarBuilderService->getParameterSource();
-
-        $extension = pathinfo($sourceImage->getPathReal(), PATHINFO_EXTENSION);
-
-        $targetPath = $source->getOptionFromConfig(Option::TARGET);
-
-        if (is_null($targetPath)) {
-            $targetPath = sprintf('%s-%s.%s', $target->getYear(), $target->getMonth(), $extension);
-        }
-
-        return sprintf('%s/%s', $sourceImage->getDirectoryPath(), $targetPath);
+            ->setWidth((int)$image[0])
+            ->setHeight((int)$image[1])
+            ->setMimeType((string)$image['mime'])
+            ->setSizeByte($sizeByte);
     }
 
     /**
@@ -326,6 +352,14 @@ abstract class DesignBase
     {
         $this->imageTarget = $this->createImage($this->width, $this->height);
         $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute);
+    }
+
+    /**
+     * Add image
+     */
+    protected function addImage(): void
+    {
+        imagecopyresampled($this->imageTarget, $this->imageSource, 0, 0, 0, 0, $this->width, $this->height, $this->widthSource, $this->heightSource);
     }
 
     /**
