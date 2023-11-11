@@ -1,0 +1,152 @@
+settings:
+    output:
+        quality: 100
+        format: jpg
+    defaults:
+        year: 2024
+        month: 1
+        design:
+            type: default
+            config:
+                transparency: 40
+                v-align: top
+holidays:
+    2024-01-01: Neujahr
+    2024-03-29: Karfreitag
+    2024-04-01: Ostermontag
+    2024-05-01: Tag der Arbeit
+    2024-05-09: Christi Himmelfahrt
+    2024-05-20: Pfingstmontag
+    2024-10-03: Tag der Deutschen Einheit
+    2024-10-31: Reformationstag
+    2024-10-20: Buß- und Bettag
+    2024-12-25: 1. Weihnachtstag
+    2024-12-26: 2. Weihnachtstag
+birthdays:
+    1946-05-17: Udo Lindenberg # noted rock musician and singer-songwriter
+    1949-08-30: Peter Maffay # successful singer and actor, especially in the rock genre
+    1954-06-04: Angelique Kerber # successful tennis player
+    1954-07-17: Angela Merkel # former Chancellor of Germany and one of the most influential political leaders in Europe
+    1955-03-11: Nina Hagen # famous singer known for her unique and experimental musical style
+    1956-04-12: Herbert Grönemeyer # renowned musician and actor known for his influential work in the German music industry
+    1958-06-14: Olaf Scholz # former Chancellor of Germany (as of 2022), representing the Social Democratic Party (SPD)
+    1958-10-08: Ursula von der Leyen # president of the European Commission, a key figure in European politics
+    1960-03-24: Nena # pop singer famous for her hit song "99 Luftballons."
+    1967-06-16: Jürgen Klopp # highly successful football manager, most notably with Liverpool FC
+    1968-04-26: Claudia Roth # politician and Vice-President of the German Bundestag
+    1971-10-02: Xavier Naidoo # accomplished singer and musician.
+    1975-06-30: Philipp Lahm # former soccer player and world champion
+    1975-12-14: Mirjam Weichselbraun # austrian-German presenter
+    1976-01-27: Sabine Lisicki # former tennis player
+    1976-06-02: Sebastian Fitzek # successful thriller author
+    1976-07-15: Diane Kruger # notable actress known for her roles in various international films
+    1977-12-13: Judith Rakers # well-known television presenter
+    1978-09-07: Lena Headey # actress, known from "Game of Thrones"
+    1979-02-10: Rosamund Pike # german-british actress
+    1979-09-03: Tom Schilling # actor
+    1980-03-17: Fabian Hambüchen # gymnast and olympic champion
+    1980-12-15: Annalena Baerbock # leader of the Green Party (as of 2022), a prominent figure in German politics
+    1981-12-27: Sibel Kekilli # actress and former "Game of Thrones" actress
+    1982-02-18: Lena Meyer-Landrut # singer and eurovision winner
+    1983-03-17: Johannes Strate # singer of the band "Revolverheld"
+    1983-05-29: Ana Ivanovic # former tennis player
+    1984-08-01: Bastian Schweinsteiger # former professional footballer and World Cup winner with the German national team
+    1984-11-26: Sarah Brandner # model and actress
+    1985-01-23: Julia Jentsch # actress
+    1986-07-22: Selina Wagner # member of the band "Laing"
+    1988-11-07: Julia Görges # former tennis player
+    1990-08-12: Max Giesinger # pop musician and singer
+pages:
+    -
+        source: 00.png
+        target: ready/2024-00.jpg
+        page-title: Title Page
+        title: My calendar
+        subtitle: for the year 2024
+        coordinate: 40.689247, -74.044502 # Statue of Liberty, New York City, USA
+        year: 2024
+        month: 0
+    -
+        source: 01.png
+        target: ready/2024-01.jpg
+        page-title: January
+        coordinate: 30.044419, 31.235711 # Pyramids of Giza, Egypt
+        year: 2024
+        month: 1
+    -
+        source: 02.png
+        target: ready/2024-02.jpg
+        page-title: February
+        coordinate: 41.890169, 12.492269 # Colosseum, Rome, Italy
+        year: 2024
+        month: 2
+    -
+        source: 03.png
+        target: ready/2024-03.jpg
+        page-title: March
+        coordinate: 48.858844, 2.294351 # Eiffel Tower, Paris, France
+        year: 2024
+        month: 3
+    -
+        source: 04.png
+        target: ready/2024-04.jpg
+        page-title: April
+        coordinate: 51.178882, -1.826215 # Stonehenge, England
+        year: 2024
+        month: 4
+    -
+        source: 05.png
+        target: ready/2024-05.jpg
+        page-title: May
+        coordinate: 51.172978, 4.532212 # Atomium, Brussels, Belgium
+        year: 2024
+        month: 5
+    -
+        source: 06.png
+        target: ready/2024-06.jpg
+        page-title: June
+        coordinate: 51.500729, -0.124625 # Big Ben, London, England
+        year: 2024
+        month: 6
+    -
+        source: 07.png
+        target: ready/2024-07.jpg
+        page-title: July
+        coordinate: 51.165750, 10.451300 # Wartburg Castle, Eisenach, Germany
+        year: 2024
+        month: 7
+    -
+        source: 08.png
+        target: ready/2024-08.jpg
+        page-title: August
+        coordinate: 22.951470, 78.229934 # Taj Mahal, Agra, Indien
+        year: 2024
+        month: 8
+    -
+        source: 09.png
+        target: ready/2024-09.jpg
+        page-title: September
+        coordinate: 34.052235, -118.243683 # Hollywood Sign, Los Angeles, USA
+        year: 2024
+        month: 9
+    -
+        source: 10.png
+        target: ready/2024-10.jpg
+        page-title: October
+        coordinate: 19.378345, -99.182461 # Templo Mayor, Mexico City, Mexico
+        year: 2024
+        month: 10
+    -
+        source: 11.png
+        target: ready/2024-11.jpg
+        page-title: November
+        coordinate: 41.891667, 12.511667 # St. Peter's Basilica, Vatican City
+        year: 2024
+        month: 11
+    -
+        source: 12.png
+        target: ready/2024-12.jpg
+        page-title: December
+        coordinate: 37.971482, 23.726750 # Acropolis of Athens, Greece
+        year: 2024
+        month: 12
