@@ -34,4 +34,7 @@ class Option
 
     final public const QUALITY = 'quality';
     final public const TRANSPARENCY = 'transparency';
+
+    final public const DESIGN_TYPE = 'design-type';
+    final public const DESIGN_CONFIG = 'design-config';
 }

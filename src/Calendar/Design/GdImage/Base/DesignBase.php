@@ -20,6 +20,7 @@ use App\Service\CalendarBuilderService;
 use Exception;
 use GdImage;
 use Ixnode\PhpContainer\File;
+use Ixnode\PhpContainer\Json;
 use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -80,8 +81,9 @@ abstract class DesignBase
 
     /**
      * @param KernelInterface $appKernel
+     * @param Json|null $config
      */
-    public function __construct(protected KernelInterface $appKernel)
+    public function __construct(protected KernelInterface $appKernel, protected Json|null $config = null)
     {
     }
 

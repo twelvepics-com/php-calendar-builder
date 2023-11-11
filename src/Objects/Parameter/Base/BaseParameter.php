@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter\Base;
 
+use App\Calendar\Design\GdImage\Base\DesignBase;
+use App\Calendar\Design\GdImage\DesignBlank;
+use App\Calendar\Design\GdImage\DesignDefault;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use Ixnode\PhpContainer\File;
@@ -35,6 +38,7 @@ use Symfony\Component\Yaml\Yaml;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-08)
  * @since 0.1.0 (2023-11-08) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class BaseParameter
 {
@@ -195,6 +199,9 @@ class BaseParameter
             Option::QUALITY => ['settings', 'output', 'quality'],
             Option::TRANSPARENCY => ['settings', 'output', 'transparency'],
 
+            Option::DESIGN_TYPE => ['pages', (string) $this->getPageNumber(), 'design', 'type'],
+            Option::DESIGN_CONFIG => ['pages', (string) $this->getPageNumber(), 'design', 'config'],
+
             default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
         };
     }
@@ -228,13 +235,13 @@ class BaseParameter
      *
      * @param string $name
      * @return int|string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
      */
     public function getOptionFromConfig(string $name): int|string|null
     {
@@ -250,6 +257,43 @@ class BaseParameter
         $value = $this->config->getKey($configPath);
 
         if (!is_int($value) && !is_string($value)) {
+            throw new LogicException('Unexpected value for option.');
+        }
+
+        return $value;
+    }
+
+    /**
+     * Tries to get Option from parameter as an array.
+     *
+     * @param string $name
+     * @return array<int|string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getOptionFromConfigAsArray(string $name): array|null
+    {
+        if (!$this->hasConfig($name)) {
+            return null;
+        }
+        if (is_null($this->config)) {
+            return null;
+        }
+
+        $configPath = $this->getConfigPath($name);
+
+        $value = $this->config->getKey($configPath);
+
+        if (is_int($value) || is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!is_array($value)) {
             throw new LogicException('Unexpected value for option.');
         }
 
@@ -414,5 +458,40 @@ class BaseParameter
         $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
 
         return sprintf('%s/%s-%s.%s', $sourceDirectory, $year, $month, $extension);
+    }
+
+    /**
+     * Returns the design according to the config.
+     *
+     * @return DesignBase
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getDesign(): DesignBase
+    {
+        if (!$this->hasConfig(Option::DESIGN_TYPE)) {
+            return new DesignDefault($this->appKernel, null);
+        }
+
+        $designType = $this->getOptionFromConfig(Option::DESIGN_TYPE);
+        $designConfig = match (true) {
+            $this->hasConfig(Option::DESIGN_CONFIG) => $this->getOptionFromConfigAsArray(Option::DESIGN_CONFIG),
+            default => null,
+        };
+        $designConfigJson = match (true) {
+            is_array($designConfig) => new Json($designConfig),
+            default => null,
+        };
+
+        return match ($designType) {
+            'default' => new DesignDefault($this->appKernel, $designConfigJson),
+            'blank' => new DesignBlank($this->appKernel, $designConfigJson),
+            default => throw new LogicException(sprintf('Unsupported design type "%s" was given.', $designType)),
+        };
     }
 }

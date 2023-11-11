@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace App\Command\Calendar;
 
-use App\Calendar\Design\GdImage\DesignDefault;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use App\Objects\Image\Image;
@@ -29,7 +28,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class CreatePageCommand
@@ -55,13 +53,11 @@ class CreatePageCommand extends Command
      * CreatePageCommand constructor
      *
      * @param CalendarBuilderService $calendarBuilderService
-     * @param KernelInterface $appKernel
      * @param Source $source
      * @param Target $target
      */
     public function __construct(
         private readonly CalendarBuilderService $calendarBuilderService,
-        private readonly KernelInterface        $appKernel,
         private readonly Source                 $source,
         private readonly Target                 $target
     )
@@ -204,7 +200,7 @@ EOT
         $this->calendarBuilderService->init(
             parameterSource: $this->source,
             parameterTarget: $this->target,
-            design: new DesignDefault($this->appKernel)
+            design: $this->source->getDesign()
         );
 
         /* Create calendar image */
