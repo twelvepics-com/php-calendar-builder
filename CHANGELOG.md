@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
-### [0.1.0] - 2023-09-25
+### [0.1.1] - 2023-11-11
+
+* Add CalendarBuilderService
+* Add Source, Target, Image and ImageContainer
+* Add separate Design class structure
+* Add DesignBase class to allow different Design classes
+* Reads design and design config from config.yml and default settings
+* Add a calendar example
+* DefaultJTAC and BlankJTAC design
+* Add calendar:new command
+* Add README.md documentation
+
+### [0.1.0] - 2023-11-06
 
 * Initial release
 * Add Semantic Versioning
