@@ -29,22 +29,22 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Class CreateCalenderCommand
+ * Class BuildCommand
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-11)
  * @since 0.1.0 (2023-11-11) First version.
- * @example bin/console calendar:create-calendar data/calendar/bcb37ef651a1814c091c8a24d8f550ee/config.yml
+ * @example bin/console calendar:build data/calendar/bcb37ef651a1814c091c8a24d8f550ee/config.yml
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
     description: self::COMMAND_DESCRIPTION
 )]
-class CreateCalenderCommand extends Command
+class BuildCommand extends Command
 {
-    final public const COMMAND_NAME = 'calendar:create-calendar';
+    final public const COMMAND_NAME = 'calendar:build';
 
-    final public const COMMAND_DESCRIPTION = 'Creates all calendar pages';
+    final public const COMMAND_DESCRIPTION = 'Builds all calendar pages';
 
     /**
      * @param KernelInterface $kernel
@@ -63,7 +63,7 @@ class CreateCalenderCommand extends Command
             ->addArgument(Argument::CONFIG, InputArgument::REQUIRED, 'The path to the config file.')
             ->setHelp(
                 <<<'EOT'
-The <info>calendar:create-calendar</info> creates all calendar pages:
+The <info>calendar:build</info> creates all calendar pages:
   <info>php %command.full_name%</info>
 Creates a calendar page.
 EOT
@@ -121,7 +121,7 @@ EOT
             $application->setAutoExit(false);
 
             $input = new ArrayInput([
-                'command' => CreatePageCommand::COMMAND_NAME,
+                'command' => PageBuildCommand::COMMAND_NAME,
                 Argument::SOURCE => $configString,
                 '--year' => (int) $year,
                 '--month' => (int) $month,

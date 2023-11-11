@@ -40,6 +40,66 @@ Open the project in your browser:
 > Hint: If you want to use real urls instead of using port numbers,
 > try to use https://github.com/bjoern-hempel/local-traefik-proxy
 
+## Create your first calendar on command line
+
+### Create new directory structure
+
+```bash
+bin/console calendar:new
+```
+
+```bash
+
+→ Directory "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b" was successfully created.
+→ Got to this directory.
+→ Add your own images.
+→ Edit the "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml" config file to your needs.
+→ Build your calendar with: bin/console calendar:build "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml"
+→ The 13 calendar pages are then located here by default: "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/ready/*"
+→ Enjoy
+
+```
+
+### Add your own images to the folder created above
+
+There are already 13 sample images in the folder. Replace these with your own. Allowed are png and jpg images.
+
+### Edit the config.yml file
+
+Things that can be changed
+
+* Design and design configurations
+* Birthdays
+* Holidays
+* Title and subtitle of the main page
+* Title of the monthly pages
+* Positions/coordinates of the images
+* Source and destination of the images
+* Year and month of the monthly pages
+* Output quality
+* etc.
+
+### Finally create calendar pages
+
+```bash
+bin/console calendar:build "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml"
+```
+
+### Check the calendar
+
+```bash
+ls data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/ready
+```
+
+```bash
+2024-00.jpg  2024-01.jpg  2024-02.jpg  2024-03.jpg 
+2024-04.jpg  2024-05.jpg  2024-06.jpg  2024-07.jpg 
+2024-08.jpg  2024-09.jpg  2024-10.jpg  2024-11.jpg 
+2024-12.jpg
+```
+
+Example images can be found here: [Example Images](./data/examples/simple/ready)
+
 ## Test command
 
 * PHPCS - PHP Coding Standards Fixer

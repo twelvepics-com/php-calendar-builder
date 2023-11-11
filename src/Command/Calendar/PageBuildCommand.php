@@ -30,22 +30,22 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Class CreatePageCommand
+ * Class PageBuildCommand
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-06)
  * @since 0.1.0 (2023-11-06) First version.
- * @example bin/console calendar:create-page data/calendar/bcb37ef651a1814c091c8a24d8f550ee/DSC03740.png --year 2024 --month 1 --page-title 'Scotland, Edinburgh' --title Edinburgh --subtitle 'With love' --coordinate '55.948815, -3.193105'
+ * @example bin/console calendar:page-build data/calendar/bcb37ef651a1814c091c8a24d8f550ee/DSC03740.png --year 2024 --month 1 --page-title 'Scotland, Edinburgh' --title Edinburgh --subtitle 'With love' --coordinate '55.948815, -3.193105'
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
     description: self::COMMAND_DESCRIPTION
 )]
-class CreatePageCommand extends Command
+class PageBuildCommand extends Command
 {
-    final public const COMMAND_NAME = 'calendar:create-page';
+    final public const COMMAND_NAME = 'calendar:page-build';
 
-    final public const COMMAND_DESCRIPTION = 'Creates a calendar page';
+    final public const COMMAND_DESCRIPTION = 'Builds a calendar page';
 
     private OutputInterface $output;
 
@@ -85,7 +85,7 @@ class CreatePageCommand extends Command
             ->addArgument(Argument::SOURCE, InputArgument::REQUIRED, 'The path to the source image.')
             ->setHelp(
                 <<<'EOT'
-The <info>calendar:create-page</info> creates a calendar page:
+The <info>calendar:page-build</info> creates a calendar page:
   <info>php %command.full_name%</info>
 Creates a calendar page.
 EOT
