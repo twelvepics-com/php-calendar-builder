@@ -37,4 +37,7 @@ class Option
 
     final public const DESIGN_TYPE = 'design-type';
     final public const DESIGN_CONFIG = 'design-config';
+
+    final public const DESIGN_TYPE_DEFAULT = 'design-type-default';
+    final public const DESIGN_CONFIG_DEFAULT = 'design-config-default';
 }

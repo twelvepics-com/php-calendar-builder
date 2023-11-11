@@ -199,6 +199,8 @@ class BaseParameter
             Option::QUALITY => ['settings', 'output', 'quality'],
             Option::TRANSPARENCY => ['settings', 'output', 'transparency'],
 
+            Option::DESIGN_TYPE_DEFAULT => ['settings', 'defaults', 'design', 'type'],
+            Option::DESIGN_CONFIG_DEFAULT => ['settings', 'defaults', 'design', 'config'],
             Option::DESIGN_TYPE => ['pages', (string) $this->getPageNumber(), 'design', 'type'],
             Option::DESIGN_CONFIG => ['pages', (string) $this->getPageNumber(), 'design', 'config'],
 
@@ -474,13 +476,25 @@ class BaseParameter
      */
     public function getDesign(): DesignBase
     {
-        if (!$this->hasConfig(Option::DESIGN_TYPE)) {
+        $designType = match (true) {
+            $this->hasConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
+            $this->hasConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
+            default => null,
+        };
+
+        if (is_null($designType)) {
             return new DesignDefault($this->appKernel, null);
         }
 
-        $designType = $this->getOptionFromConfig(Option::DESIGN_TYPE);
+        $designConfigSource = match (true) {
+            $this->hasConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
+            $this->hasConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
+            default => null,
+        };
+
         $designConfig = match (true) {
-            $this->hasConfig(Option::DESIGN_CONFIG) => $this->getOptionFromConfigAsArray(Option::DESIGN_CONFIG),
+            is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
+            $this->hasConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
             default => null,
         };
         $designConfigJson = match (true) {
