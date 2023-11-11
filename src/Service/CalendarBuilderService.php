@@ -496,7 +496,7 @@ class CalendarBuilderService
             $this->removeTargetImages($pathTargetAbsolute);
         }
 
-        /* Check target path */
+        /* Check the target path */
         $this->checkAndCreateDirectory($pathTargetAbsolute, true);
 
         $this->createEventsAndHolidays();

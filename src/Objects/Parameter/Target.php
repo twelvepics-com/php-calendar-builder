@@ -250,6 +250,8 @@ class Target extends BaseParameter
      */
     public function readParameter(InputInterface $input, Json|null $config = null): void
     {
+        $this->unsetPageNumber();
+
         $this->config = $config;
 
         /* Set calendar month and year (must be called first!). */

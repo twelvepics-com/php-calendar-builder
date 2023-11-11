@@ -44,5 +44,7 @@ class CalendarBuilderService
 
     final public const IMAGE_JPG = 'jpg';
 
+    final public const IMAGE_JPEG = 'jpeg';
+
     final public const DEFAULT_QR_CODE_VERSION = 5;
 }

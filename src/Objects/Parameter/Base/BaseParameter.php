@@ -15,7 +15,9 @@ namespace App\Objects\Parameter\Base;
 
 use App\Calendar\Design\GdImage\Base\DesignBase;
 use App\Calendar\Design\GdImage\DesignBlank;
+use App\Calendar\Design\GdImage\DesignBlankJTAC;
 use App\Calendar\Design\GdImage\DesignDefault;
+use App\Calendar\Design\GdImage\DesignDefaultJTAC;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use Ixnode\PhpContainer\File;
@@ -61,6 +63,17 @@ class BaseParameter
      */
     public function __construct(protected readonly KernelInterface $appKernel)
     {
+        $this->unsetPageNumber();
+    }
+
+    /**
+     * Unsets the page number.
+     *
+     * @return void
+     */
+    public function unsetPageNumber(): void
+    {
+        unset($this->pageNumber);
     }
 
     /**
@@ -144,6 +157,7 @@ class BaseParameter
         $pageNumber = null;
 
         $index = -1;
+
         foreach ($pages as $page) {
             if (!is_array($page)) {
                 throw new LogicException('Config.yml contains invalid format for a single page. Array expected.');
@@ -409,10 +423,17 @@ class BaseParameter
 
         $sourcePath = (string) $source;
 
-        $directoryGiven = is_dir($sourcePath);
+        $configGiven = is_dir($sourcePath) || basename($sourcePath) === self::CONFIG_NAME;
 
-        if ($directoryGiven) {
-            $pathConfig = sprintf('%s/%s', $sourcePath, self::CONFIG_NAME);
+        if ($configGiven) {
+            $pathConfig = match (true) {
+                is_dir($sourcePath) => sprintf('%s/%s', $sourcePath, self::CONFIG_NAME),
+                default => $sourcePath,
+            };
+
+            if (!is_dir($sourcePath)) {
+                $sourcePath = dirname($sourcePath);
+            }
 
             $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
 
@@ -504,7 +525,9 @@ class BaseParameter
 
         return match ($designType) {
             'default' => new DesignDefault($this->appKernel, $designConfigJson),
+            'default-jtac' => new DesignDefaultJTAC($this->appKernel, $designConfigJson),
             'blank' => new DesignBlank($this->appKernel, $designConfigJson),
+            'blank-jtac' => new DesignBlankJTAC($this->appKernel, $designConfigJson),
             default => throw new LogicException(sprintf('Unsupported design type "%s" was given.', $designType)),
         };
     }

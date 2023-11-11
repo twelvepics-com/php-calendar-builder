@@ -205,6 +205,8 @@ class Source extends BaseParameter
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
     {
+        $this->unsetPageNumber();
+
         $sourcePath = $this->getSourcePath($input);
 
         $this->setImage(new File($sourcePath, $this->appKernel->getProjectDir()));

@@ -18,8 +18,6 @@ use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServ
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
-use GdImage;
-use JetBrains\PhpStorm\ArrayShape;
 use LogicException;
 
 /**
@@ -38,8 +36,6 @@ class DesignDefault extends DesignBase
     /**
      * Constants.
      */
-    private const FONT = 'OpenSansCondensed-Light.ttf';
-
     private const CALENDAR_BOX_BOTTOM_SIZE = 9/48;
 
     protected const MAX_LENGTH_EVENT_CAPTION = 28;
@@ -82,19 +78,16 @@ class DesignDefault extends DesignBase
     /**
      * Class cached values.
      */
-    protected string $pathFont;
-
     protected int $valignImage;
 
     protected int $yCalendarBoxBottom;
 
     protected string $url;
 
-    /** @var int[] $colors */
-    protected array $colors;
-
     /** @var array<string, array{x: int, y: int, align: int, dimension: int[], day: int}> $positionDays */
     protected array $positionDays = [];
+
+
 
     /**
      * @inheritdoc
@@ -107,10 +100,6 @@ class DesignDefault extends DesignBase
 
         /* Set qr code version */
         $this->qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION;
-
-        /* Font path */
-        $pathData = sprintf('%s/data', $this->appKernel->getProjectDir());
-        $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT);
 
         /* Calculate sizes */
         $this->fontSizeTitle = $this->getSize($this->fontSizeTitle);
@@ -171,58 +160,6 @@ class DesignDefault extends DesignBase
 
 
     /**
-     * Returns the dimension of given text, font size and angle.
-     *
-     * @param string $text
-     * @param int $fontSize
-     * @param int $angle
-     * @return array{width: int, height: int}
-     * @throws Exception
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
-    #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function getDimension(string $text, int $fontSize, int $angle = 0): array
-    {
-        $boundingBox = imageftbbox($fontSize, $angle, $this->pathFont, $text);
-
-        if ($boundingBox === false) {
-            throw new Exception(sprintf('Unable to get bounding box (%s:%d', __FILE__, __LINE__));
-        }
-
-        [$leftBottomX, $leftBottomY, $rightBottomX, $rightBottomY, $rightTopX, $rightTopY, $leftTopX, $leftTopY] = $boundingBox;
-
-        return [
-            'width' => $rightBottomX - $leftBottomX,
-            'height' => $leftBottomY - $rightTopY,
-        ];
-    }
-
-    /**
-     * Create color from given red, green, blue and alpha value.
-     *
-     * @param GdImage $image
-     * @param int $red
-     * @param int $green
-     * @param int $blue
-     * @param int|null $alpha
-     * @return int
-     * @throws Exception
-     */
-    protected function createColor(GdImage $image, int $red, int $green, int $blue, ?int $alpha = null): int
-    {
-        $color = match(true) {
-            $alpha === null => imagecolorallocate($image, $red, $green, $blue),
-            default => imagecolorallocatealpha($image, $red, $green, $blue, $alpha),
-        };
-
-        if ($color === false) {
-            throw new Exception(sprintf('Unable to create color (%s:%d)', __FILE__, __LINE__));
-        }
-
-        return $color;
-    }
-
-    /**
      * Create the colors and save the integer values to color.
      *
      * @throws Exception
@@ -266,47 +203,6 @@ class DesignDefault extends DesignBase
 
         /* Print day in white otherwise */
         return $this->colors['white'];
-    }
-
-    /**
-     * Add text.
-     *
-     * @param string $text
-     * @param int $fontSize
-     * @param ?int $color
-     * @param int $paddingTop
-     * @param int $align
-     * @param int $valign
-     * @param int $angle
-     * @return array{width: int, height: int}
-     * @throws Exception
-     */
-    #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array
-    {
-        if ($color === null) {
-            $color = $this->colors['white'];
-        }
-
-        $dimension = $this->getDimension($text, $fontSize, $angle);
-
-        $positionX = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
-            default => $this->positionX,
-        };
-
-        $positionY = match ($valign) {
-            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
-            default => $this->positionY,
-        };
-
-        imagettftext($this->imageTarget, $fontSize, $angle, $positionX, $positionY + $paddingTop, $color, $this->pathFont, $text);
-
-        return [
-            'width' => $dimension['width'],
-            'height' => $fontSize,
-        ];
     }
 
     /**
@@ -390,7 +286,7 @@ class DesignDefault extends DesignBase
     {
         $target = $this->calendarBuilderService->getParameterTarget();
 
-        /* Add distance for next day and between calendar weeks */
+        /* Add distance for the next day and between calendar weeks */
         $calendarWeekDistance = $this->calendarBuilderService->getDayOfWeek($target->getYear(), $target->getMonth(), $day) === CalendarBuilderServiceConstants::DAY_MONDAY ? $this->dayDistance : 0;
 
         /* Add x for next day */

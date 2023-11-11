@@ -21,6 +21,14 @@ use Exception;
 use GdImage;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use JetBrains\PhpStorm\ArrayShape;
+use JsonException;
 use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -40,7 +48,13 @@ abstract class DesignBase
     /**
      * Constants.
      */
+    private const FONT = 'OpenSansCondensed-Light.ttf';
+
     protected const ASPECT_RATIO = 3 / 2;
+
+    private const DEFAULT_COLOR = [47, 141, 171];
+
+    private const EXPECTED_COLOR_VALUES = 3;
 
 
     /**
@@ -55,6 +69,11 @@ abstract class DesignBase
     protected string $pathSourceAbsolute;
 
     protected string $pathTargetAbsolute;
+
+    protected string $pathFont;
+
+    /** @var int[] $colors */
+    protected array $colors;
 
 
     /**
@@ -122,6 +141,9 @@ abstract class DesignBase
         $this->setSourceDimensions();
         $this->setTargetDimensions();
         $this->setTargetZoom();
+
+        /* Font path */
+        $this->setFontPath();
 
         /* Do some customs initializations. */
         $this->doInit();
@@ -239,6 +261,17 @@ abstract class DesignBase
     }
 
     /**
+     * Sets the default font path.
+     *
+     * @return void
+     */
+    protected function setFontPath(): void
+    {
+        $pathData = sprintf('%s/data', $this->appKernel->getProjectDir());
+        $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT);
+    }
+
+    /**
      * Init x and y.
      *
      * @param int $positionX
@@ -341,6 +374,33 @@ abstract class DesignBase
     }
 
     /**
+     * Returns the dimension of given text, font size and angle.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param int $angle
+     * @return array{width: int, height: int}
+     * @throws Exception
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    #[ArrayShape(['width' => "int", 'height' => "int"])]
+    protected function getDimension(string $text, int $fontSize, int $angle = 0): array
+    {
+        $boundingBox = imageftbbox($fontSize, $angle, $this->pathFont, $text);
+
+        if ($boundingBox === false) {
+            throw new Exception(sprintf('Unable to get bounding box (%s:%d', __FILE__, __LINE__));
+        }
+
+        [$leftBottomX, $leftBottomY, $rightBottomX, $rightBottomY, $rightTopX, $rightTopY, $leftTopX, $leftTopY] = $boundingBox;
+
+        return [
+            'width' => $rightBottomX - $leftBottomX,
+            'height' => $leftBottomY - $rightTopY,
+        ];
+    }
+
+    /**
      * Creates an empty image.
      *
      * @param int $width
@@ -381,7 +441,7 @@ abstract class DesignBase
         }
 
         $image = match ($type) {
-            CalendarBuilderServiceConstants::IMAGE_JPG => imagecreatefromjpeg($filename),
+            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagecreatefromjpeg($filename),
             CalendarBuilderServiceConstants::IMAGE_PNG => imagecreatefrompng($filename),
             default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $type, __FILE__, __LINE__)),
         };
@@ -407,6 +467,114 @@ abstract class DesignBase
     }
 
     /**
+     * Create color from given red, green, blue and alpha value.
+     *
+     * @param GdImage $image
+     * @param int $red
+     * @param int $green
+     * @param int $blue
+     * @param int|null $alpha
+     * @return int
+     * @throws Exception
+     */
+    protected function createColor(GdImage $image, int $red, int $green, int $blue, ?int $alpha = null): int
+    {
+        $color = match(true) {
+            $alpha === null => imagecolorallocate($image, $red, $green, $blue),
+            default => imagecolorallocatealpha($image, $red, $green, $blue, $alpha),
+        };
+
+        if ($color === false) {
+            throw new Exception(sprintf('Unable to create color (%s:%d)', __FILE__, __LINE__));
+        }
+
+        return $color;
+    }
+
+    /**
+     * Creates color from given config.
+     *
+     * @param GdImage $image
+     * @param string $key
+     * @return int
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     * @throws Exception
+     */
+    protected function createColorFromConfig(GdImage $image, string $key): int
+    {
+        $color = null;
+
+        if (!is_null($this->config) && $this->config->hasKey($key)) {
+            $color = $this->config->getKeyArray($key);
+        }
+
+        if (is_null($color)) {
+            $color = self::DEFAULT_COLOR;
+        }
+
+        if (count($color) < self::EXPECTED_COLOR_VALUES) {
+            $color = self::DEFAULT_COLOR;
+        }
+
+        $red = $color[0];
+        $green = $color[1];
+        $blue = $color[2];
+
+        if (!is_int($red) || !is_int($green) || !is_int($blue)) {
+            throw new LogicException('Invalid color value given.');
+        }
+
+        return $this->createColor($image, $red, $green, $blue);
+    }
+
+    /**
+     * Add text.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param ?int $color
+     * @param int $paddingTop
+     * @param int $align
+     * @param int $valign
+     * @param int $angle
+     * @return array{width: int, height: int}
+     * @throws Exception
+     */
+    #[ArrayShape(['width' => "int", 'height' => "int"])]
+    protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array
+    {
+        if ($color === null) {
+            $color = $this->colors['white'];
+        }
+
+        $dimension = $this->getDimension($text, $fontSize, $angle);
+
+        $positionX = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
+            default => $this->positionX,
+        };
+
+        $positionY = match ($valign) {
+            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
+            default => $this->positionY,
+        };
+
+        imagettftext($this->imageTarget, $fontSize, $angle, $positionX, $positionY + $paddingTop, $color, $this->pathFont, $text);
+
+        return [
+            'width' => $dimension['width'],
+            'height' => $fontSize,
+        ];
+    }
+
+    /**
      * Add image
      */
     protected function addImage(): void
@@ -419,8 +587,17 @@ abstract class DesignBase
      */
     protected function writeImage(): void
     {
-        /* Write image */
-        imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getQuality());
+        $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
+
+        if (!is_string($extension)) {
+            throw new LogicException('Unable to get extension of file.');
+        }
+
+        match ($extension) {
+            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getQuality()),
+            CalendarBuilderServiceConstants::IMAGE_PNG => imagepng($this->imageTarget, $this->pathTargetAbsolute),
+            default => throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension)),
+        };
     }
 
     /**

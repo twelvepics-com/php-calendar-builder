@@ -22,6 +22,8 @@ namespace App\Constants\Parameter;
  */
 class Argument
 {
+    final public const CONFIG = 'config';
+
     final public const SOURCE = 'source';
 
     final public const TARGET = 'target';
