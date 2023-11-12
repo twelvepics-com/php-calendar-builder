@@ -30,6 +30,7 @@ class Option
     final public const PAGE_TITLE = 'page-title';
     final public const TITLE = 'title';
     final public const SUBTITLE = 'subtitle';
+    final public const URL = 'url';
     final public const COORDINATE = 'coordinate';
 
     final public const QUALITY = 'quality';

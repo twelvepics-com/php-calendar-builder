@@ -74,7 +74,7 @@ EOT
     {
         /* Iterate through directories until a non-existing one was found. */
         do {
-            $md5 = md5(random_int(100_000_000, 999_999_999).self::SALT);
+            $md5 = substr(md5(random_int(100_000_000, 999_999_999).self::SALT), 0, 12);
 
             $directoryNameNew = sprintf($directoryName, $md5);
         } while (is_dir($directoryNameNew) || file_exists($directoryNameNew));

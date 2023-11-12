@@ -62,6 +62,10 @@ class Target extends BaseParameter
     final public const DEFAULT_SUBTITLE = 'Subtitle';
     private string|null $subtitle = self::DEFAULT_SUBTITLE;
 
+    /* Subtitle of the page. */
+    final public const DEFAULT_URL = 'auto';
+    private string $url = self::DEFAULT_SUBTITLE;
+
     /* Coordinate of the picture. */
     final public const DEFAULT_COORDINATE = 'Coordinate';
     private string $coordinate = self::DEFAULT_COORDINATE;
@@ -166,6 +170,42 @@ class Target extends BaseParameter
     }
 
     /**
+     * Returns the url of this page.
+     *
+     * @param string $identification
+     * @return string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getUrl(string $identification): string
+    {
+        if ($this->url === self::DEFAULT_URL) {
+            return match (true) {
+                $this->getMonth() === 0 => sprintf(self::URL_TWELVEPICS_LIST, $identification),
+                default => sprintf(self::URL_TWELVEPICS_DETAIL, $identification, $this->getPageNumber()),
+            };
+        }
+
+        return $this->url;
+    }
+
+    /**
+     * @param string $url
+     * @return self
+     */
+    public function setUrl(string $url): self
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function getCoordinate(): string
@@ -209,7 +249,7 @@ class Target extends BaseParameter
     {
         $value = match (true) {
             $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
-            $this->hasConfig($name) => $this->getOptionFromConfig($name),
+            $this->hasOptionFromConfig($name) => $this->getOptionFromConfig($name),
             default => $this->getOptionFromParameter($input, $name),
         };
 
@@ -224,6 +264,7 @@ class Target extends BaseParameter
             Option::PAGE_TITLE => $this->setPageTitle((string) $value),
             Option::TITLE => $this->setTitle((string) $value),
             Option::SUBTITLE => $this->setSubtitle((string) $value),
+            Option::URL => $this->setUrl((string) $value),
             Option::COORDINATE => $this->setCoordinate((string) $value),
 
             Option::QUALITY => $this->setQuality((int) $value),
@@ -262,6 +303,7 @@ class Target extends BaseParameter
         $this->setOptionFromParameter($input, Option::PAGE_TITLE);
         $this->setOptionFromParameter($input, Option::TITLE);
         $this->setOptionFromParameter($input, Option::SUBTITLE);
+        $this->setOptionFromParameter($input, Option::URL);
         $this->setOptionFromParameter($input, Option::COORDINATE);
 
         /* Set calendar options. */

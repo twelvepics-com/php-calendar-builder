@@ -44,7 +44,12 @@ use Symfony\Component\Yaml\Yaml;
  */
 class BaseParameter
 {
+    /* Constants. */
     protected const CONFIG_NAME = 'config.yml';
+
+    protected const URL_TWELVEPICS_LIST = 'https://c.twelvepics.com/l/%s';
+
+    protected const URL_TWELVEPICS_DETAIL = 'https://c.twelvepics.com/d/%s/%d';
 
     /* Year of the page. */
     final public const DEFAULT_YEAR = 2024;
@@ -138,7 +143,7 @@ class BaseParameter
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    private function getPageNumber(): int
+    public function getPageNumber(): int
     {
         if (isset($this->pageNumber)) {
             return $this->pageNumber;
@@ -208,6 +213,7 @@ class BaseParameter
             Option::PAGE_TITLE => ['pages', (string) $this->getPageNumber(), 'page-title'],
             Option::TITLE => ['pages', (string) $this->getPageNumber(), 'title'],
             Option::SUBTITLE => ['pages', (string) $this->getPageNumber(), 'subtitle'],
+            Option::URL => ['pages', (string) $this->getPageNumber(), 'url'],
             Option::COORDINATE => ['pages', (string) $this->getPageNumber(), 'coordinate'],
 
             Option::QUALITY => ['settings', 'output', 'quality'],
@@ -235,7 +241,7 @@ class BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function hasConfig(string $name): bool
+    protected function hasOptionFromConfig(string $name): bool
     {
         if (is_null($this->config)) {
             return false;
@@ -261,7 +267,7 @@ class BaseParameter
      */
     public function getOptionFromConfig(string $name): int|string|null
     {
-        if (!$this->hasConfig($name)) {
+        if (!$this->hasOptionFromConfig($name)) {
             return null;
         }
         if (is_null($this->config)) {
@@ -294,7 +300,7 @@ class BaseParameter
      */
     public function getOptionFromConfigAsArray(string $name): array|null
     {
-        if (!$this->hasConfig($name)) {
+        if (!$this->hasOptionFromConfig($name)) {
             return null;
         }
         if (is_null($this->config)) {
@@ -317,13 +323,25 @@ class BaseParameter
     }
 
     /**
+     * Returns if the option was given via parameter.
+     *
+     * @param InputInterface $input
+     * @param string $name
+     * @return bool
+     */
+    protected function hasOptionFromParameter(InputInterface $input, string $name): bool
+    {
+        return $input->hasParameterOption(sprintf('--%s', $name));
+    }
+
+    /**
      * Tries to get option from parameter.
      *
      * @param InputInterface $input
      * @param string $name
      * @return int|string|null
      */
-    protected function getOptionFromParameter(InputInterface $input, string $name): int|string|null
+    public function getOptionFromParameter(InputInterface $input, string $name): int|string|null
     {
         $value = $input->getOption($name);
 
@@ -336,6 +354,29 @@ class BaseParameter
         }
 
         return $value;
+    }
+
+    /**
+     * Returns value from cli parameter or config file.
+     *
+     * @param InputInterface $input
+     * @param string $name
+     * @return int|string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getOptionFromParameterOrConfig(InputInterface $input, string $name): int|string|null
+    {
+        if ($this->hasOptionFromParameter($input, $name)) {
+            return $this->getOptionFromParameter($input, $name);
+        }
+
+        return $this->getOptionFromConfig($name);
     }
 
     /**
@@ -356,7 +397,7 @@ class BaseParameter
     {
         $value = match (true) {
             $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
-            $this->hasConfig($name) => $this->getOptionFromConfig($name),
+            $this->hasOptionFromConfig($name) => $this->getOptionFromConfig($name),
             default => $this->getOptionFromParameter($input, $name),
         };
 
@@ -474,7 +515,7 @@ class BaseParameter
 
         $sourceDirectory = pathinfo($sourcePath, PATHINFO_DIRNAME);
 
-        if ($this->hasConfig(Option::TARGET)) {
+        if ($this->hasOptionFromConfig(Option::TARGET)) {
             return sprintf('%s/%s', $sourceDirectory, $this->getOptionFromConfig(Option::TARGET));
         }
 
@@ -498,8 +539,8 @@ class BaseParameter
     public function getDesign(): DesignBase
     {
         $designType = match (true) {
-            $this->hasConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
-            $this->hasConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
             default => null,
         };
 
@@ -508,14 +549,14 @@ class BaseParameter
         }
 
         $designConfigSource = match (true) {
-            $this->hasConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
-            $this->hasConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
             default => null,
         };
 
         $designConfig = match (true) {
             is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
-            $this->hasConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
+            $this->hasOptionFromConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
             default => null,
         };
         $designConfigJson = match (true) {

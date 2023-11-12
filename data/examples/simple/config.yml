@@ -63,6 +63,7 @@ pages:
         page-title: Title Page
         title: My calendar
         subtitle: for the year 2024
+        url: auto
         coordinate: 40.689247, -74.044502 # Statue of Liberty, New York City, USA
         year: 2024
         month: 0
@@ -70,6 +71,7 @@ pages:
         source: 01.png
         target: ready/2024-01.jpg
         page-title: January
+        url: auto
         coordinate: 30.044419, 31.235711 # Pyramids of Giza, Egypt
         year: 2024
         month: 1
@@ -77,6 +79,7 @@ pages:
         source: 02.png
         target: ready/2024-02.jpg
         page-title: February
+        url: auto
         coordinate: 41.890169, 12.492269 # Colosseum, Rome, Italy
         year: 2024
         month: 2
@@ -84,6 +87,7 @@ pages:
         source: 03.png
         target: ready/2024-03.jpg
         page-title: March
+        url: auto
         coordinate: 48.858844, 2.294351 # Eiffel Tower, Paris, France
         year: 2024
         month: 3
@@ -91,6 +95,7 @@ pages:
         source: 04.png
         target: ready/2024-04.jpg
         page-title: April
+        url: auto
         coordinate: 51.178882, -1.826215 # Stonehenge, England
         year: 2024
         month: 4
@@ -98,6 +103,7 @@ pages:
         source: 05.png
         target: ready/2024-05.jpg
         page-title: May
+        url: auto
         coordinate: 51.172978, 4.532212 # Atomium, Brussels, Belgium
         year: 2024
         month: 5
@@ -105,6 +111,7 @@ pages:
         source: 06.png
         target: ready/2024-06.jpg
         page-title: June
+        url: auto
         coordinate: 51.500729, -0.124625 # Big Ben, London, England
         year: 2024
         month: 6
@@ -112,6 +119,7 @@ pages:
         source: 07.png
         target: ready/2024-07.jpg
         page-title: July
+        url: auto
         coordinate: 51.165750, 10.451300 # Wartburg Castle, Eisenach, Germany
         year: 2024
         month: 7
@@ -119,6 +127,7 @@ pages:
         source: 08.png
         target: ready/2024-08.jpg
         page-title: August
+        url: auto
         coordinate: 22.951470, 78.229934 # Taj Mahal, Agra, Indien
         year: 2024
         month: 8
@@ -126,6 +135,7 @@ pages:
         source: 09.png
         target: ready/2024-09.jpg
         page-title: September
+        url: auto
         coordinate: 34.052235, -118.243683 # Hollywood Sign, Los Angeles, USA
         year: 2024
         month: 9
@@ -133,6 +143,7 @@ pages:
         source: 10.png
         target: ready/2024-10.jpg
         page-title: October
+        url: auto
         coordinate: 19.378345, -99.182461 # Templo Mayor, Mexico City, Mexico
         year: 2024
         month: 10
@@ -140,6 +151,7 @@ pages:
         source: 11.png
         target: ready/2024-11.jpg
         page-title: November
+        url: auto
         coordinate: 41.891667, 12.511667 # St. Peter's Basilica, Vatican City
         year: 2024
         month: 11
@@ -147,6 +159,7 @@ pages:
         source: 12.png
         target: ready/2024-12.jpg
         page-title: December
+        url: auto
         coordinate: 37.971482, 23.726750 # Acropolis of Athens, Greece
         year: 2024
         month: 12

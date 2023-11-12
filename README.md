@@ -50,12 +50,12 @@ bin/console calendar:new
 
 ```bash
 
-→ Directory "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b" was successfully created.
+→ Directory "data/calendar/2c93279fb467" was successfully created.
 → Got to this directory.
 → Add your own images.
-→ Edit the "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml" config file to your needs.
-→ Build your calendar with: bin/console calendar:build "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml"
-→ The 13 calendar pages are then located here by default: "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/ready/*"
+→ Edit the "data/calendar/2c93279fb467/config.yml" config file to your needs.
+→ Build your calendar with: bin/console calendar:build "data/calendar/2c93279fb467/config.yml"
+→ The 13 calendar pages are then located here by default: "data/calendar/2c93279fb467/ready/*"
 → Enjoy
 
 ```
@@ -82,13 +82,13 @@ Things that can be changed
 ### Finally create calendar pages
 
 ```bash
-bin/console calendar:build "data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/config.yml"
+bin/console calendar:build "data/calendar/2c93279fb467/config.yml"
 ```
 
 ### Check the calendar
 
 ```bash
-ls data/calendar/5cbbc12bb77c259ee68a0ab86a80ea4b/ready
+ls data/calendar/2c93279fb467/ready
 ```
 
 ```bash

@@ -381,7 +381,7 @@ class CalendarBuilderService
             /** @var string $title */
             $title = $holiday['title'];
 
-            /* Get event key */
+            /* Get the event key */
             $holidayKey = $this->getDayKey(intval($date->format('j')));
 
             /* Get year and month */

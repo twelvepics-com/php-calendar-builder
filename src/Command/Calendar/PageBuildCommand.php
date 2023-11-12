@@ -21,7 +21,14 @@ use App\Objects\Parameter\Source;
 use App\Objects\Parameter\Target;
 use App\Service\CalendarBuilderService;
 use Exception;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use JsonException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -77,6 +84,7 @@ class PageBuildCommand extends Command
             ->addOption(Option::PAGE_TITLE, null, InputOption::VALUE_REQUIRED, 'The page title of the page.', Target::DEFAULT_PAGE_TITLE)
             ->addOption(Option::TITLE, null, InputOption::VALUE_REQUIRED, 'The title of the page.', Target::DEFAULT_TITLE)
             ->addOption(Option::SUBTITLE, null, InputOption::VALUE_REQUIRED, 'The subtitle of the page.', Target::DEFAULT_SUBTITLE)
+            ->addOption(Option::URL, null, InputOption::VALUE_REQUIRED, 'The url of the page.', Target::DEFAULT_SUBTITLE)
             ->addOption(Option::COORDINATE, null, InputOption::VALUE_REQUIRED, 'The position/coordinate of the picture.', Target::DEFAULT_COORDINATE)
 
             ->addOption(Option::QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_QUALITY)
@@ -97,6 +105,13 @@ EOT
      *
      * @return void
      * @throws CaseUnsupportedException
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
      */
     private function printParameter(): void
     {
@@ -123,6 +138,7 @@ EOT
         $this->output->writeln(sprintf('Title:           %s', $this->target->getTitle() ?? 'n/a'));
         $this->output->writeln(sprintf('Subtitle:        %s', $this->target->getSubtitle() ?? 'n/a'));
         $this->output->writeln(sprintf('Page-Title:      %s', $this->target->getPageTitle()));
+        $this->output->writeln(sprintf('URL:             %s', $this->target->getUrl($this->source->getIdentification())));
         $this->output->writeln(sprintf('Coordinate:      %s', $this->target->getCoordinate()));
         $this->output->writeln('');
         $this->output->writeln(sprintf('Quality:         %s', $this->target->getQuality()));

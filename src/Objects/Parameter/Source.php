@@ -48,6 +48,8 @@ class Source extends BaseParameter
     /** @var array<int, array{date: DateTimeImmutable, title: string}> $birthdays */
     private array $birthdays = [];
 
+    private string $identification;
+
     /**
      * @return File
      */
@@ -66,6 +68,8 @@ class Source extends BaseParameter
      */
     private function setImage(File $image): void
     {
+        $this->setIdentification(basename(dirname($image->getPath())));
+
         $this->image = $image;
     }
 
@@ -104,6 +108,25 @@ class Source extends BaseParameter
     public function getBirthdays(): array
     {
         return $this->birthdays;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIdentification(): string
+    {
+        return $this->identification;
+    }
+
+    /**
+     * @param string $identification
+     * @return self
+     */
+    public function setIdentification(string $identification): self
+    {
+        $this->identification = $identification;
+
+        return $this;
     }
 
     /**
