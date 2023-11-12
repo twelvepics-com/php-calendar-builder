@@ -332,7 +332,7 @@ class CalendarBuilderService
             /** @var string $title */
             $title = $birthday['title'];
 
-            /* Get event key */
+            /* Get the event key */
             $eventKey = $this->getDayKey(intval($date->format('j')));
 
             /* Get year from event */

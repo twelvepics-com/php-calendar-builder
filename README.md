@@ -85,6 +85,12 @@ Things that can be changed
 bin/console calendar:build "data/calendar/2c93279fb467/config.yml"
 ```
 
+or if want to execute the command within the running docker container:
+
+```bash
+docker compose exec -u www-data php bin/console calendar:build data/calendar/2c93279fb467/config.yml
+```
+
 ### Check the calendar
 
 ```bash
