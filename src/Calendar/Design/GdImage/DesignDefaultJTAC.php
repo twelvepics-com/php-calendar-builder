@@ -25,7 +25,7 @@ use Exception;
  * @version 0.1.1 (2023-11-11)
  * @since 0.1.0 (2023-11-11) First version.
  */
-class DesignDefaultJTAC extends DesignDefault
+class DesignDefaultJTAC extends GdImageDefault
 {
     protected int $fontSizeImage = 400;
 
@@ -49,7 +49,7 @@ class DesignDefaultJTAC extends DesignDefault
     {
         parent::createColors();
 
-        $this->colors['custom'] = $this->createColorFromConfig($this->imageTarget, 'color');
+        $this->colors['custom'] = $this->createColorFromConfig('color');
     }
 
     /**
@@ -59,7 +59,7 @@ class DesignDefaultJTAC extends DesignDefault
     protected function addImage(): void
     {
         /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->imageTarget, 0, 0, $this->widthTarget, $this->heightTarget, $this->colors['custom']);
+        imagefilledrectangle($this->getImageTarget(), 0, 0, $this->widthTarget, $this->heightTarget, $this->colors['custom']);
 
         $xCenterCalendar = intval(round($this->widthTarget / 2));
         $yCenterCalendar = intval(round($this->heightTarget / 2));

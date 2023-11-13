@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\GdImage;
 
-use App\Calendar\Design\GdImage\Base\DesignBase;
+use App\Calendar\Design\GdImage\Base\GdImageBase;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
 
@@ -28,7 +28,7 @@ use Exception;
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class DesignBlankJTAC extends DesignBase
+class GdImageBlankJTAC extends GdImageBase
 {
     /**
      * Calculated values (by zoom).
@@ -75,7 +75,7 @@ class DesignBlankJTAC extends DesignBase
      */
     protected function createColors(): void
     {
-        $this->colors['custom'] = $this->createColorFromConfig($this->imageTarget, 'color');
+        $this->colors['custom'] = $this->createColorFromConfig('color');
     }
 
     /**
@@ -85,7 +85,7 @@ class DesignBlankJTAC extends DesignBase
     protected function addImage(): void
     {
         /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->imageTarget, 0, 0, $this->widthTarget, $this->heightTarget, $this->colors['custom']);
+        imagefilledrectangle($this->getImageTarget(), 0, 0, $this->widthTarget, $this->heightTarget, $this->colors['custom']);
 
         $xCenterCalendar = intval(round($this->widthTarget / 2));
         $yCenterCalendar = intval(round($this->heightTarget / 2));

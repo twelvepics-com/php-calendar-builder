@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\GdImage;
 
-use App\Calendar\Design\GdImage\Base\DesignBase;
+use App\Calendar\Design\GdImage\Base\GdImageBase;
 
 /**
  * Class DesignBlank
@@ -26,7 +26,7 @@ use App\Calendar\Design\GdImage\Base\DesignBase;
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class DesignBlank extends DesignBase
+class GdImageBlank extends GdImageBase
 {
     /**
      * @inheritdoc

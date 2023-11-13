@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage\Base;
+namespace App\Calendar\Design\Base;
 
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
@@ -19,6 +19,7 @@ use App\Objects\Image\ImageContainer;
 use App\Service\CalendarBuilderService;
 use Exception;
 use GdImage;
+use Imagick;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -36,25 +37,21 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * Abstract class DesignBase
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.1 (2023-11-09)
- * @since 0.1.0 (2023-11-09) First version.
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.TooManyMethods)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @version 0.1.0 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  */
 abstract class DesignBase
 {
     /**
      * Constants.
      */
-    private const FONT = 'OpenSansCondensed-Light.ttf';
+    protected const FONT = 'OpenSansCondensed-Light.ttf';
 
     protected const ASPECT_RATIO = 3 / 2;
 
-    private const DEFAULT_COLOR = [47, 141, 171];
+    protected const DEFAULT_COLOR = [47, 141, 171];
 
-    private const EXPECTED_COLOR_VALUES = 3;
+    protected const EXPECTED_COLOR_VALUES = 3;
 
 
     /**
@@ -81,9 +78,9 @@ abstract class DesignBase
      */
     protected CalendarBuilderService $calendarBuilderService;
 
-    protected GdImage $imageTarget;
+    protected GdImage|Imagick $imageTarget;
 
-    protected GdImage $imageSource;
+    protected GdImage|Imagick $imageSource;
 
     protected int $widthTarget;
 
@@ -167,13 +164,13 @@ abstract class DesignBase
         $this->writeImage();
 
         /* Destroy image */
-        $this->destroy();
+        $this->destroyImages();
 
         /* Returns the properties of the created and source image */
         return (new ImageContainer())
             ->setSource($this->getImageProperties($this->pathSourceAbsolute))
             ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
-        ;
+            ;
     }
 
     /**
@@ -341,37 +338,7 @@ abstract class DesignBase
      * @return Image
      * @throws Exception
      */
-    protected function getImageProperties(string $pathAbsolute): Image
-    {
-        /* Check created image */
-        if (!file_exists($pathAbsolute)) {
-            throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Get image properties */
-        $image = getimagesize($pathAbsolute);
-
-        /* Check image properties */
-        if ($image === false) {
-            throw new Exception(sprintf('Unable to get file information from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Get file size */
-        $sizeByte = filesize($pathAbsolute);
-
-        /* Check image properties */
-        if ($sizeByte === false) {
-            throw new Exception(sprintf('Unable to get file size from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Return the image properties */
-        return (new Image($this->appKernel))
-            ->setPathAbsolute($pathAbsolute)
-            ->setWidth((int)$image[0])
-            ->setHeight((int)$image[1])
-            ->setMimeType((string)$image['mime'])
-            ->setSizeByte($sizeByte);
-    }
+    abstract protected function getImageProperties(string $pathAbsolute): Image;
 
     /**
      * Returns the dimension of given text, font size and angle.
@@ -381,80 +348,29 @@ abstract class DesignBase
      * @param int $angle
      * @return array{width: int, height: int}
      * @throws Exception
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function getDimension(string $text, int $fontSize, int $angle = 0): array
-    {
-        $boundingBox = imageftbbox($fontSize, $angle, $this->pathFont, $text);
-
-        if ($boundingBox === false) {
-            throw new Exception(sprintf('Unable to get bounding box (%s:%d', __FILE__, __LINE__));
-        }
-
-        [$leftBottomX, $leftBottomY, $rightBottomX, $rightBottomY, $rightTopX, $rightTopY, $leftTopX, $leftTopY] = $boundingBox;
-
-        return [
-            'width' => $rightBottomX - $leftBottomX,
-            'height' => $leftBottomY - $rightTopY,
-        ];
-    }
+    abstract protected function getDimension(string $text, int $fontSize, int $angle = 0): array;
 
     /**
      * Creates an empty image.
      *
      * @param int $width
      * @param int $height
-     * @return GdImage
+     * @return GdImage|Imagick
      * @throws Exception
      */
-    protected function createImage(int $width, int $height): GdImage
-    {
-        $image = imagecreatetruecolor($width, $height);
-
-        if ($image === false) {
-            throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
-        }
-
-        imagealphablending($image, true);
-        imagesavealpha($image, true);
-
-        return $image;
-    }
+    abstract protected function createImage(int $width, int $height): GdImage|Imagick;
 
     /**
      * Creates image from given filename.
      *
      * @param string $filename
      * @param string|null $type
-     * @return GdImage
+     * @return GdImage|Imagick
      * @throws Exception
      */
-    protected function createImageFromImage(string $filename, string $type = null): GdImage
-    {
-        if (!file_exists($filename)) {
-            throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
-        }
-
-        if (is_null($type)) {
-            $type = pathinfo($filename, PATHINFO_EXTENSION);
-        }
-
-        $image = match ($type) {
-            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagecreatefromjpeg($filename),
-            CalendarBuilderServiceConstants::IMAGE_PNG => imagecreatefrompng($filename),
-            default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $type, __FILE__, __LINE__)),
-        };
-
-        if ($image === false) {
-            throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
-        }
-
-        imagealphablending($image, true);
-        imagesavealpha($image, true);
-
-        return $image;
-    }
+    abstract protected function createImageFromImage(string $filename, string $type = null): GdImage|Imagick;
 
     /**
      * Creates the GdImage instances.
@@ -469,7 +385,6 @@ abstract class DesignBase
     /**
      * Create color from given red, green, blue and alpha value.
      *
-     * @param GdImage $image
      * @param int $red
      * @param int $green
      * @param int $blue
@@ -477,24 +392,11 @@ abstract class DesignBase
      * @return int
      * @throws Exception
      */
-    protected function createColor(GdImage $image, int $red, int $green, int $blue, ?int $alpha = null): int
-    {
-        $color = match(true) {
-            $alpha === null => imagecolorallocate($image, $red, $green, $blue),
-            default => imagecolorallocatealpha($image, $red, $green, $blue, $alpha),
-        };
-
-        if ($color === false) {
-            throw new Exception(sprintf('Unable to create color (%s:%d)', __FILE__, __LINE__));
-        }
-
-        return $color;
-    }
+    abstract protected function createColor(int $red, int $green, int $blue, ?int $alpha = null): int;
 
     /**
      * Creates color from given config.
      *
-     * @param GdImage $image
      * @param string $key
      * @return int
      * @throws ArrayKeyNotFoundException
@@ -506,32 +408,7 @@ abstract class DesignBase
      * @throws JsonException
      * @throws Exception
      */
-    protected function createColorFromConfig(GdImage $image, string $key): int
-    {
-        $color = null;
-
-        if (!is_null($this->config) && $this->config->hasKey($key)) {
-            $color = $this->config->getKeyArray($key);
-        }
-
-        if (is_null($color)) {
-            $color = self::DEFAULT_COLOR;
-        }
-
-        if (count($color) < self::EXPECTED_COLOR_VALUES) {
-            $color = self::DEFAULT_COLOR;
-        }
-
-        $red = $color[0];
-        $green = $color[1];
-        $blue = $color[2];
-
-        if (!is_int($red) || !is_int($green) || !is_int($blue)) {
-            throw new LogicException('Invalid color value given.');
-        }
-
-        return $this->createColor($image, $red, $green, $blue);
-    }
+    abstract protected function createColorFromConfig(string $key): int;
 
     /**
      * Add text.
@@ -547,66 +424,30 @@ abstract class DesignBase
      * @throws Exception
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array
-    {
-        if ($color === null) {
-            $color = $this->colors['white'];
-        }
-
-        $dimension = $this->getDimension($text, $fontSize, $angle);
-
-        $positionX = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
-            default => $this->positionX,
-        };
-
-        $positionY = match ($valign) {
-            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
-            default => $this->positionY,
-        };
-
-        imagettftext($this->imageTarget, $fontSize, $angle, $positionX, $positionY + $paddingTop, $color, $this->pathFont, $text);
-
-        return [
-            'width' => $dimension['width'],
-            'height' => $fontSize,
-        ];
-    }
+    abstract protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array;
 
     /**
-     * Add image
+     * Add image.
      */
-    protected function addImage(): void
-    {
-        imagecopyresampled($this->imageTarget, $this->imageSource, 0, 0, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
-    }
+    abstract protected function addImage(): void;
 
     /**
      * Writes target image.
      */
-    protected function writeImage(): void
-    {
-        $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
-
-        if (!is_string($extension)) {
-            throw new LogicException('Unable to get extension of file.');
-        }
-
-        match ($extension) {
-            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->imageTarget, $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getQuality()),
-            CalendarBuilderServiceConstants::IMAGE_PNG => imagepng($this->imageTarget, $this->pathTargetAbsolute),
-            default => throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension)),
-        };
-    }
+    abstract protected function writeImage(): void;
 
     /**
      * Destroys all images.
      */
-    protected function destroy(): void
-    {
-        /* Destroy image */
-        imagedestroy($this->imageTarget);
-        imagedestroy($this->imageSource);
-    }
+    abstract protected function destroyImages(): void;
+
+    /**
+     * @return GdImage|Imagick
+     */
+    abstract protected function getImageTarget(): Imagick|GdImage;
+
+    /**
+     * @return GdImage|Imagick
+     */
+    abstract protected function getImageSource(): Imagick|GdImage;
 }

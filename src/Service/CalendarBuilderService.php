@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Calendar\Design\GdImage\Base\DesignBase;
+use App\Calendar\Design\GdImage\Base\GdImageBase;
 use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\ImageContainer;
@@ -46,7 +46,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 class CalendarBuilderService
 {
-    private DesignBase $design;
+    private GdImageBase $design;
 
     private Source $parameterSource;
 
@@ -127,13 +127,13 @@ class CalendarBuilderService
      *
      * @param Source $parameterSource
      * @param Target $parameterTarget
-     * @param DesignBase $design
+     * @param GdImageBase $design
      * @throws Exception
      */
     public function init(
         Source $parameterSource,
         Target $parameterTarget,
-        DesignBase $design
+        GdImageBase $design
     ): void
     {
         $this->setParameterSource($parameterSource);

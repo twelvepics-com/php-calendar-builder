@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter\Base;
 
-use App\Calendar\Design\GdImage\Base\DesignBase;
-use App\Calendar\Design\GdImage\DesignBlank;
-use App\Calendar\Design\GdImage\DesignBlankJTAC;
-use App\Calendar\Design\GdImage\DesignDefault;
+use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Calendar\Design\GdImage\GdImageBlank;
+use App\Calendar\Design\GdImage\GdImageBlankJTAC;
+use App\Calendar\Design\GdImage\GdImageDefault;
 use App\Calendar\Design\GdImage\DesignDefaultJTAC;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
@@ -527,7 +527,7 @@ class BaseParameter
     /**
      * Returns the design according to the config.
      *
-     * @return DesignBase
+     * @return GdImageBase
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -536,7 +536,7 @@ class BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getDesign(): DesignBase
+    public function getDesign(): GdImageBase
     {
         $designType = match (true) {
             $this->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
@@ -545,7 +545,7 @@ class BaseParameter
         };
 
         if (is_null($designType)) {
-            return new DesignDefault($this->appKernel, null);
+            return new GdImageDefault($this->appKernel, null);
         }
 
         $designConfigSource = match (true) {
@@ -565,10 +565,10 @@ class BaseParameter
         };
 
         return match ($designType) {
-            'default' => new DesignDefault($this->appKernel, $designConfigJson),
+            'default' => new GdImageDefault($this->appKernel, $designConfigJson),
             'default-jtac' => new DesignDefaultJTAC($this->appKernel, $designConfigJson),
-            'blank' => new DesignBlank($this->appKernel, $designConfigJson),
-            'blank-jtac' => new DesignBlankJTAC($this->appKernel, $designConfigJson),
+            'blank' => new GdImageBlank($this->appKernel, $designConfigJson),
+            'blank-jtac' => new GdImageBlankJTAC($this->appKernel, $designConfigJson),
             default => throw new LogicException(sprintf('Unsupported design type "%s" was given.', $designType)),
         };
     }

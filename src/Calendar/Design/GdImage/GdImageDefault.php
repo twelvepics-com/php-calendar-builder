@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\GdImage;
 
-use App\Calendar\Design\GdImage\Base\DesignBase;
+use App\Calendar\Design\GdImage\Base\GdImageBase;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -26,12 +26,12 @@ use LogicException;
  * Creates the default calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.1 (2023-11-09)
+ * @version 0.1.0 (2023-11-09)
  * @since 0.1.0 (2023-11-09) First version.
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class DesignDefault extends DesignBase
+class GdImageDefault extends GdImageBase
 {
     /**
      * Constants.
@@ -169,12 +169,12 @@ class DesignDefault extends DesignBase
         $target = $this->calendarBuilderService->getParameterTarget();
 
         $this->colors = [
-            'black' => $this->createColor($this->imageTarget, 0, 0, 0),
-            'blackTransparency' => $this->createColor($this->imageTarget, 0, 0, 0, $target->getTransparency()),
-            'white' => $this->createColor($this->imageTarget, 255, 255, 255),
-            'whiteTransparency' => $this->createColor($this->imageTarget, 255, 255, 255, $target->getTransparency()),
-            'red' => $this->createColor($this->imageTarget, 255, 0, 0),
-            'redTransparency' => $this->createColor($this->imageTarget, 255, 0, 0, $target->getTransparency()),
+            'black' => $this->createColor(0, 0, 0),
+            'blackTransparency' => $this->createColor(0, 0, 0, $target->getTransparency()),
+            'white' => $this->createColor(255, 255, 255),
+            'whiteTransparency' => $this->createColor(255, 255, 255, $target->getTransparency()),
+            'red' => $this->createColor(255, 0, 0),
+            'redTransparency' => $this->createColor(255, 0, 0, $target->getTransparency()),
         ];
     }
 
@@ -217,7 +217,7 @@ class DesignDefault extends DesignBase
 
         $positionX = 0;
 
-        imagecopyresampled($this->imageTarget, $this->imageSource, $positionX, $positionY, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
+        imagecopyresampled($this->getImageTarget(), $this->getImageSource(), $positionX, $positionY, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
     }
 
     /**
@@ -226,7 +226,7 @@ class DesignDefault extends DesignBase
     protected function addRectangle(): void
     {
         /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->imageTarget, 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->colors['blackTransparency']);
+        imagefilledrectangle($this->getImageTarget(), 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->colors['blackTransparency']);
     }
 
     /**
@@ -243,14 +243,14 @@ class DesignDefault extends DesignBase
         /* Add title */
         $fontSizeTitle = $this->fontSizeTitle;
         $angleAll = 0;
-        imagettftext($this->imageTarget, $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getPageTitle());
+        imagettftext($this->getImageTarget(), $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getPageTitle());
 
         /* Add position */
         $anglePosition = 90;
         $dimensionPosition = $this->getDimension($this->calendarBuilderService->getParameterTarget()->getCoordinate(), $this->fontSizePosition, $anglePosition);
         $xPosition = $this->paddingCalendarDays + $dimensionPosition['width'] + $this->fontSizePosition;
         $yPosition = $this->yCalendarBoxBottom - $this->paddingCalendarDays;
-        imagettftext($this->imageTarget, $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getCoordinate());
+        imagettftext($this->getImageTarget(), $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getCoordinate());
     }
 
     /**
@@ -388,7 +388,7 @@ class DesignDefault extends DesignBase
 
         /* Add line */
         $positionX = $this->positionX - intval(round($this->dayDistance / 1));
-        imageline($this->imageTarget, $positionX, $this->positionY, $positionX, $positionDay['y'] - $this->fontSizeDay, $this->colors['white']);
+        imageline($this->getImageTarget(), $positionX, $this->positionY, $positionX, $positionDay['y'] - $this->fontSizeDay, $this->colors['white']);
     }
 
     /**
@@ -520,8 +520,8 @@ class DesignDefault extends DesignBase
         /* Set background color to transparent */
         imagecolortransparent($imageQrCode, $transparentColor);
 
-        /* Add dynamically generated qr image to main image */
-        imagecopyresized($this->imageTarget, $imageQrCode, $this->paddingCalendarDays, $this->heightTarget - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
+        /* Add a dynamically generated qr image to the main image */
+        imagecopyresized($this->getImageTarget(), $imageQrCode, $this->paddingCalendarDays, $this->heightTarget - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
 
         /* Destroy image. */
         imagedestroy($imageQrCode);
