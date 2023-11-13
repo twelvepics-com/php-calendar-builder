@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Calendar\Design\GdImage;
 
 use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -168,14 +169,13 @@ class GdImageDefault extends GdImageBase
     {
         $target = $this->calendarBuilderService->getParameterTarget();
 
-        $this->colors = [
-            'black' => $this->createColor(0, 0, 0),
-            'blackTransparency' => $this->createColor(0, 0, 0, $target->getTransparency()),
-            'white' => $this->createColor(255, 255, 255),
-            'whiteTransparency' => $this->createColor(255, 255, 255, $target->getTransparency()),
-            'red' => $this->createColor(255, 0, 0),
-            'redTransparency' => $this->createColor(255, 0, 0, $target->getTransparency()),
-        ];
+        $this->resetColors();
+        $this->createColor('black', 0, 0, 0);
+        $this->createColor('blackTransparency', 0, 0, 0, $target->getTransparency());
+        $this->createColor('white', 255, 255, 255);
+        $this->createColor('whiteTransparency', 255, 255, 255, $target->getTransparency());
+        $this->createColor('red', 255, 0, 0);
+        $this->createColor('redTransparency', 255, 0, 0, $target->getTransparency());
     }
 
     /**
@@ -184,25 +184,25 @@ class GdImageDefault extends GdImageBase
      * @param int $year
      * @param int $month
      * @param int $day
-     * @return int
+     * @return string
      * @throws Exception
      */
-    protected function getDayColor(int $year, int $month, int $day): int
+    protected function getDayColorKey(int $year, int $month, int $day): string
     {
-        /* Print day in red if sunday */
+        /* Print day in red if the day is sunday */
         if ($this->calendarBuilderService->getDayOfWeek($year, $month, $day) === CalendarBuilderServiceConstants::DAY_SUNDAY) {
-            return $this->colors['red'];
+            return 'red';
         }
 
-        /* Print day in red if holiday */
+        /* Print day in red if it is a holiday */
         $dayKey = $this->calendarBuilderService->getDayKey($day);
         $holidays = $this->calendarBuilderService->getHolidays();
         if (array_key_exists($dayKey, $holidays) && $holidays[$dayKey] === true) {
-            return $this->colors['red'];
+            return 'red';
         }
 
         /* Print day in white otherwise */
-        return $this->colors['white'];
+        return 'white';
     }
 
     /**
@@ -226,7 +226,7 @@ class GdImageDefault extends GdImageBase
     protected function addRectangle(): void
     {
         /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->getImageTarget(), 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->colors['blackTransparency']);
+        imagefilledrectangle($this->getImageTarget(), 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->getColor('blackTransparency'));
     }
 
     /**
@@ -243,14 +243,32 @@ class GdImageDefault extends GdImageBase
         /* Add title */
         $fontSizeTitle = $this->fontSizeTitle;
         $angleAll = 0;
-        imagettftext($this->getImageTarget(), $this->fontSizeTitle, $angleAll, $positionX, $positionY + $fontSizeTitle, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getPageTitle());
+        imagettftext(
+            $this->getImageTarget(),
+            $this->fontSizeTitle,
+            $angleAll,
+            $positionX,
+            $positionY + $fontSizeTitle,
+            $this->getColor('white'),
+            $this->pathFont,
+            $this->calendarBuilderService->getParameterTarget()->getPageTitle()
+        );
 
         /* Add position */
         $anglePosition = 90;
         $dimensionPosition = $this->getDimension($this->calendarBuilderService->getParameterTarget()->getCoordinate(), $this->fontSizePosition, $anglePosition);
         $xPosition = $this->paddingCalendarDays + $dimensionPosition['width'] + $this->fontSizePosition;
         $yPosition = $this->yCalendarBoxBottom - $this->paddingCalendarDays;
-        imagettftext($this->getImageTarget(), $this->fontSizePosition, $anglePosition, $xPosition, $yPosition, $this->colors['white'], $this->pathFont, $this->calendarBuilderService->getParameterTarget()->getCoordinate());
+        imagettftext(
+            $this->getImageTarget(),
+            $this->fontSizePosition,
+            $anglePosition,
+            $xPosition,
+            $yPosition,
+            $this->getColor('white'),
+            $this->pathFont,
+            $this->calendarBuilderService->getParameterTarget()->getCoordinate()
+        );
     }
 
     /**
@@ -267,11 +285,25 @@ class GdImageDefault extends GdImageBase
         $this->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         $paddingTopYear = $this->getSize(0);
-        $dimensionYear = $this->addText(sprintf('%s', $target->getTitle()), $this->fontSizeTitlePage, $this->colors['white'], $paddingTopYear, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $dimensionYear = $this->addText(
+            sprintf('%s', $target->getTitle()),
+            $this->fontSizeTitlePage,
+            'white',
+            $paddingTopYear,
+            CalendarBuilderServiceConstants::ALIGN_CENTER,
+            CalendarBuilderServiceConstants::VALIGN_TOP
+        );
         $this->addY($dimensionYear['height'] + $paddingTopYear);
 
         $paddingTopSubtext = $this->getSize(40);
-        $dimensionYear = $this->addText(sprintf('%s', $target->getSubtitle()), $this->fontSizeTitlePageSubtext, $this->colors['white'], $paddingTopSubtext, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $dimensionYear = $this->addText(
+            sprintf('%s', $target->getSubtitle()),
+            $this->fontSizeTitlePageSubtext,
+            'white',
+            $paddingTopSubtext,
+            CalendarBuilderServiceConstants::ALIGN_CENTER,
+            CalendarBuilderServiceConstants::VALIGN_TOP
+        );
         $this->addY($dimensionYear['height'] + $paddingTopSubtext);
     }
 
@@ -293,8 +325,8 @@ class GdImageDefault extends GdImageBase
         $this->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? ($this->dayDistance + $calendarWeekDistance) : -1 * $this->dayDistance);
 
         /* Add day */
-        $color = $this->getDayColor($target->getYear(), $target->getMonth(), $day);
-        $dimension = $this->addText(sprintf('%02d', $day), $this->fontSizeDay, $color, align: $align);
+        $colorKey = $this->getDayColorKey($target->getYear(), $target->getMonth(), $day);
+        $dimension = $this->addText(sprintf('%02d', $day), $this->fontSizeDay, $colorKey, align: $align);
 
         /* Save position */
         $this->positionDays[$this->calendarBuilderService->getDayKey($day)] = [
@@ -324,12 +356,26 @@ class GdImageDefault extends GdImageBase
 
         /* Add month */
         $paddingTop = $this->getSize(0);
-        $dimensionMonth = $this->addText(sprintf('%02d', $target->getMonth()), $this->fontSizeMonth, $this->colors['white'], $paddingTop, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $dimensionMonth = $this->addText(
+            sprintf('%02d', $target->getMonth()),
+            $this->fontSizeMonth,
+            Color::WHITE,
+            $paddingTop,
+            CalendarBuilderServiceConstants::ALIGN_CENTER,
+            CalendarBuilderServiceConstants::VALIGN_TOP
+        );
         $this->addY($dimensionMonth['height'] + $paddingTop);
 
         /* Add year */
         $paddingTop = $this->getSize(20);
-        $dimensionYear = $this->addText(sprintf('%s', $target->getYear()), $this->fontSizeYear, $this->colors['white'], $paddingTop, CalendarBuilderServiceConstants::ALIGN_CENTER, CalendarBuilderServiceConstants::VALIGN_TOP);
+        $dimensionYear = $this->addText(
+            sprintf('%s', $target->getYear()),
+            $this->fontSizeYear,
+            Color::WHITE,
+            $paddingTop,
+            CalendarBuilderServiceConstants::ALIGN_CENTER,
+            CalendarBuilderServiceConstants::VALIGN_TOP
+        );
         $this->addY($dimensionYear['height'] + $paddingTop);
 
         /* Add days */
@@ -384,11 +430,11 @@ class GdImageDefault extends GdImageBase
         $weekNumberText = sprintf('KW %02d >', $weekNumber);
 
         /* Add calendar week */
-        $this->addText($weekNumberText, intval(ceil($this->fontSizeDay * 0.5)), $this->colors['white']);
+        $this->addText($weekNumberText, intval(ceil($this->fontSizeDay * 0.5)), Color::WHITE);
 
         /* Add line */
         $positionX = $this->positionX - intval(round($this->dayDistance / 1));
-        imageline($this->getImageTarget(), $positionX, $this->positionY, $positionX, $positionDay['y'] - $this->fontSizeDay, $this->colors['white']);
+        imageline($this->getImageTarget(), $positionX, $this->positionY, $positionX, $positionDay['y'] - $this->fontSizeDay, $this->getColor(Color::WHITE));
     }
 
     /**
@@ -449,7 +495,7 @@ class GdImageDefault extends GdImageBase
         $this->positionY -= intval(round(1.5 * $this->fontSizeDay));
 
         /* Add Event */
-        $this->addText(text: $name, fontSize: $fontSizeEvent, color: $this->colors['white'], angle: $angleEvent);
+        $this->addText(text: $name, fontSize: $fontSizeEvent, keyColor: Color::WHITE, angle: $angleEvent);
     }
 
     /**

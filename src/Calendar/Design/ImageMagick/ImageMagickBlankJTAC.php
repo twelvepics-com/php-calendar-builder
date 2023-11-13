@@ -11,34 +11,63 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage;
+namespace App\Calendar\Design\ImageMagick;
 
+use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
+use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
+use ImagickDraw;
+use ImagickPixel;
 
 /**
- * Class DesignDefault
+ * Class ImageMagickBlankJTAC
  *
- * Creates the default calendar design.
+ * Creates the blank calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.1 (2023-11-11)
- * @since 0.1.0 (2023-11-11) First version.
+ * @version 0.1.0 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  */
-class DesignDefaultJTAC extends GdImageDefault
+class ImageMagickBlankJTAC extends ImageMagickBase
 {
+    /**
+     * Calculated values (by zoom).
+     */
+
     protected int $fontSizeImage = 400;
+
+
+
+    /**
+     * Class cached values.
+     */
+    protected string $pathFont;
+
+
 
     /**
      * @inheritdoc
-     * @throws Exception
      */
     public function doInit(): void
     {
-        parent::doInit();
-
+        /* Calculate sizes */
         $this->fontSizeImage = $this->getSize($this->fontSizeImage);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function doBuild(): void
+    {
+        /* Creates some needed colors. */
+        $this->createColors();
+
+        /* Add the main image */
+        $this->addImage();
+    }
+
+
 
     /**
      * Create the colors and save the integer values to color.
@@ -47,8 +76,6 @@ class DesignDefaultJTAC extends GdImageDefault
      */
     protected function createColors(): void
     {
-        parent::createColors();
-
         $this->createColorFromConfig('custom', 'color');
     }
 
@@ -58,8 +85,11 @@ class DesignDefaultJTAC extends GdImageDefault
      */
     protected function addImage(): void
     {
-        /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->getImageTarget(), 0, 0, $this->widthTarget, $this->heightTarget, $this->getColor('custom'));
+        /* Add fullscreen rectangle to image. */
+        $draw = new ImagickDraw();
+        $draw->setFillColor(new ImagickPixel($this->getColor(Color::CUSTOM)));
+        $draw->rectangle(0, 0, $this->getImageTarget()->getImageWidth(), $this->getImageTarget()->getImageHeight());
+        $this->getImageTarget()->drawImage($draw);
 
         $xCenterCalendar = intval(round($this->widthTarget / 2));
         $yCenterCalendar = intval(round($this->heightTarget / 2));
@@ -68,7 +98,7 @@ class DesignDefaultJTAC extends GdImageDefault
         $this->addText(
             $this->calendarBuilderService->getParameterTarget()->getPageTitle(),
             $this->fontSizeImage,
-            'white',
+            Color::WHITE,
             align: CalendarBuilderServiceConstants::ALIGN_CENTER
         );
     }

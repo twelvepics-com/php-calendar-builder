@@ -6,6 +6,7 @@ settings:
         year: 2024
         month: 1
         design:
+            engine: gdimage # gdimage or imagick
             type: default
             config:
                 transparency: 40

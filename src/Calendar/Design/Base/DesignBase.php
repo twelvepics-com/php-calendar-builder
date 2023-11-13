@@ -69,8 +69,8 @@ abstract class DesignBase
 
     protected string $pathFont;
 
-    /** @var int[] $colors */
-    protected array $colors;
+    /** @var int[]|string[] $colors */
+    protected array $colors = [];
 
 
     /**
@@ -385,37 +385,82 @@ abstract class DesignBase
     /**
      * Create color from given red, green, blue and alpha value.
      *
+     * @param string $keyColor
      * @param int $red
      * @param int $green
      * @param int $blue
      * @param int|null $alpha
-     * @return int
+     * @return void
      * @throws Exception
      */
-    abstract protected function createColor(int $red, int $green, int $blue, ?int $alpha = null): int;
+    abstract protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void;
+
+    /**
+     * Resets the color array.
+     *
+     * @return void
+     */
+    protected function resetColors(): void
+    {
+        $this->colors = [];
+    }
+
+    /**
+     * Returns the color from the given key.
+     *
+     * @param string $keyColor
+     * @return int|string
+     */
+    abstract protected function getColor(string $keyColor): int|string;
 
     /**
      * Creates color from given config.
      *
-     * @param string $key
-     * @return int
+     * @param string $keyColor
+     * @param string $keyConfig
+     * @return void
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
      * @throws JsonException
+     * @throws TypeInvalidException
      * @throws Exception
      */
-    abstract protected function createColorFromConfig(string $key): int;
+    protected function createColorFromConfig(string $keyColor, string $keyConfig): void
+    {
+        $color = null;
+
+        if (!is_null($this->config) && $this->config->hasKey($keyConfig)) {
+            $color = $this->config->getKeyArray($keyConfig);
+        }
+
+        if (is_null($color)) {
+            $color = self::DEFAULT_COLOR;
+        }
+
+        if (count($color) < self::EXPECTED_COLOR_VALUES) {
+            $color = self::DEFAULT_COLOR;
+        }
+
+        $red = $color[0];
+        $green = $color[1];
+        $blue = $color[2];
+
+        if (!is_int($red) || !is_int($green) || !is_int($blue)) {
+            throw new LogicException('Invalid color value given.');
+        }
+
+        $this->createColor($keyColor, $red, $green, $blue);
+    }
 
     /**
      * Add text.
      *
      * @param string $text
      * @param int $fontSize
-     * @param ?int $color
+     * @param ?string $keyColor
      * @param int $paddingTop
      * @param int $align
      * @param int $valign
@@ -424,7 +469,7 @@ abstract class DesignBase
      * @throws Exception
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    abstract protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array;
+    abstract protected function addText(string $text, int $fontSize, string $keyColor = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array;
 
     /**
      * Add image.

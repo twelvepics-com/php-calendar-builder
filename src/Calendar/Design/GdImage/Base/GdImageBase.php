@@ -149,7 +149,7 @@ abstract class GdImageBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function createColor(int $red, int $green, int $blue, ?int $alpha = null): int
+    protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
     {
         $color = match(true) {
             $alpha === null => imagecolorallocate($this->getImageTarget(), $red, $green, $blue),
@@ -160,39 +160,28 @@ abstract class GdImageBase extends DesignBase
             throw new Exception(sprintf('Unable to create color (%s:%d)', __FILE__, __LINE__));
         }
 
-        return $color;
+        $this->colors[$keyColor] = $color;
     }
 
     /**
-     * Creates color from given config.
+     * Returns the color from the given key.
      *
-     * @inheritdoc
+     * @param string $keyColor
+     * @return int
      */
-    protected function createColorFromConfig(string $key): int
+    protected function getColor(string $keyColor): int
     {
-        $color = null;
-
-        if (!is_null($this->config) && $this->config->hasKey($key)) {
-            $color = $this->config->getKeyArray($key);
+        if (!array_key_exists($keyColor, $this->colors)) {
+            throw new LogicException(sprintf('Color "%s" is not defined.', $keyColor));
         }
 
-        if (is_null($color)) {
-            $color = self::DEFAULT_COLOR;
+        $color = $this->colors[$keyColor];
+
+        if (!is_int($color)) {
+            throw new LogicException(sprintf('Color "%s" is not an integer.', $keyColor));
         }
 
-        if (count($color) < self::EXPECTED_COLOR_VALUES) {
-            $color = self::DEFAULT_COLOR;
-        }
-
-        $red = $color[0];
-        $green = $color[1];
-        $blue = $color[2];
-
-        if (!is_int($red) || !is_int($green) || !is_int($blue)) {
-            throw new LogicException('Invalid color value given.');
-        }
-
-        return $this->createColor($red, $green, $blue);
+        return $color;
     }
 
     /**
@@ -201,10 +190,18 @@ abstract class GdImageBase extends DesignBase
      * @inheritdoc
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(string $text, int $fontSize, int $color = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array
+    protected function addText(
+        string $text,
+        int $fontSize,
+        string $keyColor = null,
+        int $paddingTop = 0,
+        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
+        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM,
+        int $angle = 0
+    ): array
     {
-        if ($color === null) {
-            $color = $this->colors['white'];
+        if ($keyColor === null) {
+            $keyColor = 'white';
         }
 
         $dimension = $this->getDimension($text, $fontSize, $angle);
@@ -220,7 +217,7 @@ abstract class GdImageBase extends DesignBase
             default => $this->positionY,
         };
 
-        imagettftext($this->getImageTarget(), $fontSize, $angle, $positionX, $positionY + $paddingTop, $color, $this->pathFont, $text);
+        imagettftext($this->getImageTarget(), $fontSize, $angle, $positionX, $positionY + $paddingTop, $this->getColor($keyColor), $this->pathFont, $text);
 
         return [
             'width' => $dimension['width'],
@@ -235,7 +232,14 @@ abstract class GdImageBase extends DesignBase
      */
     protected function addImage(): void
     {
-        imagecopyresampled($this->getImageTarget(), $this->getImageSource(), 0, 0, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
+        imagecopyresampled(
+            $this->getImageTarget(),
+            $this->getImageSource(),
+            0, 0,
+            0, 0,
+            $this->widthTarget, $this->heightTarget,
+            $this->widthSource, $this->heightSource
+        );
     }
 
     /**

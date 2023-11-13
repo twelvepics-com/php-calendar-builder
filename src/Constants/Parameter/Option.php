@@ -36,9 +36,11 @@ class Option
     final public const QUALITY = 'quality';
     final public const TRANSPARENCY = 'transparency';
 
+    final public const DESIGN_ENGINE = 'design-engine';
     final public const DESIGN_TYPE = 'design-type';
     final public const DESIGN_CONFIG = 'design-config';
 
+    final public const DESIGN_ENGINE_DEFAULT = 'design-engine-default';
     final public const DESIGN_TYPE_DEFAULT = 'design-type-default';
     final public const DESIGN_CONFIG_DEFAULT = 'design-config-default';
 }
