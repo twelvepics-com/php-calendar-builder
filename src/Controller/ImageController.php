@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
@@ -41,24 +42,6 @@ use Symfony\Component\Yaml\Yaml;
  */
 class ImageController extends AbstractController
 {
-    private const PATH_CALENDAR = '%s/data/calendar/%s';
-
-    private const PATH_CONFIG = 'data/calendar/%s/config.yml';
-
-    private const PATH_IMAGE = self::PATH_CALENDAR.'/%s';
-
-    private const PATH_FONT = '%s/data/font/OpenSansCondensed-Light.ttf';
-
-    private const ERROR_BACKGROUND_COLOR = [47, 141, 171];
-
-    private const ERROR_TEXT_COLOR = [255, 255, 255];
-
-    private const ERROR_FONT_SIZE_FACTOR = 40;
-
-    private const ERROR_WIDTH = 6000;
-
-    private const ERROR_HEIGHT = 4000;
-
     /**
      * Returns the given error message as png image response.
      *
@@ -68,15 +51,23 @@ class ImageController extends AbstractController
      */
     private function getErrorResponse(string $message, string $projectDir): Response
     {
-        $font = sprintf(self::PATH_FONT, $projectDir);
+        $font = sprintf(CalendarBuilderService::PATH_FONT_ABSOLUTE, $projectDir);
 
-        $image = imagecreatetruecolor(self::ERROR_WIDTH, self::ERROR_HEIGHT);
+        $image = imagecreatetruecolor(
+            CalendarBuilderService::ERROR_WIDTH,
+            CalendarBuilderService::ERROR_HEIGHT
+        );
 
         if (!$image instanceof GdImage) {
             throw new LogicException('Unable to create image.');
         }
 
-        $backgroundColor = imagecolorallocate($image, self::ERROR_BACKGROUND_COLOR[0], self::ERROR_BACKGROUND_COLOR[1], self::ERROR_BACKGROUND_COLOR[2]);
+        $backgroundColor = imagecolorallocate(
+            $image,
+            CalendarBuilderService::ERROR_BACKGROUND_COLOR[0],
+            CalendarBuilderService::ERROR_BACKGROUND_COLOR[1],
+            CalendarBuilderService::ERROR_BACKGROUND_COLOR[2]
+        );
 
         if ($backgroundColor === false) {
             throw new LogicException('Unable to create background color.');
@@ -84,13 +75,18 @@ class ImageController extends AbstractController
 
         imagefill($image, 0, 0, $backgroundColor);
 
-        $textColor = imagecolorallocate($image, self::ERROR_TEXT_COLOR[0], self::ERROR_TEXT_COLOR[1], self::ERROR_TEXT_COLOR[2]);
+        $textColor = imagecolorallocate(
+            $image,
+            CalendarBuilderService::ERROR_TEXT_COLOR[0],
+            CalendarBuilderService::ERROR_TEXT_COLOR[1],
+            CalendarBuilderService::ERROR_TEXT_COLOR[2]
+        );
 
         if ($textColor === false) {
             throw new LogicException('Unable to create text color.');
         }
 
-        $fontSize = (int) self::ERROR_WIDTH / self::ERROR_FONT_SIZE_FACTOR;
+        $fontSize = (int) CalendarBuilderService::ERROR_WIDTH / CalendarBuilderService::ERROR_FONT_SIZE_FACTOR;
 
         $boundingBox = imageftbbox($fontSize, 0, $font, $message);
 
@@ -98,8 +94,8 @@ class ImageController extends AbstractController
             throw new LogicException('Unable to create font bounding box.');
         }
 
-        $textX = (self::ERROR_WIDTH - $boundingBox[2]) / 2;
-        $textY = (self::ERROR_HEIGHT + $boundingBox[1]) / 2;
+        $textX = (CalendarBuilderService::ERROR_WIDTH - $boundingBox[2]) / 2;
+        $textY = (CalendarBuilderService::ERROR_HEIGHT + $boundingBox[1]) / 2;
 
         imagefttext($image, $fontSize, 0, (int) $textX, (int) $textY, $textColor, $font, $message);
 
@@ -141,22 +137,22 @@ class ImageController extends AbstractController
         string $projectDir
     ): Response
     {
-        $pathCalendar = sprintf(self::PATH_CALENDAR, $projectDir, $identifier);
+        $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $projectDir, $identifier);
 
-        if (!is_dir($pathCalendar)) {
-            return $this->getErrorResponse(sprintf('Calendar path "%s" does not exist', $pathCalendar), $projectDir);
+        if (!is_dir($pathCalendarAbsolute)) {
+            return $this->getErrorResponse(sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute), $projectDir);
         }
 
-        $configFile = new File(sprintf(self::PATH_CONFIG, $identifier), $projectDir);
+        $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $projectDir);
 
-        if (!$configFile->exist()) {
-            return $this->getErrorResponse(sprintf('Config path "%s" does not exist', $configFile->getPath()), $projectDir);
+        if (!$configFileRelative->exist()) {
+            return $this->getErrorResponse(sprintf('Config path "%s" does not exist', $configFileRelative->getPath()), $projectDir);
         }
 
-        $configArray = Yaml::parse($configFile->getContentAsText());
+        $configArray = Yaml::parse($configFileRelative->getContentAsText());
 
         if (!is_array($configArray)) {
-            return $this->getErrorResponse(sprintf('Config file "%s" is not an array', $configFile->getPath()), $projectDir);
+            return $this->getErrorResponse(sprintf('Config file "%s" is not an array', $configFileRelative->getPath()), $projectDir);
         }
 
         $config = new Json($configArray);
@@ -169,7 +165,7 @@ class ImageController extends AbstractController
 
         $target = $config->getKeyString($configKeyPath);
 
-        $pathImage = sprintf(self::PATH_IMAGE, $projectDir, $identifier, $target);
+        $pathImage = sprintf(CalendarBuilderService::PATH_IMAGE_ABSOLUTE, $projectDir, $identifier, $target);
 
         if (!file_exists($pathImage)) {
             return $this->getErrorResponse(sprintf('Image path "%s" does not exist', $pathImage), $projectDir);

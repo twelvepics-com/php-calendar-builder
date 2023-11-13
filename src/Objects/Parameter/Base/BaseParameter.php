@@ -45,7 +45,7 @@ use Symfony\Component\Yaml\Yaml;
 class BaseParameter
 {
     /* Constants. */
-    protected const CONFIG_NAME = 'config.yml';
+    final public const CONFIG_NAME = 'config.yml';
 
     protected const URL_TWELVEPICS_LIST = 'https://c.twelvepics.com/l/%s';
 

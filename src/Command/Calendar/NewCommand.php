@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Command\Calendar;
 
+use App\Constants\Service\Calendar\CalendarBuilderService;
 use Exception;
 use LogicException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -37,16 +38,6 @@ class NewCommand extends Command
     final public const COMMAND_NAME = 'calendar:new';
 
     final public const COMMAND_DESCRIPTION = 'Creates a new calendar from basic example';
-
-    private const PATH_EXAMPLE = 'data/examples/simple';
-
-    private const PATH_TARGET = 'data/calendar/%s';
-
-    private const SALT = 'f7b5704d840f6b4f6b1ef4b3be39e2aa';
-
-    private const CONFIG_FILE_NAME = 'config.yml';
-
-    private const FOLDER_IMAGES = 'ready';
 
     /**
      * Configures the command.
@@ -74,7 +65,7 @@ EOT
     {
         /* Iterate through directories until a non-existing one was found. */
         do {
-            $md5 = substr(md5(random_int(100_000_000, 999_999_999).self::SALT), 0, 12);
+            $md5 = substr(md5(random_int(100_000_000, 999_999_999).CalendarBuilderService::SALT), 0, 12);
 
             $directoryNameNew = sprintf($directoryName, $md5);
         } while (is_dir($directoryNameNew) || file_exists($directoryNameNew));
@@ -127,20 +118,20 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $source = self::PATH_EXAMPLE;
-        $target = $this->getAvailableDirectoryName(self::PATH_TARGET);
-        $configFile = sprintf('%s/%s', $target, self::CONFIG_FILE_NAME);
-        $pathImages = sprintf('%s/%s/*', $target, self::FOLDER_IMAGES);
+        $source = CalendarBuilderService::PATH_EXAMPLE_RELATIVE;
+        $pathCalendarRelative = $this->getAvailableDirectoryName(CalendarBuilderService::PATH_CALENDAR_RELATIVE);
+        $pathConfigFileRelative = sprintf('%s/%s', $pathCalendarRelative, CalendarBuilderService::CONFIG_FILENAME);
+        $pathImagesReady = sprintf('%s/%s/*', $pathCalendarRelative, CalendarBuilderService::PATH_IMAGES_READY);
 
-        $this->copyDirectory($source, $target);
+        $this->copyDirectory($source, $pathCalendarRelative);
 
         $output->writeln('');
-        $output->writeln(sprintf('→ Directory "%s" was successfully created.', $target));
+        $output->writeln(sprintf('→ Directory "%s" was successfully created.', $pathCalendarRelative));
         $output->writeln('→ Got to this directory.');
         $output->writeln('→ Add your own images.');
-        $output->writeln(sprintf('→ Edit the "%s" config file to your needs.', $configFile));
-        $output->writeln(sprintf('→ Build your calendar with: bin/console %s "%s"', BuildCommand::COMMAND_NAME, $configFile));
-        $output->writeln(sprintf('→ The 13 calendar pages are then located here by default: "%s"', $pathImages));
+        $output->writeln(sprintf('→ Edit the "%s" config file to your needs.', $pathConfigFileRelative));
+        $output->writeln(sprintf('→ Build your calendar with: bin/console %s "%s"', BuildCommand::COMMAND_NAME, $pathConfigFileRelative));
+        $output->writeln(sprintf('→ The 13 calendar pages are then located here by default: "%s"', $pathImagesReady));
         $output->writeln('→ Enjoy');
         $output->writeln('');
 

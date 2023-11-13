@@ -22,6 +22,22 @@ namespace App\Constants\Service\Calendar;
  */
 class CalendarBuilderService
 {
+    final public const CONFIG_FILENAME = 'config.yml';
+
+    final public const PATH_CALENDAR_ABSOLUTE = '%s/data/calendar/%s';
+
+    final public const PATH_CALENDAR_RELATIVE = 'data/calendar/%s';
+
+    final public const PATH_CONFIG_RELATIVE = 'data/calendar/%s/'.self::CONFIG_FILENAME;
+
+    final public const PATH_IMAGE_ABSOLUTE = self::PATH_CALENDAR_ABSOLUTE.'/%s';
+
+    final public const PATH_FONT_ABSOLUTE = '%s/data/font/OpenSansCondensed-Light.ttf';
+
+    final public const PATH_EXAMPLE_RELATIVE = 'data/examples/simple';
+
+    final public const PATH_IMAGES_READY = 'ready';
+
     final public const BIRTHDAY_YEAR_NOT_GIVEN = 2100;
 
     final public const ALIGN_LEFT = 1;
@@ -47,4 +63,16 @@ class CalendarBuilderService
     final public const IMAGE_JPEG = 'jpeg';
 
     final public const DEFAULT_QR_CODE_VERSION = 5;
+
+    final public const ERROR_BACKGROUND_COLOR = [47, 141, 171];
+
+    final public const ERROR_TEXT_COLOR = [255, 255, 255];
+
+    final public const ERROR_FONT_SIZE_FACTOR = 40;
+
+    final public const ERROR_WIDTH = 6000;
+
+    final public const ERROR_HEIGHT = 4000;
+
+    final public const SALT = 'f7b5704d840f6b4f6b1ef4b3be39e2aa';
 }
