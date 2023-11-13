@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Calendar\Design\GdImage\Base;
 
 use App\Calendar\Design\Base\DesignBase;
+use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use Exception;
@@ -89,8 +90,8 @@ abstract class GdImageBase extends DesignBase
         [$leftBottomX, $leftBottomY, $rightBottomX, $rightBottomY, $rightTopX, $rightTopY, $leftTopX, $leftTopY] = $boundingBox;
 
         return [
-            'width' => $rightBottomX - $leftBottomX,
-            'height' => $leftBottomY - $rightTopY,
+            'width' => (int) abs($rightTopX - $leftBottomX),
+            'height' => (int) abs($leftBottomY - $rightTopY),
         ];
     }
 
@@ -147,13 +148,15 @@ abstract class GdImageBase extends DesignBase
     /**
      * Create color from given red, green, blue and alpha value.
      *
+     * @param int|null $alpha 100 - 100% visible, 0 - 0% visible
+     *
      * @inheritdoc
      */
     protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
     {
         $color = match(true) {
             $alpha === null => imagecolorallocate($this->getImageTarget(), $red, $green, $blue),
-            default => imagecolorallocatealpha($this->getImageTarget(), $red, $green, $blue, $alpha),
+            default => imagecolorallocatealpha($this->getImageTarget(), $red, $green, $blue, 100 - $alpha),
         };
 
         if ($color === false) {
@@ -185,44 +188,46 @@ abstract class GdImageBase extends DesignBase
     }
 
     /**
-     * Add text.
+     * Returns the angle depending on the given value.
      *
      * @inheritdoc
      */
-    #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(
+    protected function getAngle(int $angle): int
+    {
+        return $angle;
+    }
+
+    /**
+     * Add raw text.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param string $keyColor
+     * @param int $positionX
+     * @param int $positionY
+     * @param int $angle
+     * @return void
+     */
+    protected function addTextRaw(
         string $text,
         int $fontSize,
-        string $keyColor = null,
-        int $paddingTop = 0,
-        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
-        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM,
+        string $keyColor,
+        int $positionX,
+        int $positionY,
         int $angle = 0
-    ): array
+    ): void
     {
-        if ($keyColor === null) {
-            $keyColor = 'white';
-        }
+        imagettftext($this->getImageTarget(), $fontSize, $angle, $positionX, $positionY, $this->getColor($keyColor), $this->pathFont, $text);
+    }
 
-        $dimension = $this->getDimension($text, $fontSize, $angle);
-
-        $positionX = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
-            default => $this->positionX,
-        };
-
-        $positionY = match ($valign) {
-            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
-            default => $this->positionY,
-        };
-
-        imagettftext($this->getImageTarget(), $fontSize, $angle, $positionX, $positionY + $paddingTop, $this->getColor($keyColor), $this->pathFont, $text);
-
-        return [
-            'width' => $dimension['width'],
-            'height' => $fontSize,
-        ];
+    /**
+     * Draws a line.
+     *
+     * @inheritdoc
+     */
+    protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void
+    {
+        imageline($this->getImageTarget(), $x1, $y1, $x2, $y2, $this->getColor($keyColor));
     }
 
     /**

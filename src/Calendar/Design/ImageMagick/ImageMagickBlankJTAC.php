@@ -76,6 +76,7 @@ class ImageMagickBlankJTAC extends ImageMagickBase
      */
     protected function createColors(): void
     {
+        $this->createColor(Color::WHITE, 255, 255, 255);
         $this->createColorFromConfig('custom', 'color');
     }
 

@@ -18,7 +18,10 @@ use App\Calendar\Design\GdImage\GdImageBlank;
 use App\Calendar\Design\GdImage\GdImageBlankJTAC;
 use App\Calendar\Design\GdImage\GdImageDefault;
 use App\Calendar\Design\GdImage\DesignDefaultJTAC;
+use App\Calendar\Design\ImageMagick\ImageMagickBlank;
 use App\Calendar\Design\ImageMagick\ImageMagickBlankJTAC;
+use App\Calendar\Design\ImageMagick\ImageMagickDefault;
+use App\Constants\Design;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use Ixnode\PhpContainer\File;
@@ -576,14 +579,16 @@ class BaseParameter
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
-                'default' => new GdImageDefault($this->appKernel, $designConfigJson),
-                'default-jtac' => new DesignDefaultJTAC($this->appKernel, $designConfigJson),
-                'blank' => new GdImageBlank($this->appKernel, $designConfigJson),
-                'blank-jtac' => new GdImageBlankJTAC($this->appKernel, $designConfigJson),
+                Design::DEFAULT => new GdImageDefault($this->appKernel, $designConfigJson),
+                Design::DEFAULT_JTAC => new DesignDefaultJTAC($this->appKernel, $designConfigJson),
+                Design::BLANK => new GdImageBlank($this->appKernel, $designConfigJson),
+                Design::BLANK_JTAC => new GdImageBlankJTAC($this->appKernel, $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             'imagick' => match ($designType) {
-                'blank-jtac' => new ImageMagickBlankJTAC($this->appKernel, $designConfigJson),
+                Design::DEFAULT => new ImageMagickDefault($this->appKernel, $designConfigJson),
+                Design::BLANK => new ImageMagickBlank($this->appKernel, $designConfigJson),
+                Design::BLANK_JTAC => new ImageMagickBlankJTAC($this->appKernel, $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),

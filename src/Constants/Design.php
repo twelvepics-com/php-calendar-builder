@@ -20,21 +20,13 @@ namespace App\Constants;
  * @version 0.1.0 (2023-11-08)
  * @since 0.1.0 (2023-11-08) First version.
  */
-class Color
+class Design
 {
-    final public const BLACK = 'black';
+    final public const DEFAULT = 'default';
 
-    final public const BLACK_TRANSPARENCY = 'black-transparency';
+    final public const DEFAULT_JTAC = 'default-jtac';
 
-    final public const CUSTOM = 'custom';
+    final public const BLANK = 'blank';
 
-    final public const RED = 'red';
-
-    final public const RED_TRANSPARENCY = 'red-transparency';
-
-    final public const TRANSPARENT = 'transparent';
-
-    final public const WHITE = 'white';
-
-    final public const WHITE_TRANSPARENCY = 'white-transparency';
+    final public const BLANK_JTAC = 'blank-jtac';
 }

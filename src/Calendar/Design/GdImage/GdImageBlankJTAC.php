@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Calendar\Design\GdImage;
 
 use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
 
@@ -23,7 +24,7 @@ use Exception;
  * Creates the blank calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.1 (2023-11-10)
+ * @version 0.1.0 (2023-11-10)
  * @since 0.1.0 (2023-11-10) First version.
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -75,6 +76,7 @@ class GdImageBlankJTAC extends GdImageBase
      */
     protected function createColors(): void
     {
+        $this->createColor(Color::WHITE, 255, 255, 255);
         $this->createColorFromConfig('custom', 'color');
     }
 

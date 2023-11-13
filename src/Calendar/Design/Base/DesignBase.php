@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\Base;
 
+use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
@@ -254,7 +256,13 @@ abstract class DesignBase
      */
     protected function setTargetZoom(): void
     {
-        $this->zoomTarget = $this->heightTarget / CalendarBuilderServiceConstants::TARGET_HEIGHT;
+        $correct = match (true) {
+            $this instanceof ImageMagickBase => 1, # + 1/3,
+            $this instanceof GdImageBase => 1.,
+            default => throw new LogicException('Class must be either ImageMagickBase or GdImageBase'),
+        };
+
+        $this->zoomTarget = $this->heightTarget / CalendarBuilderServiceConstants::TARGET_HEIGHT * $correct;
     }
 
     /**
@@ -456,6 +464,27 @@ abstract class DesignBase
     }
 
     /**
+     * Returns the angle depending on the given value.
+     *
+     * @param int $angle
+     * @return int
+     */
+    abstract protected function getAngle(int $angle): int;
+
+    /**
+     * Add raw text.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param string $keyColor
+     * @param int $positionX
+     * @param int $positionY
+     * @param int $angle
+     * @return void
+     */
+    abstract protected function addTextRaw(string $text, int $fontSize, string $keyColor, int $positionX, int $positionY, int $angle = 0): void;
+
+    /**
      * Add text.
      *
      * @param string $text
@@ -469,20 +498,74 @@ abstract class DesignBase
      * @throws Exception
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    abstract protected function addText(string $text, int $fontSize, string $keyColor = null, int $paddingTop = 0, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT, int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM, int $angle = 0): array;
+    protected function addText(
+        string $text,
+        int $fontSize,
+        string $keyColor = null,
+        int $paddingTop = 0,
+        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
+        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM,
+        int $angle = 0
+    ): array
+    {
+        if ($keyColor === null) {
+            $keyColor = 'white';
+        }
+
+        $dimension = $this->getDimension($text, $fontSize, $angle);
+
+        $positionX = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
+            default => $this->positionX,
+        };
+
+        $positionY = match ($valign) {
+            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
+            default => $this->positionY,
+        };
+
+        $positionX = max($positionX, 0);
+        $positionY = max($positionY, 0);
+
+        $this->addTextRaw($text, $fontSize, $keyColor, $positionX, $positionY + $paddingTop, $angle);
+
+        return [
+            'width' => $dimension['width'],
+            'height' => $fontSize,
+        ];
+    }
+
+    /**
+     * Draws a line.
+     *
+     * @param int $x1
+     * @param int $y1
+     * @param int $x2
+     * @param int $y2
+     * @param string $keyColor
+     * @return void
+     */
+    abstract protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void;
 
     /**
      * Add image.
+     *
+     * @return void
      */
     abstract protected function addImage(): void;
 
     /**
      * Writes target image.
+     *
+     * @return void
      */
     abstract protected function writeImage(): void;
 
     /**
      * Destroys all images.
+     *
+     * @return void
      */
     abstract protected function destroyImages(): void;
 

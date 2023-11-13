@@ -11,22 +11,20 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage;
+namespace App\Calendar\Design\ImageMagick;
 
-use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
 
 /**
- * Class DesignBlank
+ * Class ImageMagickBlank
  *
  * Creates the blank calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-11-10)
- * @since 0.1.0 (2023-11-10) First version.
- * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @version 0.1.2 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  */
-class GdImageBlank extends GdImageBase
+class ImageMagickBlank extends ImageMagickBase
 {
     /**
      * @inheritdoc

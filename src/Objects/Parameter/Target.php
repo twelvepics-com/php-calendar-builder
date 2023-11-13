@@ -47,7 +47,7 @@ class Target extends BaseParameter
     private int $quality = self::DEFAULT_QUALITY;
 
     /* Transparency from 0 (visible) to 100 (invisible). */
-    final public const DEFAULT_TRANSPARENCY = 40;
+    final public const DEFAULT_TRANSPARENCY = 60;
     private int $transparency = self::DEFAULT_TRANSPARENCY;
 
     /* Title of the page. */

@@ -11,15 +11,20 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage;
+namespace App\Calendar\Design\ImageMagick;
 
-use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
 use App\Constants\Color;
-use App\Constants\Design;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
+use Imagick;
+use ImagickDraw;
+use ImagickDrawException;
+use ImagickException;
+use ImagickPixel;
+use ImagickPixelException;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
@@ -35,12 +40,12 @@ use LogicException;
  * Creates the default calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-11-09)
- * @since 0.1.0 (2023-11-09) First version.
+ * @version 0.1.0 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class GdImageDefault extends GdImageBase
+class ImageMagickDefault extends ImageMagickBase
 {
     /**
      * Constants.
@@ -239,6 +244,7 @@ class GdImageDefault extends GdImageBase
 
     /**
      * Add image
+     * @throws ImagickException
      */
     protected function addImage(): void
     {
@@ -249,16 +255,31 @@ class GdImageDefault extends GdImageBase
 
         $positionX = 0;
 
-        imagecopyresampled($this->getImageTarget(), $this->getImageSource(), $positionX, $positionY, 0, 0, $this->widthTarget, $this->heightTarget, $this->widthSource, $this->heightSource);
+        $source = clone $this->getImageSource();
+
+        $source->scaleImage($this->getImageTarget()->getImageWidth(), $this->getImageTarget()->getImageHeight());
+
+        $this->getImageTarget()->compositeImage(
+            $source,
+            Imagick::COMPOSITE_OVER,
+            $positionX,
+            $positionY
+        );
     }
 
     /**
      * Add bottom calendar box.
+     * @throws ImagickDrawException
+     * @throws ImagickPixelException
+     * @throws ImagickException
      */
     protected function addRectangle(): void
     {
-        /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->getImageTarget(), 0, $this->yCalendarBoxBottom, $this->widthTarget, $this->heightTarget, $this->getColor(Color::BLACK_TRANSPARENCY));
+        /* Add fullscreen rectangle to image. */
+        $draw = new ImagickDraw();
+        $draw->setFillColor(new ImagickPixel($this->getColor(Color::BLACK_TRANSPARENCY)));
+        $draw->rectangle(0, $this->yCalendarBoxBottom, $this->getImageTarget()->getImageWidth(), $this->getImageTarget()->getImageHeight());
+        $this->getImageTarget()->drawImage($draw);
     }
 
     /**
@@ -278,7 +299,7 @@ class GdImageDefault extends GdImageBase
             $this->fontSizeTitle,
             Color::WHITE,
             $positionX,
-            $positionY + $this->fontSizeTitle,
+            $positionY + $this->fontSizeTitle
         );
 
         /* Add position */
@@ -543,7 +564,7 @@ class GdImageDefault extends GdImageBase
     protected function addQrCode(): void
     {
         /* Set background color */
-        $backgroundColor = [255, 0, 0];
+        $backgroundColor = 'rgb(255, 0, 0)';
 
         /* Matrix length of qrCode */
         $matrixLength = 37;
@@ -572,28 +593,30 @@ class GdImageDefault extends GdImageBase
             throw new LogicException('$qrCodeBlob must be a string');
         }
 
-        /* Create GDImage from blob */
-        $imageQrCode = imagecreatefromstring(strval($qrCodeBlob));
+        /* Create Imagick from blob */
+        $imageQrCode = new Imagick();
+        $result = $imageQrCode->readImageBlob((string) $qrCodeBlob);
 
         /* Check creating image. */
-        if ($imageQrCode === false) {
-            throw new Exception(sprintf('An error occurred while creating GDImage from blob (%s:%d)', __FILE__, __LINE__));
+        if ($result === false) {
+            throw new Exception(sprintf('An error occurred while creating Imagick from blob (%s:%d)', __FILE__, __LINE__));
         }
 
-        /* Get height from $imageQrCode */
-        $widthQrCode  = imagesx($imageQrCode);
-        $heightQrCode = imagesy($imageQrCode);
+        $transparentColor = new ImagickPixel($backgroundColor);
 
-        /* Create transparent color */
-        $transparentColor = imagecolorexact($imageQrCode, $backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+        $imageQrCode->transparentPaintImage($transparentColor, 0, 0, false);
+        $imageQrCode->resizeImage($this->widthQrCode, $this->heightQrCode, Imagick::FILTER_LANCZOS, 1);
 
-        /* Set background color to transparent */
-        imagecolortransparent($imageQrCode, $transparentColor);
-
-        /* Add a dynamically generated qr image to the main image */
-        imagecopyresized($this->getImageTarget(), $imageQrCode, $this->paddingCalendarDays, $this->heightTarget - $this->paddingCalendarDays - $this->heightQrCode, 0, 0, $this->widthQrCode, $this->heightQrCode, $widthQrCode, $heightQrCode);
+        $this->getImageTarget()->compositeImage(
+            $imageQrCode,
+            Imagick::COMPOSITE_DEFAULT,
+            $this->paddingCalendarDays,
+            $this->heightTarget - $this->paddingCalendarDays - $this->heightQrCode
+        );
+        $this->getImageTarget()->setImageBackgroundColor($backgroundColor);
+        $this->getImageTarget()->setImageAlphaChannel(Imagick::ALPHACHANNEL_REMOVE);
 
         /* Destroy image. */
-        imagedestroy($imageQrCode);
+        $imageQrCode->destroy();
     }
 }

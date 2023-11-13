@@ -22,7 +22,7 @@ use Exception;
  * Creates the default calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.1 (2023-11-11)
+ * @version 0.1.0 (2023-11-11)
  * @since 0.1.0 (2023-11-11) First version.
  */
 class DesignDefaultJTAC extends GdImageDefault

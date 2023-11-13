@@ -9,7 +9,7 @@ settings:
             engine: gdimage # gdimage or imagick
             type: default
             config:
-                transparency: 40
+                transparency: 60
                 v-align: top
 holidays:
     2024-01-01: Neujahr

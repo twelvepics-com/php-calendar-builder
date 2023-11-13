@@ -14,13 +14,15 @@ declare(strict_types=1);
 namespace App\Calendar\Design\ImageMagick\Base;
 
 use App\Calendar\Design\Base\DesignBase;
-use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
+use App\Constants\Color;
 use App\Objects\Image\Image;
 use Exception;
 use Imagick;
 use ImagickDraw;
+use ImagickDrawException;
 use ImagickException;
 use ImagickPixel;
+use ImagickPixelException;
 use JetBrains\PhpStorm\ArrayShape;
 use LogicException;
 
@@ -33,6 +35,8 @@ use LogicException;
  */
 abstract class ImageMagickBase extends DesignBase
 {
+    private const GD_IMAGE_TO_IMAGICK_CORRECTION = 1 + 1/3;
+
     /**
      * Returns image properties from given image.
      *
@@ -66,21 +70,28 @@ abstract class ImageMagickBase extends DesignBase
     #[ArrayShape(['width' => "int", 'height' => "int"])]
     protected function getDimension(string $text, int $fontSize, int $angle = 0): array
     {
-        /* Create a new Imagick object */
+        /* Create a new Imagick object. */
         $imagick = new Imagick();
 
-        /* Set the font */
+        /* Create the font layer. */
         $draw = new ImagickDraw();
         $draw->setFont($this->pathFont);
-        $draw->setFontSize($fontSize);
-        $draw->rotate($angle);
+        $draw->setFontSize($fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION);
 
-        /* Dump the font metrics, autodetect multiline */
+        /* Gets the font metrics. */
         $fontMetrics = $imagick->queryFontMetrics($draw, $text);
 
+        $width = (int) round($fontMetrics['textWidth']);
+        $height = (int) round($fontMetrics['textHeight'] / 1.9);
+
+        /* Rotate the font layer on a temporary image. */
+        $imagick->newImage($width, $height, new ImagickPixel(Color::TRANSPARENT));
+        $imagick->annotateImage($draw, 0, 0, 0, $text);
+        $imagick->rotateImage(new ImagickPixel(Color::TRANSPARENT), $angle);
+
         return [
-            'width' => (int) round($fontMetrics['textWidth']),
-            'height' => (int) round($fontMetrics['textHeight']),
+            'width' => $imagick->getImageWidth(),
+            'height' => $imagick->getImageHeight(),
         ];
     }
 
@@ -120,6 +131,8 @@ abstract class ImageMagickBase extends DesignBase
     /**
      * Create color from given red, green, blue and alpha value.
      *
+     * @param int|null $alpha 100 - 100% visible, 0 - 0% visible
+     *
      * @inheritdoc
      */
     protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
@@ -152,51 +165,63 @@ abstract class ImageMagickBase extends DesignBase
     }
 
     /**
-     * Add text.
+     * Returns the angle depending on the given value.
      *
      * @inheritdoc
      */
-    #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(
+    protected function getAngle(int $angle): int
+    {
+        return 360 - $angle;
+    }
+
+    /**
+     * Add raw text.
+     *
+     * @param string $text
+     * @param int $fontSize
+     * @param string $keyColor
+     * @param int $positionX
+     * @param int $positionY
+     * @param int $angle
+     * @return void
+     * @throws ImagickException
+     * @throws ImagickDrawException
+     * @throws ImagickPixelException
+     */
+    protected function addTextRaw(
         string $text,
         int $fontSize,
-        string $keyColor = null,
-        int $paddingTop = 0,
-        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
-        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM,
+        string $keyColor,
+        int $positionX,
+        int $positionY,
         int $angle = 0
-    ): array
+    ): void
     {
-        if ($keyColor === null) {
-            $keyColor = 'white';
-        }
-
-        $dimension = $this->getDimension($text, $fontSize, $angle);
-
-        $positionX = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
-            default => $this->positionX,
-        };
-
-        $positionY = match ($valign) {
-            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
-            default => $this->positionY,
-        };
-
         /* Create an ImagickDraw object. */
         $draw = new ImagickDraw();
         $draw->setFillColor(new ImagickPixel($this->getColor($keyColor)));
         $draw->setFont($this->pathFont);
-        $draw->setFontSize($fontSize);
+        $draw->setFontSize($fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION);
 
         /* Add text to image. */
-        $this->getImageTarget()->annotateImage($draw, $positionX, $positionY + $paddingTop, $angle, $text);
+        $this->getImageTarget()->annotateImage($draw, $positionX, $positionY, $angle, $text);
+    }
 
-        return [
-            'width' => $dimension['width'],
-            'height' => $fontSize,
-        ];
+    /**
+     * Draws a line.
+     *
+     * @inheritdoc
+     * @throws ImagickDrawException
+     * @throws ImagickPixelException
+     * @throws ImagickException
+     */
+    protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void
+    {
+        $draw = new ImagickDraw();
+        $draw->setStrokeColor(new ImagickPixel($this->getColor($keyColor)));
+        $draw->line($x1, $y1, $x2, $y2);
+
+        $this->getImageTarget()->drawImage($draw);
     }
 
     /**
