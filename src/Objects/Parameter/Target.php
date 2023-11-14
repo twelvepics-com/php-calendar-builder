@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Objects\Parameter;
 
 use App\Constants\Parameter\Option;
+use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Parameter\Base\BaseParameter;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
@@ -42,13 +43,7 @@ class Target extends BaseParameter
 {
     private File $image;
 
-    /* Quality from bad 0 to best 100. */
-    final public const DEFAULT_QUALITY = 100;
-    private int $quality = self::DEFAULT_QUALITY;
 
-    /* Transparency from 0 (visible) to 100 (invisible). */
-    final public const DEFAULT_TRANSPARENCY = 60;
-    private int $transparency = self::DEFAULT_TRANSPARENCY;
 
     /* Title of the page. */
     final public const DEFAULT_PAGE_TITLE = 'Page Title';
@@ -69,6 +64,16 @@ class Target extends BaseParameter
     /* Coordinate of the picture. */
     final public const DEFAULT_COORDINATE = 'Coordinate';
     private string $coordinate = self::DEFAULT_COORDINATE;
+
+
+
+    /* Output quality from bad 0 to best 100. */
+    final public const DEFAULT_OUTPUT_QUALITY = 100;
+    private int $outputQuality = self::DEFAULT_OUTPUT_QUALITY;
+
+    /* Output format. */
+    final public const DEFAULT_OUTPUT_FORMAT = CalendarBuilderService::IMAGE_JPG;
+    private string $outputFormat = self::DEFAULT_OUTPUT_FORMAT;
 
     /**
      * @return File
@@ -92,9 +97,9 @@ class Target extends BaseParameter
     /**
      * @return int
      */
-    public function getQuality(): int
+    public function getOutputQuality(): int
     {
-        return $this->quality;
+        return $this->outputQuality;
     }
 
     /**
@@ -102,23 +107,23 @@ class Target extends BaseParameter
      */
     private function setQuality(int $quality): void
     {
-        $this->quality = $quality;
+        $this->outputQuality = $quality;
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function getTransparency(): int
+    public function getOutputFormat(): string
     {
-        return $this->transparency;
+        return $this->outputFormat;
     }
 
     /**
-     * @param int $transparency
+     * @param string $outputFormat
      */
-    public function setTransparency(int $transparency): void
+    public function setOutputFormat(string $outputFormat): void
     {
-        $this->transparency = $transparency;
+        $this->outputFormat = $outputFormat;
     }
 
     /**
@@ -267,8 +272,8 @@ class Target extends BaseParameter
             Option::URL => $this->setUrl((string) $value),
             Option::COORDINATE => $this->setCoordinate((string) $value),
 
-            Option::QUALITY => $this->setQuality((int) $value),
-            Option::TRANSPARENCY => $this->setTransparency((int) $value),
+            Option::OUTPUT_QUALITY => $this->setQuality((int) $value),
+            Option::OUTPUT_FORMAT => $this->setOutputFormat((string) $value),
 
             default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
         };
@@ -307,8 +312,8 @@ class Target extends BaseParameter
         $this->setOptionFromParameter($input, Option::COORDINATE);
 
         /* Set calendar options. */
-        $this->setOptionFromParameter($input, Option::QUALITY);
-        $this->setOptionFromParameter($input, Option::TRANSPARENCY);
+        $this->setOptionFromParameter($input, Option::OUTPUT_QUALITY);
+        $this->setOptionFromParameter($input, Option::OUTPUT_FORMAT);
 
         /* Reset title and subtitle if the main calendar page is currently generated. */
         if ($this->getMonth() !== 0) {

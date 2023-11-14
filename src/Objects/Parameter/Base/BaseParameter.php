@@ -208,10 +208,13 @@ class BaseParameter
     protected function getConfigPath(string $name): array
     {
         return match ($name) {
+
+            /* Source options */
+            Option::SOURCE => ['pages', (string) $this->getPageNumber(), 'source'],
+
+            /* Target options */
             Option::YEAR => ['settings', 'defaults', 'year'],
             Option::MONTH => ['settings', 'defaults', 'month'],
-
-            Option::SOURCE => ['pages', (string) $this->getPageNumber(), 'source'],
             Option::TARGET => ['pages', (string) $this->getPageNumber(), 'target'],
             Option::PAGE_TITLE => ['pages', (string) $this->getPageNumber(), 'page-title'],
             Option::TITLE => ['pages', (string) $this->getPageNumber(), 'title'],
@@ -219,12 +222,16 @@ class BaseParameter
             Option::URL => ['pages', (string) $this->getPageNumber(), 'url'],
             Option::COORDINATE => ['pages', (string) $this->getPageNumber(), 'coordinate'],
 
-            Option::QUALITY => ['settings', 'output', 'quality'],
-            Option::TRANSPARENCY => ['settings', 'output', 'transparency'],
+            /* Output options */
+            Option::OUTPUT_QUALITY => ['settings', 'output', 'quality'],
+            Option::OUTPUT_FORMAT => ['settings', 'output', 'transparency'],
 
+            /* Design options (default) */
             Option::DESIGN_ENGINE_DEFAULT => ['settings', 'defaults', 'design', 'engine'],
             Option::DESIGN_TYPE_DEFAULT => ['settings', 'defaults', 'design', 'type'],
             Option::DESIGN_CONFIG_DEFAULT => ['settings', 'defaults', 'design', 'config'],
+
+            /* Design options (via page) */
             Option::DESIGN_ENGINE => ['pages', (string) $this->getPageNumber(), 'design', 'engine'],
             Option::DESIGN_TYPE => ['pages', (string) $this->getPageNumber(), 'design', 'type'],
             Option::DESIGN_CONFIG => ['pages', (string) $this->getPageNumber(), 'design', 'config'],
@@ -530,6 +537,92 @@ class BaseParameter
     }
 
     /**
+     * Returns the design engine.
+     *
+     * @return string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getDesignEngine(): string
+    {
+        $engine = match (true) {
+            $this->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getOptionFromConfig(Option::DESIGN_ENGINE),
+            $this->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
+            default => 'imagick',
+        };
+
+        if (!is_string($engine)) {
+            return 'imagick';
+        }
+
+        return $engine;
+    }
+
+    /**
+     * Returns the design type.
+     *
+     * @return string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getDesignType(): string
+    {
+        $type = match (true) {
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
+            default => Design::DEFAULT,
+        };
+
+        if (!is_string($type)) {
+            return Design::DEFAULT;
+        }
+
+        return $type;
+    }
+
+    /**
+     * Returns the design configuration.
+     *
+     * @return Json|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getDesignConfig(): Json|null
+    {
+        $designConfigSource = match (true) {
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
+            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
+            default => null,
+        };
+
+        $designConfig = match (true) {
+            is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
+            $this->hasOptionFromConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
+            default => null,
+        };
+
+        return match (true) {
+            is_array($designConfig) => new Json($designConfig),
+            default => null,
+        };
+    }
+
+    /**
      * Returns the image builder and the design according to the config.
      *
      * @return BaseImageBuilder
@@ -543,38 +636,9 @@ class BaseParameter
      */
     public function getImageBuilder(): BaseImageBuilder
     {
-        $designEngine = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getOptionFromConfig(Option::DESIGN_ENGINE),
-            $this->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
-            default => null,
-        };
-
-        $designType = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
-            default => null,
-        };
-
-        /* Use ImageMagickImageBuilder as default image builder and DesignDefault as default design. */
-        if (is_null($designEngine) || is_null($designType)) {
-            return new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), null);
-        }
-
-        $designConfigSource = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
-            default => null,
-        };
-
-        $designConfig = match (true) {
-            is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
-            $this->hasOptionFromConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
-            default => null,
-        };
-        $designConfigJson = match (true) {
-            is_array($designConfig) => new Json($designConfig),
-            default => null,
-        };
+        $designEngine = $this->getDesignEngine();
+        $designType = $this->getDesignType();
+        $designConfigJson = $this->getDesignConfig();
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {

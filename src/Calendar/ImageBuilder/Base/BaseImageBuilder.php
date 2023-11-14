@@ -102,14 +102,28 @@ abstract class BaseImageBuilder
 
     /**
      * @param KernelInterface $appKernel
-     * @param DesignBase $designHelper
+     * @param DesignBase $design
      * @param Json|null $config
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
-    public function __construct(protected KernelInterface $appKernel, protected DesignBase $designHelper, protected Json|null $config = null)
+    public function __construct(protected KernelInterface $appKernel, protected DesignBase $design, protected Json|null $config = null)
     {
-        $designHelper->setImageBuilder($this);
-        $designHelper->setAppKernel($appKernel);
-        $designHelper->setConfig($config);
+        $design->setImageBuilder($this);
+        $design->setAppKernel($appKernel);
+
+        if (!is_null($config)) {
+            $design->setConfig($config);
+        }
+    }
+
+    /**
+     * @return DesignBase
+     */
+    public function getDesign(): DesignBase
+    {
+        return $this->design;
     }
 
     /**
@@ -117,7 +131,7 @@ abstract class BaseImageBuilder
      */
     protected function doInit(): void
     {
-        $this->designHelper->doInit();
+        $this->design->doInit();
     }
 
     /**
@@ -127,7 +141,7 @@ abstract class BaseImageBuilder
      */
     protected function doBuild(): void
     {
-        $this->designHelper->doBuild();
+        $this->design->doBuild();
     }
 
     /**

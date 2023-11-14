@@ -22,10 +22,13 @@ namespace App\Constants\Parameter;
  */
 class Option
 {
+    /* Source options */
+    final public const SOURCE = 'source';
+
+    /* Target options */
     final public const MONTH = 'month';
     final public const YEAR = 'year';
 
-    final public const SOURCE = 'source';
     final public const TARGET = 'target';
     final public const PAGE_TITLE = 'page-title';
     final public const TITLE = 'title';
@@ -33,13 +36,16 @@ class Option
     final public const URL = 'url';
     final public const COORDINATE = 'coordinate';
 
-    final public const QUALITY = 'quality';
-    final public const TRANSPARENCY = 'transparency';
+    /* Output options */
+    final public const OUTPUT_FORMAT = 'format';
+    final public const OUTPUT_QUALITY = 'quality';
 
+    /* Design options (default) */
     final public const DESIGN_ENGINE = 'design-engine';
     final public const DESIGN_TYPE = 'design-type';
     final public const DESIGN_CONFIG = 'design-config';
 
+    /* Design options (via page) */
     final public const DESIGN_ENGINE_DEFAULT = 'design-engine-default';
     final public const DESIGN_TYPE_DEFAULT = 'design-type-default';
     final public const DESIGN_CONFIG_DEFAULT = 'design-config-default';

@@ -15,17 +15,11 @@ namespace App\Calendar\Design;
 
 use App\Calendar\Design\Base\DesignBase;
 use App\Constants\Color;
+use App\Constants\KeyJson;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
-use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
-use Ixnode\PhpException\Case\CaseInvalidException;
-use Ixnode\PhpException\File\FileNotFoundException;
-use Ixnode\PhpException\File\FileNotReadableException;
-use Ixnode\PhpException\Function\FunctionJsonEncodeException;
-use Ixnode\PhpException\Type\TypeInvalidException;
-use JsonException;
 use LogicException;
 
 /**
@@ -42,15 +36,30 @@ use LogicException;
 class DesignDefault extends DesignBase
 {
     /**
+     * Configures the default configuration for the current design.
+     *
+     * @inheritdoc
+     */
+    protected function configureDefaultConfiguration(): void
+    {
+        /* settings.defaults.design.config.calendar-background-color */
+        $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BACKGROUND_COLOR, [0, 0, 0]);
+
+        /* settings.defaults.design.config.calendar-background-transparency */
+        $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY, 60);
+
+        /* settings.defaults.design.config.image-vertical-align */
+        $this->addDefaultConfiguration(KeyJson::IMAGE_VERTICAL_ALIGN, 'top');
+    }
+
+    /**
      * Constants.
      */
     private const CALENDAR_BOX_BOTTOM_SIZE = 9/48;
 
-    protected const MAX_LENGTH_EVENT_CAPTION = 28;
+    private const MAX_LENGTH_EVENT_CAPTION = 28;
 
     private const MAX_LENGTH_ADD = '...';
-
-    private const DEFAULT_TRANSPARENCY = 60;
 
 
 
@@ -173,32 +182,6 @@ class DesignDefault extends DesignBase
         $this->addQrCode();
     }
 
-
-    /**
-     * Returns the transparency from given config.
-     *
-     * @return int
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
-     * @throws JsonException
-     */
-    protected function getTransparency(): int
-    {
-        if (is_null($this->config)) {
-            return self::DEFAULT_TRANSPARENCY;
-        }
-
-        if (!$this->config->hasKey('transparency')) {
-            return self::DEFAULT_TRANSPARENCY;
-        }
-
-        return $this->config->getKeyInteger('transparency');
-    }
-
     /**
      * Create the colors and save the integer values to color.
      *
@@ -208,11 +191,11 @@ class DesignDefault extends DesignBase
     {
         $this->imageBuilder->resetColors();
         $this->imageBuilder->createColor(Color::BLACK, 0, 0, 0);
-        $this->imageBuilder->createColor(Color::BLACK_TRANSPARENCY, 0, 0, 0, $this->getTransparency());
+        $this->imageBuilder->createColor(Color::BLACK_TRANSPARENCY, 0, 0, 0, $this->getConfigurationValueInteger(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY));
         $this->imageBuilder->createColor(Color::RED, 255, 0, 0);
-        $this->imageBuilder->createColor(Color::RED_TRANSPARENCY, 255, 0, 0, $this->getTransparency());
+        $this->imageBuilder->createColor(Color::RED_TRANSPARENCY, 255, 0, 0, $this->getConfigurationValueInteger(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY));
         $this->imageBuilder->createColor(Color::WHITE, 255, 255, 255);
-        $this->imageBuilder->createColor(Color::WHITE_TRANSPARENCY, 255, 255, 255, $this->getTransparency());
+        $this->imageBuilder->createColor(Color::WHITE_TRANSPARENCY, 255, 255, 255, $this->getConfigurationValueInteger(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY));
     }
 
     /**

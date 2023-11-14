@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Command\Calendar;
 
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use App\Objects\Image\Image;
@@ -65,8 +66,8 @@ class PageBuildCommand extends Command
      */
     public function __construct(
         private readonly CalendarBuilderService $calendarBuilderService,
-        private readonly Source                 $source,
-        private readonly Target                 $target
+        private readonly Source $source,
+        private readonly Target $target
     )
     {
         parent::__construct();
@@ -87,8 +88,8 @@ class PageBuildCommand extends Command
             ->addOption(Option::URL, null, InputOption::VALUE_REQUIRED, 'The url of the page.', Target::DEFAULT_SUBTITLE)
             ->addOption(Option::COORDINATE, null, InputOption::VALUE_REQUIRED, 'The position/coordinate of the picture.', Target::DEFAULT_COORDINATE)
 
-            ->addOption(Option::QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_QUALITY)
-            ->addOption(Option::TRANSPARENCY, null, InputOption::VALUE_REQUIRED, 'The output transparency.', Target::DEFAULT_TRANSPARENCY)
+            ->addOption(Option::OUTPUT_FORMAT, null, InputOption::VALUE_REQUIRED, 'The output format.', Target::DEFAULT_OUTPUT_FORMAT)
+            ->addOption(Option::OUTPUT_QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_OUTPUT_QUALITY)
 
             ->addArgument(Argument::SOURCE, InputArgument::REQUIRED, 'The path to the source image.')
             ->setHelp(
@@ -103,17 +104,18 @@ EOT
     /**
      * Prints the parameter to screen.
      *
+     * @param BaseImageBuilder $imageBuilder
      * @return void
-     * @throws CaseUnsupportedException
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws CaseUnsupportedException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
      * @throws JsonException
+     * @throws TypeInvalidException
      */
-    private function printParameter(): void
+    private function printParameter(BaseImageBuilder $imageBuilder): void
     {
         $this->output->writeln([
             '',
@@ -141,8 +143,17 @@ EOT
         $this->output->writeln(sprintf('URL:             %s', $this->target->getUrl($this->source->getIdentification())));
         $this->output->writeln(sprintf('Coordinate:      %s', $this->target->getCoordinate()));
         $this->output->writeln('');
-        $this->output->writeln(sprintf('Quality:         %s', $this->target->getQuality()));
-        $this->output->writeln(sprintf('Transparency:    %s', $this->target->getTransparency()));
+
+        $this->output->writeln('Output');
+        $this->output->writeln('------');
+        $this->output->writeln(sprintf('Format:          %s', $this->target->getOutputFormat()));
+        $this->output->writeln(sprintf('Quality:         %s', $this->target->getOutputQuality()));
+        $this->output->writeln('');
+
+        $this->output->writeln('Config (JSON)');
+        $this->output->writeln('-------------');
+        $this->output->writeln(sprintf('%s', $imageBuilder->getDesign()->getConfig()->getJsonStringFormatted()));
+        $this->output->writeln('-------------');
     }
 
     /**
@@ -208,15 +219,18 @@ EOT
         /* Read arguments (Target). */
         $this->target->readParameter($input, $this->source->getConfig());
 
+        /* Get image builder. */
+        $imageBuilder = $this->source->getImageBuilder();
+
         /* Print details */
-        $this->printParameter();
+        $this->printParameter($imageBuilder);
         $this->printWaitScreen();
 
         /* Initialize calendar image */
         $this->calendarBuilderService->init(
             parameterSource: $this->source,
             parameterTarget: $this->target,
-            imageBuilder: $this->source->getImageBuilder()
+            imageBuilder: $imageBuilder
         );
 
         /* Create calendar image */

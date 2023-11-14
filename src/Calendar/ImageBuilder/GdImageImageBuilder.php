@@ -319,7 +319,7 @@ class GdImageImageBuilder extends BaseImageBuilder
         }
 
         match ($extension) {
-            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->getImageTarget(), $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getQuality()),
+            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->getImageTarget(), $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getOutputQuality()),
             CalendarBuilderServiceConstants::IMAGE_PNG => imagepng($this->getImageTarget(), $this->pathTargetAbsolute),
             default => throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension)),
         };

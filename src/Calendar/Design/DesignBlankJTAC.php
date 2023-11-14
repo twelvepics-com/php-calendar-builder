@@ -30,12 +30,18 @@ use Exception;
 class DesignBlankJTAC extends DesignBase
 {
     /**
+     * Configures the configuration for the current design.
+     *
+     * @inheritdoc
+     */
+    protected function configureDefaultConfiguration(): void
+    {
+    }
+
+    /**
      * Calculated values (by zoom).
      */
-
     protected int $fontSizeImage = 400;
-
-
 
     /**
      * Do the main init for XXXBlankJTAC.php

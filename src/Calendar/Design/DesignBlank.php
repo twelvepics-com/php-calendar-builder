@@ -27,6 +27,15 @@ use App\Calendar\Design\Base\DesignBase;
 class DesignBlank extends DesignBase
 {
     /**
+     * Configures the configuration for the current design.
+     *
+     * @inheritdoc
+     */
+    protected function configureDefaultConfiguration(): void
+    {
+    }
+
+    /**
      * Do the main init for XXXDefault.php
      *
      * @inheritdoc 

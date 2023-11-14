@@ -31,11 +31,18 @@ use Exception;
 class DesignDefaultJTAC extends DesignDefault
 {
     /**
+     * Configures the configuration for the current design.
+     *
+     * @inheritdoc
+     */
+    protected function configureDefaultConfiguration(): void
+    {
+    }
+
+    /**
      * Calculated values (by zoom).
      */
     protected int $fontSizeImage = 400;
-
-
 
     /**
      * Do the main init for XXXDefault.php
@@ -48,8 +55,6 @@ class DesignDefaultJTAC extends DesignDefault
 
         $this->fontSizeImage = $this->imageBuilder->getSize($this->fontSizeImage);
     }
-
-
 
     /**
      * Create the colors and save the integer values to color.
