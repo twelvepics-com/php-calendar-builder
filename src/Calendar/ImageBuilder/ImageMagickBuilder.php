@@ -11,9 +11,9 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\ImageMagick\Base;
+namespace App\Calendar\ImageBuilder;
 
-use App\Calendar\Design\Base\DesignBase;
+use App\Calendar\ImageBuilder\Base\BaseBuilder;
 use App\Constants\Color;
 use App\Objects\Image\Image;
 use Exception;
@@ -27,13 +27,13 @@ use JetBrains\PhpStorm\ArrayShape;
 use LogicException;
 
 /**
- * Abstract class ImageMagickBase
+ * Class ImageMagickBase
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-13)
  * @since 0.1.0 (2023-11-13) First version.
  */
-abstract class ImageMagickBase extends DesignBase
+class ImageMagickBuilder extends BaseBuilder
 {
     private const GD_IMAGE_TO_IMAGICK_CORRECTION = 1 + 1/3;
 

@@ -11,9 +11,9 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\Helper;
+namespace App\Calendar\Design;
 
-use App\Calendar\Design\Helper\Base\DesignHelperBase;
+use App\Calendar\Design\Base\DesignBase;
 use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use chillerlan\QRCode\QRCode;
@@ -39,7 +39,7 @@ use LogicException;
  * @SuppressWarnings(PHPMD.TooManyFields)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class DesignDefault extends DesignHelperBase
+class DesignDefault extends DesignBase
 {
     /**
      * Constants.

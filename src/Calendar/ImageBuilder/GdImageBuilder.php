@@ -11,10 +11,9 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage\Base;
+namespace App\Calendar\ImageBuilder;
 
-use App\Calendar\Design\Base\DesignBase;
-use App\Constants\Color;
+use App\Calendar\ImageBuilder\Base\BaseBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use Exception;
@@ -23,7 +22,7 @@ use JetBrains\PhpStorm\ArrayShape;
 use LogicException;
 
 /**
- * Abstract class GdImageBase
+ * Class GdImageBuilder
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-09)
@@ -33,7 +32,7 @@ use LogicException;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-abstract class GdImageBase extends DesignBase
+class GdImageBuilder extends BaseBuilder
 {
     /**
      * Returns image properties from given image.
