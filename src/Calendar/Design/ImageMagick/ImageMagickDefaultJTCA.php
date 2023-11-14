@@ -11,27 +11,25 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage;
+namespace App\Calendar\Design\ImageMagick;
 
-use App\Calendar\Design\GdImage\Base\GdImageBase;
 use App\Calendar\Design\Helper\Base\DesignHelperBase;
-use App\Calendar\Design\Helper\DesignDefault;
+use App\Calendar\Design\Helper\DesignDefaultJTAC;
+use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
 use Exception;
 use Ixnode\PhpContainer\Json;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * Class GdImageDefault
+ * Class ImageMagickDefaultJTCA
  *
  * Creates the default calendar design.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-11-09)
- * @since 0.1.0 (2023-11-09) First version.
- * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @version 0.1.0 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  */
-class GdImageDefault extends GdImageBase
+class ImageMagickDefaultJTCA extends ImageMagickBase
 {
     protected DesignHelperBase $designHelper;
 
@@ -41,7 +39,7 @@ class GdImageDefault extends GdImageBase
      */
     public function __construct(protected KernelInterface $appKernel, protected Json|null $config = null)
     {
-        $this->designHelper = new DesignDefault($this, $appKernel, $config);
+        $this->designHelper = new DesignDefaultJTAC($this, $appKernel, $config);
 
         parent::__construct($appKernel, $config);
     }

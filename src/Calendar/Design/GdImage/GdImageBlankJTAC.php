@@ -64,7 +64,18 @@ class GdImageBlankJTAC extends GdImageBase
         $this->createColors();
 
         /* Add the main image */
-        $this->addImage();
+        $this->addImage(0, 0, $this->widthTarget, $this->heightTarget);
+
+        $xCenterCalendar = intval(round($this->widthTarget / 2));
+        $yCenterCalendar = intval(round($this->heightTarget / 2));
+        $this->initXY($xCenterCalendar, $yCenterCalendar);
+
+        $this->addText(
+            $this->calendarBuilderService->getParameterTarget()->getPageTitle(),
+            $this->fontSizeImage,
+            'white',
+            align: CalendarBuilderServiceConstants::ALIGN_CENTER
+        );
     }
 
 
@@ -78,26 +89,5 @@ class GdImageBlankJTAC extends GdImageBase
     {
         $this->createColor(Color::WHITE, 255, 255, 255);
         $this->createColorFromConfig('custom', 'color');
-    }
-
-    /**
-     * Add image
-     * @throws Exception
-     */
-    protected function addImage(): void
-    {
-        /* Add calendar area (rectangle) */
-        imagefilledrectangle($this->getImageTarget(), 0, 0, $this->widthTarget, $this->heightTarget, $this->getColor('custom'));
-
-        $xCenterCalendar = intval(round($this->widthTarget / 2));
-        $yCenterCalendar = intval(round($this->heightTarget / 2));
-        $this->initXY($xCenterCalendar, $yCenterCalendar);
-
-        $this->addText(
-            $this->calendarBuilderService->getParameterTarget()->getPageTitle(),
-            $this->fontSizeImage,
-            'white',
-            align: CalendarBuilderServiceConstants::ALIGN_CENTER
-        );
     }
 }

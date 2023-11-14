@@ -152,7 +152,7 @@ abstract class GdImageBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
+    public function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
     {
         $color = match(true) {
             $alpha === null => imagecolorallocate($this->getImageTarget(), $red, $green, $blue),
@@ -172,7 +172,7 @@ abstract class GdImageBase extends DesignBase
      * @param string $keyColor
      * @return int
      */
-    protected function getColor(string $keyColor): int
+    public function getColor(string $keyColor): int
     {
         if (!array_key_exists($keyColor, $this->colors)) {
             throw new LogicException(sprintf('Color "%s" is not defined.', $keyColor));
@@ -192,7 +192,7 @@ abstract class GdImageBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function getAngle(int $angle): int
+    public function getAngle(int $angle): int
     {
         return $angle;
     }
@@ -208,7 +208,7 @@ abstract class GdImageBase extends DesignBase
      * @param int $angle
      * @return void
      */
-    protected function addTextRaw(
+    public function addTextRaw(
         string $text,
         int $fontSize,
         string $keyColor,
@@ -225,26 +225,85 @@ abstract class GdImageBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void
+    public function drawLine(int $xPosition1, int $yPosition1, int $xPosition2, int $yPosition2, string $keyColor): void
     {
-        imageline($this->getImageTarget(), $x1, $y1, $x2, $y2, $this->getColor($keyColor));
+        imageline($this->getImageTarget(), $xPosition1, $yPosition1, $xPosition2, $yPosition2, $this->getColor($keyColor));
+    }
+
+    /**
+     * Add bottom calendar box.
+     *
+     * @inheritdoc
+     */
+    public function addRectangle(int $xPosition, int $yPosition, int $width, int $height, string $keyColor): void
+    {
+        /* Add calendar area (rectangle) */
+        imagefilledrectangle($this->getImageTarget(), $xPosition, $yPosition, $width, $height, $this->getColor($keyColor));
     }
 
     /**
      * Add image.
      *
+     * @param int $xPosition
+     * @param int $yPosition
+     * @param int $width
+     * @param int $height
      * @inheritdoc
      */
-    protected function addImage(): void
+    public function addImage(int $xPosition, int $yPosition, int $width, int $height): void
     {
         imagecopyresampled(
             $this->getImageTarget(),
             $this->getImageSource(),
+            $xPosition, $yPosition,
             0, 0,
-            0, 0,
-            $this->widthTarget, $this->heightTarget,
+            $width, $height,
             $this->widthSource, $this->heightSource
         );
+    }
+
+    /**
+     * Add image from blob.
+     *
+     * @inheritdoc
+     * @throws Exception
+     */
+    public function addImageBlob(string $blob, int $xPosition, int $yPosition, int $width, int $height, array $backgroundColor): void
+    {
+        /* Create GDImage from blob */
+        $imageQrCode = imagecreatefromstring($blob);
+
+        /* Check creating image. */
+        if ($imageQrCode === false) {
+            throw new Exception(sprintf('An error occurred while creating GDImage from blob (%s:%d)', __FILE__, __LINE__));
+        }
+
+        /* Get height from $imageQrCode */
+        $widthQrCode  = imagesx($imageQrCode);
+        $heightQrCode = imagesy($imageQrCode);
+
+        /* Create transparent color */
+        $transparentColor = imagecolorexact($imageQrCode, $backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+
+        /* Set background color to transparent */
+        imagecolortransparent($imageQrCode, $transparentColor);
+
+        /* Add a dynamically generated qr image to the main image */
+        imagecopyresized(
+            $this->getImageTarget(),
+            $imageQrCode,
+            $xPosition,
+            $yPosition,
+            0,
+            0,
+            $width,
+            $height,
+            $widthQrCode,
+            $heightQrCode
+        );
+
+        /* Destroy image. */
+        imagedestroy($imageQrCode);
     }
 
     /**
@@ -284,7 +343,7 @@ abstract class GdImageBase extends DesignBase
      *
      * @return GdImage
      */
-    protected function getImageTarget(): GdImage
+    public function getImageTarget(): GdImage
     {
         if (!$this->imageTarget instanceof GdImage) {
             throw new LogicException('$this->imageTarget must be an instance of GdImage');
@@ -298,7 +357,7 @@ abstract class GdImageBase extends DesignBase
      *
      * @return GdImage
      */
-    protected function getImageSource(): GdImage
+    public function getImageSource(): GdImage
     {
         if (!$this->imageSource instanceof GdImage) {
             throw new LogicException('$this->imageSource must be an instance of GdImage');

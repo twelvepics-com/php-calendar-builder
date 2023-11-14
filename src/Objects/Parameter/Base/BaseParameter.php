@@ -17,10 +17,11 @@ use App\Calendar\Design\Base\DesignBase;
 use App\Calendar\Design\GdImage\GdImageBlank;
 use App\Calendar\Design\GdImage\GdImageBlankJTAC;
 use App\Calendar\Design\GdImage\GdImageDefault;
-use App\Calendar\Design\GdImage\DesignDefaultJTAC;
+use App\Calendar\Design\GdImage\GdImageDefaultJTAC;
 use App\Calendar\Design\ImageMagick\ImageMagickBlank;
 use App\Calendar\Design\ImageMagick\ImageMagickBlankJTAC;
 use App\Calendar\Design\ImageMagick\ImageMagickDefault;
+use App\Calendar\Design\ImageMagick\ImageMagickDefaultJTCA;
 use App\Constants\Design;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
@@ -579,16 +580,17 @@ class BaseParameter
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
-                Design::DEFAULT => new GdImageDefault($this->appKernel, $designConfigJson),
-                Design::DEFAULT_JTAC => new DesignDefaultJTAC($this->appKernel, $designConfigJson),
                 Design::BLANK => new GdImageBlank($this->appKernel, $designConfigJson),
                 Design::BLANK_JTAC => new GdImageBlankJTAC($this->appKernel, $designConfigJson),
+                Design::DEFAULT => new GdImageDefault($this->appKernel, $designConfigJson),
+                Design::DEFAULT_JTAC => new GdImageDefaultJTAC($this->appKernel, $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             'imagick' => match ($designType) {
-                Design::DEFAULT => new ImageMagickDefault($this->appKernel, $designConfigJson),
                 Design::BLANK => new ImageMagickBlank($this->appKernel, $designConfigJson),
                 Design::BLANK_JTAC => new ImageMagickBlankJTAC($this->appKernel, $designConfigJson),
+                Design::DEFAULT => new ImageMagickDefault($this->appKernel, $designConfigJson),
+                Design::DEFAULT_JTAC => new ImageMagickDefaultJTCA($this->appKernel, $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),

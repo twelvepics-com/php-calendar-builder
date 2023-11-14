@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\ImageMagick;
 
+use App\Calendar\Design\Helper\Base\DesignHelperBase;
+use App\Calendar\Design\Helper\DesignBlankJTAC;
 use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
-use App\Constants\Color;
-use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
-use ImagickDraw;
-use ImagickPixel;
+use Ixnode\PhpContainer\Json;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class ImageMagickBlankJTAC
@@ -31,28 +31,26 @@ use ImagickPixel;
  */
 class ImageMagickBlankJTAC extends ImageMagickBase
 {
-    /**
-     * Calculated values (by zoom).
-     */
-
-    protected int $fontSizeImage = 400;
-
-
+    protected DesignHelperBase $designHelper;
 
     /**
-     * Class cached values.
+     * @param KernelInterface $appKernel
+     * @param Json|null $config
      */
-    protected string $pathFont;
+    public function __construct(protected KernelInterface $appKernel, protected Json|null $config = null)
+    {
+        $this->designHelper = new DesignBlankJTAC($this, $appKernel, $config);
 
-
+        parent::__construct($appKernel, $config);
+    }
 
     /**
      * @inheritdoc
+     * @throws Exception
      */
     public function doInit(): void
     {
-        /* Calculate sizes */
-        $this->fontSizeImage = $this->getSize($this->fontSizeImage);
+        $this->designHelper->doInit();
     }
 
     /**
@@ -60,47 +58,6 @@ class ImageMagickBlankJTAC extends ImageMagickBase
      */
     public function doBuild(): void
     {
-        /* Creates some needed colors. */
-        $this->createColors();
-
-        /* Add the main image */
-        $this->addImage();
-    }
-
-
-
-    /**
-     * Create the colors and save the integer values to color.
-     *
-     * @throws Exception
-     */
-    protected function createColors(): void
-    {
-        $this->createColor(Color::WHITE, 255, 255, 255);
-        $this->createColorFromConfig('custom', 'color');
-    }
-
-    /**
-     * Add image
-     * @throws Exception
-     */
-    protected function addImage(): void
-    {
-        /* Add fullscreen rectangle to image. */
-        $draw = new ImagickDraw();
-        $draw->setFillColor(new ImagickPixel($this->getColor(Color::CUSTOM)));
-        $draw->rectangle(0, 0, $this->getImageTarget()->getImageWidth(), $this->getImageTarget()->getImageHeight());
-        $this->getImageTarget()->drawImage($draw);
-
-        $xCenterCalendar = intval(round($this->widthTarget / 2));
-        $yCenterCalendar = intval(round($this->heightTarget / 2));
-        $this->initXY($xCenterCalendar, $yCenterCalendar);
-
-        $this->addText(
-            $this->calendarBuilderService->getParameterTarget()->getPageTitle(),
-            $this->fontSizeImage,
-            Color::WHITE,
-            align: CalendarBuilderServiceConstants::ALIGN_CENTER
-        );
+        $this->designHelper->doBuild();
     }
 }

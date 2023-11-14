@@ -13,7 +13,12 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\ImageMagick;
 
+use App\Calendar\Design\Helper\Base\DesignHelperBase;
+use App\Calendar\Design\Helper\DesignBlank;
 use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
+use Exception;
+use Ixnode\PhpContainer\Json;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class ImageMagickBlank
@@ -26,11 +31,26 @@ use App\Calendar\Design\ImageMagick\Base\ImageMagickBase;
  */
 class ImageMagickBlank extends ImageMagickBase
 {
+    protected DesignHelperBase $designHelper;
+
+    /**
+     * @param KernelInterface $appKernel
+     * @param Json|null $config
+     */
+    public function __construct(protected KernelInterface $appKernel, protected Json|null $config = null)
+    {
+        $this->designHelper = new DesignBlank($this, $appKernel, $config);
+
+        parent::__construct($appKernel, $config);
+    }
+
     /**
      * @inheritdoc
+     * @throws Exception
      */
     public function doInit(): void
     {
+        $this->designHelper->doInit();
     }
 
     /**
@@ -38,7 +58,6 @@ class ImageMagickBlank extends ImageMagickBase
      */
     public function doBuild(): void
     {
-        /* Add the main image */
-        $this->addImage();
+        $this->designHelper->doBuild();
     }
 }

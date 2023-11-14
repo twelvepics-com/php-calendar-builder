@@ -41,6 +41,8 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-13)
  * @since 0.1.0 (2023-11-13) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 abstract class DesignBase
 {
@@ -282,10 +284,26 @@ abstract class DesignBase
      * @param int $positionX
      * @param int $positionY
      */
-    protected function initXY(int $positionX = 0, int $positionY = 0): void
+    public function initXY(int $positionX = 0, int $positionY = 0): void
     {
         $this->positionX = $positionX;
         $this->positionY = $positionY;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPositionX(): int
+    {
+        return $this->positionX;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPositionY(): int
+    {
+        return $this->positionY;
     }
 
     /**
@@ -293,7 +311,7 @@ abstract class DesignBase
      *
      * @param int $positionX
      */
-    protected function setPositionX(int $positionX): void
+    public function setPositionX(int $positionX): void
     {
         $this->positionX = $positionX;
     }
@@ -303,7 +321,7 @@ abstract class DesignBase
      *
      * @param int $positionY
      */
-    protected function setPositionY(int $positionY): void
+    public function setPositionY(int $positionY): void
     {
         $this->positionY = $positionY;
     }
@@ -313,7 +331,7 @@ abstract class DesignBase
      *
      * @param int $positionX
      */
-    protected function addX(int $positionX): void
+    public function addX(int $positionX): void
     {
         $this->positionX += $positionX;
     }
@@ -323,9 +341,29 @@ abstract class DesignBase
      *
      * @param int $positionY
      */
-    protected function addY(int $positionY): void
+    public function addY(int $positionY): void
     {
         $this->positionY += $positionY;
+    }
+
+    /**
+     * Remove x position.
+     *
+     * @param int $positionX
+     */
+    public function removeX(int $positionX): void
+    {
+        $this->positionX -= $positionX;
+    }
+
+    /**
+     * Remove y position.
+     *
+     * @param int $positionY
+     */
+    public function removeY(int $positionY): void
+    {
+        $this->positionY -= $positionY;
     }
 
     /**
@@ -334,7 +372,7 @@ abstract class DesignBase
      * @param int $size
      * @return int
      */
-    protected function getSize(int $size): int
+    public function getSize(int $size): int
     {
         return intval(round($size * $this->zoomTarget));
     }
@@ -401,14 +439,14 @@ abstract class DesignBase
      * @return void
      * @throws Exception
      */
-    abstract protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void;
+    abstract public function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void;
 
     /**
      * Resets the color array.
      *
      * @return void
      */
-    protected function resetColors(): void
+    public function resetColors(): void
     {
         $this->colors = [];
     }
@@ -419,7 +457,7 @@ abstract class DesignBase
      * @param string $keyColor
      * @return int|string
      */
-    abstract protected function getColor(string $keyColor): int|string;
+    abstract public function getColor(string $keyColor): int|string;
 
     /**
      * Creates color from given config.
@@ -436,7 +474,7 @@ abstract class DesignBase
      * @throws TypeInvalidException
      * @throws Exception
      */
-    protected function createColorFromConfig(string $keyColor, string $keyConfig): void
+    public function createColorFromConfig(string $keyColor, string $keyConfig): void
     {
         $color = null;
 
@@ -469,7 +507,7 @@ abstract class DesignBase
      * @param int $angle
      * @return int
      */
-    abstract protected function getAngle(int $angle): int;
+    abstract public function getAngle(int $angle): int;
 
     /**
      * Add raw text.
@@ -482,7 +520,7 @@ abstract class DesignBase
      * @param int $angle
      * @return void
      */
-    abstract protected function addTextRaw(string $text, int $fontSize, string $keyColor, int $positionX, int $positionY, int $angle = 0): void;
+    abstract public function addTextRaw(string $text, int $fontSize, string $keyColor, int $positionX, int $positionY, int $angle = 0): void;
 
     /**
      * Add text.
@@ -498,7 +536,7 @@ abstract class DesignBase
      * @throws Exception
      */
     #[ArrayShape(['width' => "int", 'height' => "int"])]
-    protected function addText(
+    public function addText(
         string $text,
         int $fontSize,
         string $keyColor = null,
@@ -539,21 +577,43 @@ abstract class DesignBase
     /**
      * Draws a line.
      *
-     * @param int $x1
-     * @param int $y1
-     * @param int $x2
-     * @param int $y2
+     * @param int $xPosition1
+     * @param int $yPosition1
+     * @param int $xPosition2
+     * @param int $yPosition2
      * @param string $keyColor
      * @return void
      */
-    abstract protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void;
+    abstract public function drawLine(int $xPosition1, int $yPosition1, int $xPosition2, int $yPosition2, string $keyColor): void;
+
+    /**
+     * Add bottom calendar box.
+     */
+    abstract public function addRectangle(int $xPosition, int $yPosition, int $width, int $height, string $keyColor): void;
 
     /**
      * Add image.
      *
+     * @param int $xPosition
+     * @param int $yPosition
+     * @param int $width
+     * @param int $height
      * @return void
      */
-    abstract protected function addImage(): void;
+    abstract public function addImage(int $xPosition, int $yPosition, int $width, int $height): void;
+
+    /**
+     * Add image from blob.
+     *
+     * @param string $blob
+     * @param int $xPosition
+     * @param int $yPosition
+     * @param int $width
+     * @param int $height
+     * @param int[] $backgroundColor
+     * @return void
+     */
+    abstract public function addImageBlob(string $blob, int $xPosition, int $yPosition, int $width, int $height, array $backgroundColor): void;
 
     /**
      * Writes target image.
@@ -570,12 +630,52 @@ abstract class DesignBase
     abstract protected function destroyImages(): void;
 
     /**
-     * @return GdImage|Imagick
+     * @return CalendarBuilderService
      */
-    abstract protected function getImageTarget(): Imagick|GdImage;
+    public function getCalendarBuilderService(): CalendarBuilderService
+    {
+        return $this->calendarBuilderService;
+    }
 
     /**
      * @return GdImage|Imagick
      */
-    abstract protected function getImageSource(): Imagick|GdImage;
+    abstract public function getImageTarget(): Imagick|GdImage;
+
+    /**
+     * @return GdImage|Imagick
+     */
+    abstract public function getImageSource(): Imagick|GdImage;
+
+    /**
+     * @return int
+     */
+    public function getWidthTarget(): int
+    {
+        return $this->widthTarget;
+    }
+
+    /**
+     * @return int
+     */
+    public function getHeightTarget(): int
+    {
+        return $this->heightTarget;
+    }
+
+    /**
+     * @return int
+     */
+    public function getWidthSource(): int
+    {
+        return $this->widthSource;
+    }
+
+    /**
+     * @return int
+     */
+    public function getHeightSource(): int
+    {
+        return $this->heightSource;
+    }
 }

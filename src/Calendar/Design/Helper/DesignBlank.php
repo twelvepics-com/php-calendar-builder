@@ -11,36 +11,38 @@
 
 declare(strict_types=1);
 
-namespace App\Calendar\Design\GdImage;
+namespace App\Calendar\Design\Helper;
 
-use App\Calendar\Design\GdImage\Base\GdImageBase;
+use App\Calendar\Design\Helper\Base\DesignHelperBase;
 
 /**
  * Class DesignBlank
  *
- * Creates the blank calendar design.
+ * Creates the blank calendar design. Shared between GdImage and Imagick libraries.
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-11-10)
- * @since 0.1.0 (2023-11-10) First version.
- * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @version 0.1.0 (2023-11-13)
+ * @since 0.1.0 (2023-11-13) First version.
  */
-class GdImageBlank extends GdImageBase
+class DesignBlank extends DesignHelperBase
 {
     /**
-     * @inheritdoc
+     * Do the main init for XXXDefault.php
+     *
+     * @inheritdoc 
      */
     public function doInit(): void
     {
     }
 
     /**
+     * Do the main build for XXXDefault.php
+     *
      * @inheritdoc
      */
     public function doBuild(): void
     {
         /* Add the main image */
-        $this->addImage(0, 0, $this->widthTarget, $this->heightTarget);
+        $this->designBase->addImage(0, 0, $this->designBase->getWidthTarget(), $this->designBase->getHeightTarget());
     }
 }

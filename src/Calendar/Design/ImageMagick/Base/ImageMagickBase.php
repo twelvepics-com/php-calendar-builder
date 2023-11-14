@@ -135,7 +135,7 @@ abstract class ImageMagickBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
+    public function createColor(string $keyColor, int $red, int $green, int $blue, ?int $alpha = null): void
     {
         $this->colors[$keyColor] = match (!is_null($alpha)) {
             true => sprintf('rgba(%d, %d, %d, %.2f)', $red, $green, $blue, $alpha / 100),
@@ -149,7 +149,7 @@ abstract class ImageMagickBase extends DesignBase
      * @param string $keyColor
      * @return string
      */
-    protected function getColor(string $keyColor): string
+    public function getColor(string $keyColor): string
     {
         if (!array_key_exists($keyColor, $this->colors)) {
             throw new LogicException(sprintf('Color "%s" is not defined.', $keyColor));
@@ -169,7 +169,7 @@ abstract class ImageMagickBase extends DesignBase
      *
      * @inheritdoc
      */
-    protected function getAngle(int $angle): int
+    public function getAngle(int $angle): int
     {
         return 360 - $angle;
     }
@@ -188,7 +188,7 @@ abstract class ImageMagickBase extends DesignBase
      * @throws ImagickDrawException
      * @throws ImagickPixelException
      */
-    protected function addTextRaw(
+    public function addTextRaw(
         string $text,
         int $fontSize,
         string $keyColor,
@@ -215,12 +215,29 @@ abstract class ImageMagickBase extends DesignBase
      * @throws ImagickPixelException
      * @throws ImagickException
      */
-    protected function drawLine(int $x1, int $y1, int $x2, int $y2, string $keyColor): void
+    public function drawLine(int $xPosition1, int $yPosition1, int $xPosition2, int $yPosition2, string $keyColor): void
     {
         $draw = new ImagickDraw();
         $draw->setStrokeColor(new ImagickPixel($this->getColor($keyColor)));
-        $draw->line($x1, $y1, $x2, $y2);
+        $draw->line($xPosition1, $yPosition1, $xPosition2, $yPosition2);
 
+        $this->getImageTarget()->drawImage($draw);
+    }
+
+    /**
+     * Add bottom calendar box.
+     *
+     * @inheritdoc
+     * @throws ImagickDrawException
+     * @throws ImagickPixelException
+     * @throws ImagickException
+     */
+    public function addRectangle(int $xPosition, int $yPosition, int $width, int $height, string $keyColor): void
+    {
+        /* Add fullscreen rectangle to image. */
+        $draw = new ImagickDraw();
+        $draw->setFillColor(new ImagickPixel($this->getColor($keyColor)));
+        $draw->rectangle($xPosition, $yPosition, $width, $height);
         $this->getImageTarget()->drawImage($draw);
     }
 
@@ -230,18 +247,58 @@ abstract class ImageMagickBase extends DesignBase
      * @inheritdoc
      * @throws ImagickException
      */
-    protected function addImage(): void
+    public function addImage(int $xPosition, int $yPosition, int $width, int $height): void
     {
         $source = clone $this->getImageSource();
 
-        $source->scaleImage($this->getImageTarget()->getImageWidth(), $this->getImageTarget()->getImageHeight());
+        $source->scaleImage($width, $height);
 
         $this->getImageTarget()->compositeImage(
             $source,
             Imagick::COMPOSITE_OVER,
-            0,
-            0
+            $xPosition,
+            $yPosition
         );
+    }
+
+    /**
+     * Add image from blob.
+     *
+     * @inheritdoc
+     * @throws ImagickException
+     * @throws ImagickPixelException
+     * @throws Exception
+     */
+    public function addImageBlob(string $blob, int $xPosition, int $yPosition, int $width, int $height, array $backgroundColor): void
+    {
+        /* Set background color */
+        $backgroundColor = sprintf('rgb(%d, %d, %d)', $backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+
+        /* Create Imagick from blob */
+        $imageQrCode = new Imagick();
+        $result = $imageQrCode->readImageBlob($blob);
+
+        /* Check creating image. */
+        if ($result === false) {
+            throw new Exception('An error occurred while creating Imagick from blob');
+        }
+
+        $transparentColor = new ImagickPixel($backgroundColor);
+
+        $imageQrCode->transparentPaintImage($transparentColor, 0, 0, false);
+        $imageQrCode->resizeImage($width, $height, Imagick::FILTER_LANCZOS, 1);
+
+        $this->getImageTarget()->compositeImage(
+            $imageQrCode,
+            Imagick::COMPOSITE_DEFAULT,
+            $xPosition,
+            $yPosition
+        );
+        $this->getImageTarget()->setImageBackgroundColor($backgroundColor);
+        $this->getImageTarget()->setImageAlphaChannel(Imagick::ALPHACHANNEL_REMOVE);
+
+        /* Destroy image. */
+        $imageQrCode->destroy();
     }
 
     /**
@@ -272,7 +329,7 @@ abstract class ImageMagickBase extends DesignBase
      *
      * @return Imagick
      */
-    protected function getImageTarget(): Imagick
+    public function getImageTarget(): Imagick
     {
         if (!$this->imageTarget instanceof Imagick) {
             throw new LogicException('$this->imageTarget must be an instance of Imagick');
@@ -286,7 +343,7 @@ abstract class ImageMagickBase extends DesignBase
      *
      * @return Imagick
      */
-    protected function getImageSource(): Imagick
+    public function getImageSource(): Imagick
     {
         if (!$this->imageSource instanceof Imagick) {
             throw new LogicException('$this->imageSource must be an instance of Imagick');
