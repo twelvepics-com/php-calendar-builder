@@ -17,9 +17,9 @@ use App\Calendar\Design\DesignBlank;
 use App\Calendar\Design\DesignBlankJTAC;
 use App\Calendar\Design\DesignDefault;
 use App\Calendar\Design\DesignDefaultJTAC;
-use App\Calendar\ImageBuilder\Base\BaseBuilder;
-use App\Calendar\ImageBuilder\GdImageBuilder;
-use App\Calendar\ImageBuilder\ImageMagickBuilder;
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
+use App\Calendar\ImageBuilder\GdImageImageBuilder;
+use App\Calendar\ImageBuilder\ImageMagickImageBuilder;
 use App\Constants\Design;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
@@ -530,9 +530,9 @@ class BaseParameter
     }
 
     /**
-     * Returns the design according to the config.
+     * Returns the image builder and the design according to the config.
      *
-     * @return BaseBuilder
+     * @return BaseImageBuilder
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -541,7 +541,7 @@ class BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getDesign(): BaseBuilder
+    public function getImageBuilder(): BaseImageBuilder
     {
         $designEngine = match (true) {
             $this->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getOptionFromConfig(Option::DESIGN_ENGINE),
@@ -557,7 +557,7 @@ class BaseParameter
 
         /* Use GdImageDefault as default design. */
         if (is_null($designEngine) || is_null($designType)) {
-            return new ImageMagickBuilder($this->appKernel, new DesignDefault(), null);
+            return new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), null);
         }
 
         $designConfigSource = match (true) {
@@ -578,17 +578,17 @@ class BaseParameter
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
-                Design::BLANK => new GdImageBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
-                Design::BLANK_JTAC => new GdImageBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
-                Design::DEFAULT => new GdImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new GdImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
+                Design::BLANK => new GdImageImageBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
+                Design::BLANK_JTAC => new GdImageImageBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
+                Design::DEFAULT => new GdImageImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
+                Design::DEFAULT_JTAC => new GdImageImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             'imagick' => match ($designType) {
-                Design::BLANK => new ImageMagickBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
-                Design::BLANK_JTAC => new ImageMagickBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
-                Design::DEFAULT => new ImageMagickBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new ImageMagickBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
+                Design::BLANK => new ImageMagickImageBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
+                Design::BLANK_JTAC => new ImageMagickImageBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
+                Design::DEFAULT => new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
+                Design::DEFAULT_JTAC => new ImageMagickImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),

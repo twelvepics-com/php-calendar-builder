@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\ImageBuilder;
 
-use App\Calendar\ImageBuilder\Base\BaseBuilder;
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Color;
 use App\Objects\Image\Image;
 use Exception;
@@ -33,7 +33,7 @@ use LogicException;
  * @version 0.1.0 (2023-11-13)
  * @since 0.1.0 (2023-11-13) First version.
  */
-class ImageMagickBuilder extends BaseBuilder
+class ImageMagickImageBuilder extends BaseImageBuilder
 {
     private const GD_IMAGE_TO_IMAGICK_CORRECTION = 1 + 1/3;
 

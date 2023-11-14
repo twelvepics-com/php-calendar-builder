@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace App\Calendar\ImageBuilder\Base;
 
 use App\Calendar\Design\Base\DesignBase;
-use App\Calendar\ImageBuilder\GdImageBuilder;
-use App\Calendar\ImageBuilder\ImageMagickBuilder;
+use App\Calendar\ImageBuilder\GdImageImageBuilder;
+use App\Calendar\ImageBuilder\ImageMagickImageBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
@@ -45,7 +45,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-abstract class BaseBuilder
+abstract class BaseImageBuilder
 {
     /**
      * Constants.
@@ -270,8 +270,8 @@ abstract class BaseBuilder
     protected function setTargetZoom(): void
     {
         $correct = match (true) {
-            $this instanceof ImageMagickBuilder => 1, # + 1/3,
-            $this instanceof GdImageBuilder => 1.,
+            $this instanceof ImageMagickImageBuilder => 1, # + 1/3,
+            $this instanceof GdImageImageBuilder => 1.,
             default => throw new LogicException('Class must be either ImageMagickBase or GdImageBase'),
         };
 

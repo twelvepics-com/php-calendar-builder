@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\Design\Base;
 
-use App\Calendar\ImageBuilder\Base\BaseBuilder;
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use Ixnode\PhpContainer\Json;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 abstract class DesignBase
 {
-    protected BaseBuilder $designBase;
+    protected BaseImageBuilder $designBase;
 
     protected KernelInterface $appKernel;
 
@@ -43,10 +43,10 @@ abstract class DesignBase
     abstract public function doBuild(): void;
 
     /**
-     * @param BaseBuilder $designBase
+     * @param BaseImageBuilder $designBase
      * @return self
      */
-    public function setDesignBase(BaseBuilder $designBase): self
+    public function setDesignBase(BaseImageBuilder $designBase): self
     {
         $this->designBase = $designBase;
 

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\ImageBuilder;
 
-use App\Calendar\ImageBuilder\Base\BaseBuilder;
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use Exception;
@@ -32,7 +32,7 @@ use LogicException;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class GdImageBuilder extends BaseBuilder
+class GdImageImageBuilder extends BaseImageBuilder
 {
     /**
      * Returns image properties from given image.

@@ -216,7 +216,7 @@ EOT
         $this->calendarBuilderService->init(
             parameterSource: $this->source,
             parameterTarget: $this->target,
-            design: $this->source->getDesign()
+            imageBuilder: $this->source->getImageBuilder()
         );
 
         /* Create calendar image */
