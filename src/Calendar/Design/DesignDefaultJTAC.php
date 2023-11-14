@@ -46,7 +46,7 @@ class DesignDefaultJTAC extends DesignDefault
     {
         parent::doInit();
 
-        $this->fontSizeImage = $this->designBase->getSize($this->fontSizeImage);
+        $this->fontSizeImage = $this->imageBuilder->getSize($this->fontSizeImage);
     }
 
 
@@ -60,7 +60,7 @@ class DesignDefaultJTAC extends DesignDefault
     {
         parent::createColors();
 
-        $this->designBase->createColorFromConfig(Color::CUSTOM, 'color');
+        $this->imageBuilder->createColorFromConfig(Color::CUSTOM, 'color');
     }
 
     /**
@@ -71,20 +71,20 @@ class DesignDefaultJTAC extends DesignDefault
     protected function addImage(): void
     {
         /* Add calendar area (rectangle) */
-        $this->designBase->addRectangle(
+        $this->imageBuilder->addRectangle(
             0,
             0,
-            $this->designBase->getWidthTarget(),
-            $this->designBase->getHeightTarget(),
+            $this->imageBuilder->getWidthTarget(),
+            $this->imageBuilder->getHeightTarget(),
             Color::CUSTOM
         );
 
-        $xCenterCalendar = intval(round($this->designBase->getWidthTarget() / 2));
-        $yCenterCalendar = intval(round($this->designBase->getHeightTarget() / 2));
-        $this->designBase->initXY($xCenterCalendar, $yCenterCalendar);
+        $xCenterCalendar = intval(round($this->imageBuilder->getWidthTarget() / 2));
+        $yCenterCalendar = intval(round($this->imageBuilder->getHeightTarget() / 2));
+        $this->imageBuilder->initXY($xCenterCalendar, $yCenterCalendar);
 
-        $this->designBase->addText(
-            $this->designBase->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
+        $this->imageBuilder->addText(
+            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
             $this->fontSizeImage,
             Color::WHITE,
             align: CalendarBuilderServiceConstants::ALIGN_CENTER

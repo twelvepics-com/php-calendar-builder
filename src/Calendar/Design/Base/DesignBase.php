@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 abstract class DesignBase
 {
-    protected BaseImageBuilder $designBase;
+    protected BaseImageBuilder $imageBuilder;
 
     protected KernelInterface $appKernel;
 
@@ -43,12 +43,12 @@ abstract class DesignBase
     abstract public function doBuild(): void;
 
     /**
-     * @param BaseImageBuilder $designBase
+     * @param BaseImageBuilder $imageBuilder
      * @return self
      */
-    public function setDesignBase(BaseImageBuilder $designBase): self
+    public function setImageBuilder(BaseImageBuilder $imageBuilder): self
     {
-        $this->designBase = $designBase;
+        $this->imageBuilder = $imageBuilder;
 
         return $this;
     }

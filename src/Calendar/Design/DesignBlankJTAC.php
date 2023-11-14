@@ -44,7 +44,7 @@ class DesignBlankJTAC extends DesignBase
      */
     public function doInit(): void
     {
-        $this->fontSizeImage = $this->designBase->getSize($this->fontSizeImage);
+        $this->fontSizeImage = $this->imageBuilder->getSize($this->fontSizeImage);
     }
 
     /**
@@ -56,17 +56,17 @@ class DesignBlankJTAC extends DesignBase
     public function doBuild(): void
     {
         /* Creates some needed colors. */
-        $this->designBase->createColor(Color::WHITE, 255, 255, 255);
-        $this->designBase->createColorFromConfig(Color::CUSTOM, 'color');
+        $this->imageBuilder->createColor(Color::WHITE, 255, 255, 255);
+        $this->imageBuilder->createColorFromConfig(Color::CUSTOM, 'color');
 
-        $this->designBase->addImage(0, 0, $this->designBase->getWidthTarget(), $this->designBase->getHeightTarget());
+        $this->imageBuilder->addImage(0, 0, $this->imageBuilder->getWidthTarget(), $this->imageBuilder->getHeightTarget());
 
-        $xCenterCalendar = intval(round($this->designBase->getWidthTarget() / 2));
-        $yCenterCalendar = intval(round($this->designBase->getHeightTarget() / 2));
-        $this->designBase->initXY($xCenterCalendar, $yCenterCalendar);
+        $xCenterCalendar = intval(round($this->imageBuilder->getWidthTarget() / 2));
+        $yCenterCalendar = intval(round($this->imageBuilder->getHeightTarget() / 2));
+        $this->imageBuilder->initXY($xCenterCalendar, $yCenterCalendar);
 
-        $this->designBase->addText(
-            $this->designBase->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
+        $this->imageBuilder->addText(
+            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
             $this->fontSizeImage,
             Color::WHITE,
             align: CalendarBuilderServiceConstants::ALIGN_CENTER

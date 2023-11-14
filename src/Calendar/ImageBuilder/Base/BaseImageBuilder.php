@@ -107,7 +107,7 @@ abstract class BaseImageBuilder
      */
     public function __construct(protected KernelInterface $appKernel, protected DesignBase $designHelper, protected Json|null $config = null)
     {
-        $designHelper->setDesignBase($this);
+        $designHelper->setImageBuilder($this);
         $designHelper->setAppKernel($appKernel);
         $designHelper->setConfig($config);
     }

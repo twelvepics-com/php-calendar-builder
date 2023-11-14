@@ -113,24 +113,24 @@ class DesignDefault extends DesignBase
         $this->qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION;
 
         /* Calculate sizes */
-        $this->fontSizeTitle = $this->designBase->getSize($this->fontSizeTitle);
-        $this->fontSizePosition = $this->designBase->getSize($this->fontSizePosition);
-        $this->fontSizeYear = $this->designBase->getSize($this->fontSizeYear);
-        $this->fontSizeMonth = $this->designBase->getSize($this->fontSizeMonth);
-        $this->fontSizeDay = $this->designBase->getSize($this->fontSizeDay);
-        $this->fontSizeTitlePage = $this->designBase->getSize($this->fontSizeTitlePage);
-        $this->fontSizeTitlePageSubtext = $this->designBase->getSize($this->fontSizeTitlePageSubtext);
-        $this->fontSizeTitlePageAuthor = $this->designBase->getSize($this->fontSizeTitlePageAuthor);
-        $this->paddingCalendarDays = $this->designBase->getSize($this->paddingCalendarDays);
-        $this->heightQrCode = $this->designBase->getSize($this->heightQrCode);
-        $this->widthQrCode = $this->designBase->getSize($this->widthQrCode);
-        $this->dayDistance = $this->designBase->getSize($this->dayDistance);
+        $this->fontSizeTitle = $this->imageBuilder->getSize($this->fontSizeTitle);
+        $this->fontSizePosition = $this->imageBuilder->getSize($this->fontSizePosition);
+        $this->fontSizeYear = $this->imageBuilder->getSize($this->fontSizeYear);
+        $this->fontSizeMonth = $this->imageBuilder->getSize($this->fontSizeMonth);
+        $this->fontSizeDay = $this->imageBuilder->getSize($this->fontSizeDay);
+        $this->fontSizeTitlePage = $this->imageBuilder->getSize($this->fontSizeTitlePage);
+        $this->fontSizeTitlePageSubtext = $this->imageBuilder->getSize($this->fontSizeTitlePageSubtext);
+        $this->fontSizeTitlePageAuthor = $this->imageBuilder->getSize($this->fontSizeTitlePageAuthor);
+        $this->paddingCalendarDays = $this->imageBuilder->getSize($this->paddingCalendarDays);
+        $this->heightQrCode = $this->imageBuilder->getSize($this->heightQrCode);
+        $this->widthQrCode = $this->imageBuilder->getSize($this->widthQrCode);
+        $this->dayDistance = $this->imageBuilder->getSize($this->dayDistance);
 
-        $this->yCalendarBoxBottom = intval(floor($this->designBase->getHeightTarget() * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
+        $this->yCalendarBoxBottom = intval(floor($this->imageBuilder->getHeightTarget() * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
 
         $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
-        $this->url = $this->designBase->getCalendarBuilderService()->getParameterTarget()->getUrl(
-            $this->designBase->getCalendarBuilderService()->getParameterSource()->getIdentification()
+        $this->url = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getUrl(
+            $this->imageBuilder->getCalendarBuilderService()->getParameterSource()->getIdentification()
         );
     }
 
@@ -154,7 +154,7 @@ class DesignDefault extends DesignBase
         /* Add title, position, etc. */
         $this->addImageDescriptionAndPositionOnCalendarPage();
 
-        $target = $this->designBase->getCalendarBuilderService()->getParameterTarget();
+        $target = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget();
 
         /* Add calendar */
         switch (true) {
@@ -206,13 +206,13 @@ class DesignDefault extends DesignBase
      */
     protected function createColors(): void
     {
-        $this->designBase->resetColors();
-        $this->designBase->createColor(Color::BLACK, 0, 0, 0);
-        $this->designBase->createColor(Color::BLACK_TRANSPARENCY, 0, 0, 0, $this->getTransparency());
-        $this->designBase->createColor(Color::RED, 255, 0, 0);
-        $this->designBase->createColor(Color::RED_TRANSPARENCY, 255, 0, 0, $this->getTransparency());
-        $this->designBase->createColor(Color::WHITE, 255, 255, 255);
-        $this->designBase->createColor(Color::WHITE_TRANSPARENCY, 255, 255, 255, $this->getTransparency());
+        $this->imageBuilder->resetColors();
+        $this->imageBuilder->createColor(Color::BLACK, 0, 0, 0);
+        $this->imageBuilder->createColor(Color::BLACK_TRANSPARENCY, 0, 0, 0, $this->getTransparency());
+        $this->imageBuilder->createColor(Color::RED, 255, 0, 0);
+        $this->imageBuilder->createColor(Color::RED_TRANSPARENCY, 255, 0, 0, $this->getTransparency());
+        $this->imageBuilder->createColor(Color::WHITE, 255, 255, 255);
+        $this->imageBuilder->createColor(Color::WHITE_TRANSPARENCY, 255, 255, 255, $this->getTransparency());
     }
 
     /**
@@ -227,13 +227,13 @@ class DesignDefault extends DesignBase
     protected function getDayColorKey(int $year, int $month, int $day): string
     {
         /* Print day in red if the day is sunday */
-        if ($this->designBase->getCalendarBuilderService()->getDayOfWeek($year, $month, $day) === CalendarBuilderServiceConstants::DAY_SUNDAY) {
+        if ($this->imageBuilder->getCalendarBuilderService()->getDayOfWeek($year, $month, $day) === CalendarBuilderServiceConstants::DAY_SUNDAY) {
             return Color::RED;
         }
 
         /* Print day in red if it is a holiday */
-        $dayKey = $this->designBase->getCalendarBuilderService()->getDayKey($day);
-        $holidays = $this->designBase->getCalendarBuilderService()->getHolidays();
+        $dayKey = $this->imageBuilder->getCalendarBuilderService()->getDayKey($day);
+        $holidays = $this->imageBuilder->getCalendarBuilderService()->getHolidays();
         if (array_key_exists($dayKey, $holidays) && $holidays[$dayKey] === true) {
             return Color::RED;
         }
@@ -248,17 +248,17 @@ class DesignDefault extends DesignBase
     protected function addImage(): void
     {
         $positionY = match ($this->valignImage) {
-            CalendarBuilderServiceConstants::VALIGN_BOTTOM => $this->yCalendarBoxBottom - $this->designBase->getHeightTarget(),
+            CalendarBuilderServiceConstants::VALIGN_BOTTOM => $this->yCalendarBoxBottom - $this->imageBuilder->getHeightTarget(),
             default => 0,
         };
 
         $positionX = 0;
 
-        $this->designBase->addImage(
+        $this->imageBuilder->addImage(
             $positionX,
             $positionY,
-            $this->designBase->getWidthTarget(),
-            $this->designBase->getHeightTarget()
+            $this->imageBuilder->getWidthTarget(),
+            $this->imageBuilder->getHeightTarget()
         );
     }
 
@@ -268,11 +268,11 @@ class DesignDefault extends DesignBase
     protected function addRectangle(): void
     {
         /* Add fullscreen rectangle to image. */
-        $this->designBase->addRectangle(
+        $this->imageBuilder->addRectangle(
             0,
             $this->yCalendarBoxBottom,
-            $this->designBase->getWidthTarget(),
-            $this->designBase->getHeightTarget(),
+            $this->imageBuilder->getWidthTarget(),
+            $this->imageBuilder->getHeightTarget(),
             Color::BLACK_TRANSPARENCY
         );
     }
@@ -289,8 +289,8 @@ class DesignDefault extends DesignBase
         $positionY = $this->yCalendarBoxBottom + $this->paddingCalendarDays;
 
         /* Add title */
-        $this->designBase->addTextRaw(
-            $this->designBase->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
+        $this->imageBuilder->addTextRaw(
+            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
             $this->fontSizeTitle,
             Color::WHITE,
             $positionX,
@@ -298,11 +298,11 @@ class DesignDefault extends DesignBase
         );
 
         /* Add position */
-        $anglePosition = $this->designBase->getAngle(90);
+        $anglePosition = $this->imageBuilder->getAngle(90);
         $xPosition = $this->paddingCalendarDays + $this->fontSizePosition;
         $yPosition = $this->yCalendarBoxBottom - $this->paddingCalendarDays;
-        $this->designBase->addTextRaw(
-            $this->designBase->getCalendarBuilderService()->getParameterTarget()->getCoordinate(),
+        $this->imageBuilder->addTextRaw(
+            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getCoordinate(),
             $this->fontSizePosition,
             Color::WHITE,
             $xPosition,
@@ -318,14 +318,14 @@ class DesignDefault extends DesignBase
      */
     protected function addTitleOnTitlePage(): void
     {
-        $target = $this->designBase->getCalendarBuilderService()->getParameterTarget();
+        $target = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget();
 
         /* Set x and y */
-        $xCenterCalendar = intval(round($this->designBase->getWidthTarget() / 2));
-        $this->designBase->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
+        $xCenterCalendar = intval(round($this->imageBuilder->getWidthTarget() / 2));
+        $this->imageBuilder->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
-        $paddingTopYear = $this->designBase->getSize(0);
-        $dimensionYear = $this->designBase->addText(
+        $paddingTopYear = $this->imageBuilder->getSize(0);
+        $dimensionYear = $this->imageBuilder->addText(
             sprintf('%s', $target->getTitle()),
             $this->fontSizeTitlePage,
             'white',
@@ -333,10 +333,10 @@ class DesignDefault extends DesignBase
             CalendarBuilderServiceConstants::ALIGN_CENTER,
             CalendarBuilderServiceConstants::VALIGN_TOP
         );
-        $this->designBase->addY($dimensionYear['height'] + $paddingTopYear);
+        $this->imageBuilder->addY($dimensionYear['height'] + $paddingTopYear);
 
-        $paddingTopSubtext = $this->designBase->getSize(40);
-        $dimensionYear = $this->designBase->addText(
+        $paddingTopSubtext = $this->imageBuilder->getSize(40);
+        $dimensionYear = $this->imageBuilder->addText(
             sprintf('%s', $target->getSubtitle()),
             $this->fontSizeTitlePageSubtext,
             'white',
@@ -344,7 +344,7 @@ class DesignDefault extends DesignBase
             CalendarBuilderServiceConstants::ALIGN_CENTER,
             CalendarBuilderServiceConstants::VALIGN_TOP
         );
-        $this->designBase->addY($dimensionYear['height'] + $paddingTopSubtext);
+        $this->imageBuilder->addY($dimensionYear['height'] + $paddingTopSubtext);
     }
 
     /**
@@ -356,29 +356,29 @@ class DesignDefault extends DesignBase
      */
     protected function addDay(int $day, int $align = CalendarBuilderServiceConstants::ALIGN_LEFT): void
     {
-        $target = $this->designBase->getCalendarBuilderService()->getParameterTarget();
+        $target = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget();
 
         /* Add distance for the next day and between calendar weeks */
-        $calendarWeekDistance = $this->designBase->getCalendarBuilderService()->getDayOfWeek($target->getYear(), $target->getMonth(), $day) === CalendarBuilderServiceConstants::DAY_MONDAY ? $this->dayDistance : 0;
+        $calendarWeekDistance = $this->imageBuilder->getCalendarBuilderService()->getDayOfWeek($target->getYear(), $target->getMonth(), $day) === CalendarBuilderServiceConstants::DAY_MONDAY ? $this->dayDistance : 0;
 
         /* Add x for next day */
-        $this->designBase->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? ($this->dayDistance + $calendarWeekDistance) : -1 * $this->dayDistance);
+        $this->imageBuilder->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? ($this->dayDistance + $calendarWeekDistance) : -1 * $this->dayDistance);
 
         /* Add day */
         $colorKey = $this->getDayColorKey($target->getYear(), $target->getMonth(), $day);
-        $dimension = $this->designBase->addText(sprintf('%02d', $day), $this->fontSizeDay, $colorKey, align: $align);
+        $dimension = $this->imageBuilder->addText(sprintf('%02d', $day), $this->fontSizeDay, $colorKey, align: $align);
 
         /* Save position */
-        $this->positionDays[$this->designBase->getCalendarBuilderService()->getDayKey($day)] = [
-            'x' => $this->designBase->getPositionX(),
-            'y' => $this->designBase->getPositionY(),
+        $this->positionDays[$this->imageBuilder->getCalendarBuilderService()->getDayKey($day)] = [
+            'x' => $this->imageBuilder->getPositionX(),
+            'y' => $this->imageBuilder->getPositionY(),
             'align' => $align,
             'dimension' => $dimension,
             'day' => $day,
         ];
 
         /* Add x for next day */
-        $this->designBase->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? $dimension['width'] : -1 * ($dimension['width'] + $calendarWeekDistance));
+        $this->imageBuilder->addX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? $dimension['width'] : -1 * ($dimension['width'] + $calendarWeekDistance));
     }
 
     /**
@@ -388,15 +388,15 @@ class DesignDefault extends DesignBase
      */
     protected function addYearMonthAndDays(): void
     {
-        $target = $this->designBase->getCalendarBuilderService()->getParameterTarget();
+        $target = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget();
 
         /* Set x and y */
-        $xCenterCalendar = intval(round($this->designBase->getWidthTarget() / 2) + round($this->designBase->getWidthTarget() / 8));
-        $this->designBase->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
+        $xCenterCalendar = intval(round($this->imageBuilder->getWidthTarget() / 2) + round($this->imageBuilder->getWidthTarget() / 8));
+        $this->imageBuilder->initXY($xCenterCalendar, $this->yCalendarBoxBottom + $this->paddingCalendarDays);
 
         /* Add month */
-        $paddingTop = $this->designBase->getSize(0);
-        $dimensionMonth = $this->designBase->addText(
+        $paddingTop = $this->imageBuilder->getSize(0);
+        $dimensionMonth = $this->imageBuilder->addText(
             sprintf('%02d', $target->getMonth()),
             $this->fontSizeMonth,
             Color::WHITE,
@@ -404,11 +404,11 @@ class DesignDefault extends DesignBase
             CalendarBuilderServiceConstants::ALIGN_CENTER,
             CalendarBuilderServiceConstants::VALIGN_TOP
         );
-        $this->designBase->addY($dimensionMonth['height'] + $paddingTop);
+        $this->imageBuilder->addY($dimensionMonth['height'] + $paddingTop);
 
         /* Add year */
-        $paddingTop = $this->designBase->getSize(20);
-        $dimensionYear = $this->designBase->addText(
+        $paddingTop = $this->imageBuilder->getSize(20);
+        $dimensionYear = $this->imageBuilder->addText(
             sprintf('%s', $target->getYear()),
             $this->fontSizeYear,
             Color::WHITE,
@@ -416,21 +416,21 @@ class DesignDefault extends DesignBase
             CalendarBuilderServiceConstants::ALIGN_CENTER,
             CalendarBuilderServiceConstants::VALIGN_TOP
         );
-        $this->designBase->addY($dimensionYear['height'] + $paddingTop);
+        $this->imageBuilder->addY($dimensionYear['height'] + $paddingTop);
 
         /* Add days */
-        $days = $this->designBase->getCalendarBuilderService()->getDays();
+        $days = $this->imageBuilder->getCalendarBuilderService()->getDays();
 
         /* Add first days (left side) */
-        $this->designBase->setPositionX($xCenterCalendar - intval(round($dimensionYear['width'] / 2)));
-        $this->designBase->addX(-$this->dayDistance);
+        $this->imageBuilder->setPositionX($xCenterCalendar - intval(round($dimensionYear['width'] / 2)));
+        $this->imageBuilder->addX(-$this->dayDistance);
         for ($day = $days['left']['to']; $day >= $days['left']['from']; $day--) {
             $this->addDay($day, CalendarBuilderServiceConstants::ALIGN_RIGHT);
         }
 
         /* Add second part of days (right side) */
-        $this->designBase->setPositionX($xCenterCalendar + intval(round($dimensionYear['width'] / 2)));
-        $this->designBase->addX($this->dayDistance);
+        $this->imageBuilder->setPositionX($xCenterCalendar + intval(round($dimensionYear['width'] / 2)));
+        $this->imageBuilder->addX($this->dayDistance);
         for ($day = $days['right']['from']; $day <= $days['right']['to']; $day++) {
             $this->addDay($day);
         }
@@ -444,14 +444,14 @@ class DesignDefault extends DesignBase
      */
     protected function addCalendarWeek(string $dayKey): void
     {
-        $target = $this->designBase->getCalendarBuilderService()->getParameterTarget();
+        $target = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget();
 
         $positionDay = $this->positionDays[$dayKey];
         $day = $positionDay['day'];
         $dimensionDay = $positionDay['dimension'];
         $align = $positionDay['align'];
 
-        $weekNumber = $this->designBase->getCalendarBuilderService()->getCalendarWeekIfMonday($target->getYear(), $target->getMonth(), $day);
+        $weekNumber = $this->imageBuilder->getCalendarBuilderService()->getCalendarWeekIfMonday($target->getYear(), $target->getMonth(), $day);
 
         /* Add the calendar week if the day is monday */
         if ($weekNumber === null) {
@@ -459,22 +459,22 @@ class DesignDefault extends DesignBase
         }
 
         /* Set x and y */
-        $this->designBase->setPositionX($positionDay['x']);
-        $this->designBase->setPositionY($positionDay['y']);
+        $this->imageBuilder->setPositionX($positionDay['x']);
+        $this->imageBuilder->setPositionY($positionDay['y']);
 
         /* Set calendar week position (ALIGN_LEFT -> right side) */
-        $this->designBase->removeX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width']);
-        $this->designBase->addY(intval(round(1.0 * $this->fontSizeDay)));
+        $this->imageBuilder->removeX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width']);
+        $this->imageBuilder->addY(intval(round(1.0 * $this->fontSizeDay)));
 
         /* Build calendar week text */
         $weekNumberText = sprintf('KW %02d >', $weekNumber);
 
         /* Add calendar week */
-        $this->designBase->addText($weekNumberText, intval(ceil($this->fontSizeDay * 0.5)), Color::WHITE);
+        $this->imageBuilder->addText($weekNumberText, intval(ceil($this->fontSizeDay * 0.5)), Color::WHITE);
 
         /* Add line */
-        $positionX = $this->designBase->getPositionX() - intval(round($this->dayDistance));
-        $this->designBase->drawLine($positionX, $this->designBase->getPositionY(), $positionX, $positionDay['y'] - $this->fontSizeDay, Color::WHITE);
+        $positionX = $this->imageBuilder->getPositionX() - intval(round($this->dayDistance));
+        $this->imageBuilder->drawLine($positionX, $this->imageBuilder->getPositionY(), $positionX, $positionDay['y'] - $this->fontSizeDay, Color::WHITE);
     }
 
     /**
@@ -503,9 +503,9 @@ class DesignDefault extends DesignBase
         $dimensionDay = $positionDay['dimension'];
         $align = $positionDay['align'];
 
-        $dayKey = $this->designBase->getCalendarBuilderService()->getDayKey($day);
+        $dayKey = $this->imageBuilder->getCalendarBuilderService()->getDayKey($day);
         
-        $eventsAndHolidays = $this->designBase->getCalendarBuilderService()->getEventsAndHolidays();
+        $eventsAndHolidays = $this->imageBuilder->getCalendarBuilderService()->getEventsAndHolidays();
 
         if (!array_key_exists($dayKey, $eventsAndHolidays)) {
             return;
@@ -514,11 +514,11 @@ class DesignDefault extends DesignBase
         $eventOrHoliday = $eventsAndHolidays[$dayKey];
 
         /* Set x and y */
-        $this->designBase->setPositionX($positionDay['x']);
-        $this->designBase->setPositionY($positionDay['y']);
+        $this->imageBuilder->setPositionX($positionDay['x']);
+        $this->imageBuilder->setPositionY($positionDay['y']);
 
         /* Angle and font size */
-        $angleEvent = $this->designBase->getAngle(80);
+        $angleEvent = $this->imageBuilder->getAngle(80);
         $fontSizeEvent = intval(ceil($this->fontSizeDay * 0.6));
 
         /* Get name */
@@ -530,12 +530,12 @@ class DesignDefault extends DesignBase
         $xEvent = $fontSizeEvent + intval(round(($dimensionDay['width'] - $fontSizeEvent) / 2));
 
         /* Set event position */
-        $this->designBase->removeX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width']);
-        $this->designBase->addX($xEvent);
-        $this->designBase->removeY(intval(round(1.5 * $this->fontSizeDay)));
+        $this->imageBuilder->removeX($align === CalendarBuilderServiceConstants::ALIGN_LEFT ? 0 : $dimensionDay['width']);
+        $this->imageBuilder->addX($xEvent);
+        $this->imageBuilder->removeY(intval(round(1.5 * $this->fontSizeDay)));
 
         /* Add Event */
-        $this->designBase->addText(text: $name, fontSize: $fontSizeEvent, keyColor: Color::WHITE, angle: $angleEvent);
+        $this->imageBuilder->addText(text: $name, fontSize: $fontSizeEvent, keyColor: Color::WHITE, angle: $angleEvent);
     }
 
     /**
@@ -588,10 +588,10 @@ class DesignDefault extends DesignBase
             throw new LogicException('$qrCodeBlob must be a string');
         }
 
-        $this->designBase->addImageBlob(
+        $this->imageBuilder->addImageBlob(
             $qrCodeBlob,
             $this->paddingCalendarDays,
-            $this->designBase->getHeightTarget() - $this->paddingCalendarDays - $this->heightQrCode,
+            $this->imageBuilder->getHeightTarget() - $this->paddingCalendarDays - $this->heightQrCode,
             $this->widthQrCode,
             $this->heightQrCode,
             $backgroundColor

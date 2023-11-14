@@ -555,7 +555,7 @@ class BaseParameter
             default => null,
         };
 
-        /* Use GdImageDefault as default design. */
+        /* Use ImageMagickImageBuilder as default image builder and DesignDefault as default design. */
         if (is_null($designEngine) || is_null($designType)) {
             return new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), null);
         }

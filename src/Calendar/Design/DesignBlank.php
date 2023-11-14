@@ -43,6 +43,6 @@ class DesignBlank extends DesignBase
     public function doBuild(): void
     {
         /* Add the main image */
-        $this->designBase->addImage(0, 0, $this->designBase->getWidthTarget(), $this->designBase->getHeightTarget());
+        $this->imageBuilder->addImage(0, 0, $this->imageBuilder->getWidthTarget(), $this->imageBuilder->getHeightTarget());
     }
 }
