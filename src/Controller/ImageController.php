@@ -319,7 +319,7 @@ class ImageController extends AbstractController
         imagedestroy($imageCurrent);
 
         ob_start();
-        imagejpeg($image, null, 100);
+        imagejpeg($image, null, 90);
         $imageStringResized = ob_get_clean();
 
         if ($imageStringResized === false) {
