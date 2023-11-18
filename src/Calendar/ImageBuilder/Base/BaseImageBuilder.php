@@ -99,6 +99,8 @@ abstract class BaseImageBuilder
 
     protected int $positionY;
 
+    protected string|null $imageString = null;
+
 
     /**
      * @param KernelInterface $appKernel
@@ -178,10 +180,12 @@ abstract class BaseImageBuilder
     /**
      * Builds the given source image to a calendar page.
      *
+     * @param bool $writeToFile
      * @return ImageContainer
      * @throws Exception
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function build(): ImageContainer
+    public function build(bool $writeToFile = false): ImageContainer
     {
         /* Creates the source and target GDImages */
         $this->createImages();
@@ -189,17 +193,22 @@ abstract class BaseImageBuilder
         /* Do the custom-builds */
         $this->doBuild();
 
+        /* Save the image string */
+        $this->imageString = $this->getImageString();
+
         /* Write image */
-        $this->writeImage();
+        if ($writeToFile) {
+            $this->writeImage();
+        }
 
         /* Destroy image */
         $this->destroyImages();
 
-        /* Returns the properties of the created and source image */
+        /* Returns the properties of the target and source image */
         return (new ImageContainer())
             ->setSource($this->getImageProperties($this->pathSourceAbsolute))
             ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
-            ;
+        ;
     }
 
     /**
@@ -659,11 +668,25 @@ abstract class BaseImageBuilder
     abstract public function addImageBlob(string $blob, int $xPosition, int $yPosition, int $width, int $height, array $backgroundColor): void;
 
     /**
+     * Gets the target image as string.
+     *
+     * @return string
+     */
+    abstract public function getImageString(): string;
+
+    /**
      * Writes target image.
      *
      * @return void
      */
-    abstract protected function writeImage(): void;
+    public function writeImage(): void
+    {
+        if (is_null($this->imageString)) {
+            $this->imageString = $this->getImageString();
+        }
+
+        file_put_contents($this->pathTargetAbsolute, $this->imageString);
+    }
 
     /**
      * Destroys all images.

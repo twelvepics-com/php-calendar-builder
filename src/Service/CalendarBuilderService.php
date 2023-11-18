@@ -485,10 +485,19 @@ class CalendarBuilderService
     /**
      * Builds the given source image to a calendar page.
      *
+     * @param bool $writeToFile
      * @return ImageContainer
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      * @throws Exception
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function build(): ImageContainer
+    public function build(bool $writeToFile = false): ImageContainer
     {
         $pathTargetAbsolute = $this->getTargetPathFromSource($this->parameterSource->getImage());
 
@@ -501,6 +510,6 @@ class CalendarBuilderService
 
         $this->createEventsAndHolidays();
 
-        return $this->design->build();
+        return $this->design->build($writeToFile);
     }
 }

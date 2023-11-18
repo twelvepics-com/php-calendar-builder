@@ -332,14 +332,40 @@ class ImageMagickImageBuilder extends BaseImageBuilder
     }
 
     /**
-     * Writes target image.
+     * Gets the target image as string.
      *
      * @inheritdoc
      * @throws ImagickException
      */
-    protected function writeImage(): void
+    public function getImageString(): string
     {
-        $this->getImageTarget()->writeImage($this->pathTargetAbsolute);
+        $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
+
+        if (!is_string($extension)) {
+            throw new LogicException('Unable to get extension of file.');
+        }
+
+        $image = $this->getImageTarget();
+
+        switch ($extension) {
+            case CalendarBuilderServiceConstants::IMAGE_JPG:
+            case CalendarBuilderServiceConstants::IMAGE_JPEG:
+                $image->setImageCompression(Imagick::COMPRESSION_JPEG);
+                $image->setImageCompressionQuality($this->calendarBuilderService->getParameterTarget()->getOutputQuality());
+                $image->setImageFormat('JPEG');
+                $image->setFormat('JPEG');
+                break;
+
+            case CalendarBuilderServiceConstants::IMAGE_PNG:
+                $image->setImageFormat('PNG');
+                $image->setFormat('PNG');
+                break;
+
+            default:
+                throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension));
+        }
+
+        return $image->getImagesBlob();
     }
 
     /**

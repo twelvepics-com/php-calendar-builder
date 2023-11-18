@@ -332,11 +332,11 @@ class GdImageImageBuilder extends BaseImageBuilder
     }
 
     /**
-     * Writes target image.
+     * Gets the target image as string.
      *
      * @inheritdoc
      */
-    protected function writeImage(): void
+    public function getImageString(): string
     {
         $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
 
@@ -344,11 +344,19 @@ class GdImageImageBuilder extends BaseImageBuilder
             throw new LogicException('Unable to get extension of file.');
         }
 
+        ob_start();
         match ($extension) {
-            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->getImageTarget(), $this->pathTargetAbsolute, $this->calendarBuilderService->getParameterTarget()->getOutputQuality()),
-            CalendarBuilderServiceConstants::IMAGE_PNG => imagepng($this->getImageTarget(), $this->pathTargetAbsolute),
+            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagejpeg($this->getImageTarget(), null, $this->calendarBuilderService->getParameterTarget()->getOutputQuality()),
+            CalendarBuilderServiceConstants::IMAGE_PNG => imagepng($this->getImageTarget()),
             default => throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension)),
         };
+        $imageString = ob_get_clean();
+
+        if ($imageString === false) {
+            throw new LogicException('Unable to create image content.');
+        }
+
+        return $imageString;
     }
 
     /**

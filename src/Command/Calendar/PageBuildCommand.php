@@ -236,7 +236,7 @@ EOT
         /* Create calendar image */
         $timeStart = microtime(true);
         $this->printBuildInformation(
-            $this->calendarBuilderService->build(),
+            $this->calendarBuilderService->build(true),
             microtime(true) - $timeStart
         );
 
