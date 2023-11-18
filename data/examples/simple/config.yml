@@ -6,11 +6,10 @@ settings:
         year: 2024
         month: 1
         design:
-            engine: gdimage # gdimage or imagick
+            engine: imagick # gdimage or imagick
             type: default
             config:
-                transparency: 60
-                v-align: top
+                calendar-box-background-transparency: 60
 holidays:
     2024-01-01: Neujahr
     2024-03-29: Karfreitag

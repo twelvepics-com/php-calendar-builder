@@ -22,6 +22,10 @@ namespace App\Constants;
  */
 class KeyJson
 {
+    final public const AUTHOR = 'author';
+
+    final public const AUTHOR_FONT_SIZE = 'author-font-size';
+
     final public const BACKGROUND_COLOR = 'background-color';
 
     final public const CALENDAR_BOX_BACKGROUND_COLOR = 'calendar-box-background-color';
@@ -31,5 +35,7 @@ class KeyJson
     final public const IMAGE_VERTICAL_ALIGN = 'image-vertical-align';
 
     final public const TEXT = 'text';
+
+    final public const TEXT_FONT_SIZE = 'text-font-size';
 
 }

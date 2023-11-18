@@ -594,6 +594,10 @@ abstract class BaseImageBuilder
             $keyColor = 'white';
         }
 
+        $splitText = explode('<br>', $text);
+
+        $text = str_replace('<br>', PHP_EOL, $text);
+
         $this->addTextRaw(
             $text,
             $fontSize,
@@ -609,7 +613,7 @@ abstract class BaseImageBuilder
 
         return [
             'width' => $dimension['width'],
-            'height' => $fontSize,
+            'height' => count($splitText) > 1 ? intval(round($this->getCorrectedValue($dimension['height']))) : $fontSize,
         ];
     }
 

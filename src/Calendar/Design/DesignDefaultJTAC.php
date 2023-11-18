@@ -17,6 +17,13 @@ use App\Constants\Color;
 use App\Constants\KeyJson;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use JsonException;
 use LogicException;
 
 /**
@@ -47,18 +54,34 @@ class DesignDefaultJTAC extends DesignDefault
     /**
      * Calculated values (by zoom).
      */
-    protected int $fontSizeImage = 400;
+    protected string $text = 'Text';
+    protected int $textFontSize = 400;
+    protected string $author = 'Author';
+    protected int $authorFontSize = 100;
+    protected int $authorDistance = 400;
 
     /**
      * Do the main init for XXXDefault.php
      *
-     * @inheritdoc 
+     * @inheritdoc
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
      */
     public function doInit(): void
     {
         parent::doInit();
 
-        $this->fontSizeImage = $this->imageBuilder->getSize($this->fontSizeImage);
+        $this->text = $this->getConfigurationValueString(KeyJson::TEXT);
+        $this->textFontSize = $this->imageBuilder->getSize($this->getConfigurationValueInteger(KeyJson::TEXT_FONT_SIZE));
+
+        $this->author = $this->getConfigurationValueString(KeyJson::AUTHOR);
+        $this->authorFontSize = $this->imageBuilder->getSize($this->getConfigurationValueInteger(KeyJson::AUTHOR_FONT_SIZE));
+        $this->authorDistance = $this->imageBuilder->getSize($this->authorDistance);
     }
 
     /**
@@ -103,9 +126,18 @@ class DesignDefaultJTAC extends DesignDefault
         $yCenterCalendar = intval(round(($this->imageBuilder->getHeightTarget() - $this->imageBuilder->getHeightTarget() * self::CALENDAR_BOX_BOTTOM_SIZE) / 2));
         $this->imageBuilder->initXY($xCenterCalendar, $yCenterCalendar);
 
+        $dimension = $this->imageBuilder->addText(
+            $this->text,
+            $this->textFontSize,
+            Color::WHITE,
+            align: CalendarBuilderServiceConstants::ALIGN_CENTER,
+            valign: CalendarBuilderServiceConstants::VALIGN_MIDDLE,
+        );
+
+        $this->imageBuilder->addY(intval(round($dimension['height'] / 2)) + $this->authorDistance + $this->authorFontSize);
         $this->imageBuilder->addText(
-            $this->getConfigurationValueString(KeyJson::TEXT),
-            $this->fontSizeImage,
+            sprintf('- %s -', $this->author),
+            $this->authorFontSize,
             Color::WHITE,
             align: CalendarBuilderServiceConstants::ALIGN_CENTER,
             valign: CalendarBuilderServiceConstants::VALIGN_MIDDLE,
