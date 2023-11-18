@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter\Base;
 
-use App\Calendar\Design\DesignBlank;
-use App\Calendar\Design\DesignBlankJTAC;
+use App\Calendar\Design\DesignImage;
+use App\Calendar\Design\DesignText;
 use App\Calendar\Design\DesignDefault;
 use App\Calendar\Design\DesignDefaultJTAC;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
@@ -642,17 +642,17 @@ class BaseParameter
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
-                Design::BLANK => new GdImageImageBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
-                Design::BLANK_JTAC => new GdImageImageBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
                 Design::DEFAULT => new GdImageImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
                 Design::DEFAULT_JTAC => new GdImageImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
+                Design::IMAGE => new GdImageImageBuilder($this->appKernel, new DesignImage(), $designConfigJson),
+                Design::TEXT => new GdImageImageBuilder($this->appKernel, new DesignText(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             'imagick' => match ($designType) {
-                Design::BLANK => new ImageMagickImageBuilder($this->appKernel, new DesignBlank(), $designConfigJson),
-                Design::BLANK_JTAC => new ImageMagickImageBuilder($this->appKernel, new DesignBlankJTAC(), $designConfigJson),
                 Design::DEFAULT => new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
                 Design::DEFAULT_JTAC => new ImageMagickImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
+                Design::IMAGE => new ImageMagickImageBuilder($this->appKernel, new DesignImage(), $designConfigJson),
+                Design::TEXT => new ImageMagickImageBuilder($this->appKernel, new DesignText(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),

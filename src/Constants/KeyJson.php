@@ -24,9 +24,13 @@ class KeyJson
 {
     final public const AUTHOR = 'author';
 
+    final public const AUTHOR_DISTANCE = 'author-distance';
+
     final public const AUTHOR_FONT_SIZE = 'author-font-size';
 
     final public const BACKGROUND_COLOR = 'background-color';
+
+    final public const BOX_BOTTOM_RATIO = 'box-bottom-ratio';
 
     final public const CALENDAR_BOX_BACKGROUND_COLOR = 'calendar-box-background-color';
 

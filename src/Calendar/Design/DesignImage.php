@@ -16,7 +16,7 @@ namespace App\Calendar\Design;
 use App\Calendar\Design\Base\DesignBase;
 
 /**
- * Class DesignBlank
+ * Class DesignImage
  *
  * Creates the blank calendar design. Shared between GdImage and Imagick libraries.
  *
@@ -24,7 +24,7 @@ use App\Calendar\Design\Base\DesignBase;
  * @version 0.1.0 (2023-11-13)
  * @since 0.1.0 (2023-11-13) First version.
  */
-class DesignBlank extends DesignBase
+class DesignImage extends DesignBase
 {
     /**
      * Configures the configuration for the current design.

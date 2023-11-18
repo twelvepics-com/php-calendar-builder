@@ -26,7 +26,7 @@ class Design
 
     final public const DEFAULT_JTAC = 'default-jtac';
 
-    final public const BLANK = 'blank';
+    final public const IMAGE = 'image';
 
-    final public const BLANK_JTAC = 'blank-jtac';
+    final public const TEXT = 'text';
 }

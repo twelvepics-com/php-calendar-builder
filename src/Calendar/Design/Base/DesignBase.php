@@ -129,7 +129,7 @@ abstract class DesignBase
      * @return void
      * @throws TypeInvalidException
      */
-    protected function addDefaultConfiguration(string|array $path, int|string|array|null $default): void
+    protected function addDefaultConfiguration(string|array $path, int|string|float|array|null $default): void
     {
         $this->configDefault->addValue($path, $default);
     }
@@ -206,6 +206,34 @@ abstract class DesignBase
         $value = $this->getConfigurationValue($keys);
 
         if (!is_int($value)) {
+            if (is_string($keys)) {
+                $keys = [$keys];
+            }
+
+            throw new LogicException(sprintf('Invalid value type "%s" for key path "%s" in configuration. "int" expected.', gettype($value), implode('.', $keys)));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the configuration value from existing config or from default configuration (as float).
+     *
+     * @param string|array<int, string> $keys
+     * @return float
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     */
+    protected function getConfigurationValueFloat(string|array $keys): float
+    {
+        $value = $this->getConfigurationValue($keys);
+
+        if (!is_float($value)) {
             if (is_string($keys)) {
                 $keys = [$keys];
             }

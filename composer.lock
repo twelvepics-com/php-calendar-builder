@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6c5b22a6fd66dcb9a4e0e251667ba267",
+    "content-hash": "d6b2cda131c5b7d60957033817c9b2fa",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2124,16 +2124,16 @@
         },
         {
             "name": "ixnode/php-container",
-            "version": "0.1.10",
+            "version": "0.1.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-container.git",
-                "reference": "5dcbc5e643758abd87315d44af11354bbf11745e"
+                "reference": "bfff35cc12804ec25883fdb136b1fd917b172642"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-container/zipball/5dcbc5e643758abd87315d44af11354bbf11745e",
-                "reference": "5dcbc5e643758abd87315d44af11354bbf11745e",
+                "url": "https://api.github.com/repos/ixnode/php-container/zipball/bfff35cc12804ec25883fdb136b1fd917b172642",
+                "reference": "bfff35cc12804ec25883fdb136b1fd917b172642",
                 "shasum": ""
             },
             "require": {
@@ -2182,9 +2182,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-container/issues",
-                "source": "https://github.com/ixnode/php-container/tree/0.1.10"
+                "source": "https://github.com/ixnode/php-container/tree/0.1.11"
             },
-            "time": "2023-08-14T15:20:57+00:00"
+            "time": "2023-11-18T22:30:29+00:00"
         },
         {
             "name": "ixnode/php-coordinate",
