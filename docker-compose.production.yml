@@ -1,0 +1,121 @@
+# ===========================================
+# Overwrites the docker-compose.yml file (Production Mode).
+#
+# @author Björn Hempel <bjoern@hempel.li>
+# @version 1.0 (2023-09-25)
+# ===========================================
+
+# ===========================================
+# Start app (Production + Traefik):
+# ----------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+#
+# Show containers:
+# ----------------
+# ❯ docker container ls
+#
+# Build images:
+# -------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml build
+#
+# Show logs:
+# ----------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml logs -f
+#
+# Login into containers:
+# ----------------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml exec nginx bash
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml exec php bash
+#
+# Open app (local - localhost):
+# -----------------
+#
+# - https://builder.twelvepics.com/
+#
+# Restart containers:
+# -------------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml restart
+#
+# Shutdown containers:
+# --------------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml down
+#
+# Installation:
+# -------------
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+# ❯ docker-compose -f docker-compose.yml -f docker-compose.production.yml exec php composer install
+#
+# ===========================================
+
+version: "3.8"
+
+# Configures the services
+services:
+
+  # Nginx service: https://builder.twelvepics.com/
+  nginx:
+    networks:
+      - network-internal
+      - network-traefik
+    labels:
+      # enable traefik
+      - "traefik.enable=true"
+      # middleware -> https redirect
+      - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_https.redirectscheme.scheme=https"
+      # middleware -> remove headers
+      - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_remove_headers.headers.customResponseHeaders.Server="
+      - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_remove_headers.headers.customResponseHeaders.X-Powered-By="
+      # middleware -> chain -> with authentication and frame
+      - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_chain_with_auth.chain.middlewares=${NAMESPACE_UNDERLINE}_remove_headers"
+      # middleware -> chain -> frame
+      - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_chain_without_auth.chain.middlewares=${NAMESPACE_UNDERLINE}_remove_headers"
+      # service -> load balancer
+      - "traefik.http.services.${NAMESPACE_UNDERLINE}_https_lb.loadbalancer.server.port=${PORT_HTTPS}"
+      - "traefik.http.services.${NAMESPACE_UNDERLINE}_https_lb.loadbalancer.server.scheme=http"
+      # router -> http layer -> redirect https
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_http.entrypoints=web"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_http.rule=Host(`${URL_PRODUCTION}`)"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_http.middlewares=${NAMESPACE_UNDERLINE}_https,${NAMESPACE_UNDERLINE}_chain_without_auth"
+      # router -> https layer -> GET, POST, etc.
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.entrypoints=websecure"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.rule=Host(`${URL_PRODUCTION}`)"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.middlewares=${NAMESPACE_UNDERLINE}_chain_without_auth"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.service=${NAMESPACE_UNDERLINE}_https_lb"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.tls=true"
+      - "traefik.http.routers.${NAMESPACE_UNDERLINE}_https.tls.certresolver=letsencryptresolver"
+      # network
+      - "traefik.docker.network=${NETWORK_NAME_TRAEFIK_PUBLIC_PRODUCTION}"
+
+  # PHP 8.2 container
+  php:
+    networks:
+      - network-internal
+
+  # MySQL 8.0.x Server
+  database:
+    networks:
+      - network-internal
+
+  # MySQL 8.0.x Server
+  database-test:
+    networks:
+      - network-internal
+
+  # Adminer MySQL Client
+  adminer:
+    networks:
+      - network-internal
+
+  # Mailhog (amd64 and arm64 version)
+  mailhog:
+    networks:
+      - network-internal
+
+# configure networks
+networks:
+  network-traefik:
+    external: true
+    name: "${NETWORK_NAME_TRAEFIK_PUBLIC_PRODUCTION}"
+  network-internal:
+    external: false
+    name: "${NAMESPACE_HOSTNAME}.network.internal"
