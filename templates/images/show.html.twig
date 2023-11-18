@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Show calendar images</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+        <style>
+            html, body {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .container {
+                max-width: 100%;
+                overflow: hidden;
+            }
+
+            .image {
+                box-sizing: border-box;
+                float: left;
+                width: 50%;
+                font-size: 0;
+            }
+
+            .image:nth-child(n+2) {
+                width: 25%;
+            }
+
+            img {
+                width: 99.999%;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            @media (max-width: 1024px) {
+                .image {
+                    width: 100%;
+                }
+
+                .image:nth-child(n+2) {
+                    width: 50%;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .image {
+                    width: 100%;
+                }
+
+                .image:nth-child(n+2) {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>{% apply spaceless %}
+        <div class="container">
+            {% for image in images %}
+                <div class="image"><a href="{{ image.path_fullsize }}"><img src="{{ image.path }}" alt="{{ image.page_title }}"></a></div>
+            {% endfor %}
+        </div>
+    {% endapply %}</body>
+</html>

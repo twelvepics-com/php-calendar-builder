@@ -27,9 +27,7 @@ use JsonException;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Yaml\Yaml;
 
@@ -115,47 +113,261 @@ class ImageController extends AbstractController
     }
 
     /**
-     * The controller to show the image.
+     * Returns the config for given identifier.
      *
-     * @param string $identifier
-     * @param int $number The number of the page (not month!)
      * @param string $projectDir
-     * @return Response
+     * @param string $identifier
+     * @return Json
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
      */
-    #[Route('/v/{identifier}/{number}', name: 'app_get_image')]
-    public function showImage(
-        string $identifier,
-        int $number,
-        #[Autowire('%kernel.project_dir%')]
-        string $projectDir
-    ): Response
+    private function getConfig(string $projectDir, string $identifier): Json
     {
         $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $projectDir, $identifier);
 
         if (!is_dir($pathCalendarAbsolute)) {
-            return $this->getErrorResponse(sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute), $projectDir);
+            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
         }
 
         $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $projectDir);
 
         if (!$configFileRelative->exist()) {
-            return $this->getErrorResponse(sprintf('Config path "%s" does not exist', $configFileRelative->getPath()), $projectDir);
+            return new Json(['error' => sprintf('Config path "%s" does not exist', $configFileRelative->getPath())]);
         }
 
         $configArray = Yaml::parse($configFileRelative->getContentAsText());
 
         if (!is_array($configArray)) {
-            return $this->getErrorResponse(sprintf('Config file "%s" is not an array', $configFileRelative->getPath()), $projectDir);
+            return new Json(['error' => sprintf('Config file "%s" is not an array', $configFileRelative->getPath())]);
         }
 
-        $config = new Json($configArray);
+        return new Json($configArray);
+    }
+
+    /**
+     * Returns the image from given path.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @param array<string, mixed> $page
+     * @param int|null $width
+     * @return array<string, mixed>
+     */
+    protected function getImageArray(string $identifier, int $number, array $page, int|null $width = null): array
+    {
+        $pathFullSize = sprintf('/v/%s/%d', $identifier, $number);
+
+        $path = match (true) {
+            is_null($width) => $pathFullSize,
+            default => sprintf('/v/%s/%d/%d', $identifier, $number, $width)
+        };
+
+        $image = [
+            'path' => $path,
+            'path_fullsize' => $pathFullSize,
+            ...$page
+        ];
+
+        if (array_key_exists('page-title', $image)) {
+            $image['page_title'] = $image['page-title'];
+            unset($image['page-title']);
+        }
+
+        if (array_key_exists('design', $image)) {
+            unset($image['design']);
+        }
+
+        return $image;
+    }
+
+    /**
+     * Returns all calendar ids.
+     *
+     * @param string $path
+     * @return string[]
+     */
+    protected function getCalendars(string $path): array {
+        $calendars = [];
+
+        if (!is_dir($path)) {
+            return $calendars;
+        }
+
+        $scanned = scandir($path);
+
+        if ($scanned === false) {
+            return $calendars;
+        }
+
+        return array_filter($scanned, fn($element) => is_dir($path.'/'.$element) && !in_array($element, ['.', '..']));
+    }
+
+    /**
+     * The controller to show the image.
+     *
+     * @param string $projectDir
+     * @return Response
+     */
+    #[Route('/v', name: 'app_get_calendars')]
+    public function showCalendars(
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir
+    ): Response
+    {
+        $path = $projectDir.'/data/calendar';
+
+        $calendars = $this->getCalendars($path);
+
+        foreach ($calendars as $key => $calendar) {
+            $calendars[$key] = sprintf('/v/%s/all', $calendar);
+        }
+
+        return $this->render('calendars/show.html.twig', [
+            'calendars' => $calendars
+        ]);
+    }
+
+    /**
+     * The controller to show the image.
+     *
+     * @param string $identifier
+     * @param string $projectDir
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    #[Route('/v/{identifier}/all', name: 'app_get_images')]
+    public function showImages(
+        string $identifier,
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir
+    ): Response
+    {
+        $config = $this->getConfig($projectDir, $identifier);
+
+        if ($config->hasKey('error')) {
+            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
+        }
+
+        $configKeyPath = ['pages'];
+
+        if (!$config->hasKey($configKeyPath)) {
+            return $this->getErrorResponse('Pages key do not exist.', $projectDir);
+        }
+
+        $pages = $config->getKeyArray($configKeyPath);
+
+        $images = [];
+        foreach ($pages as $number => $page) {
+            if (!is_int($number)) {
+                continue;
+            }
+
+            if (!is_array($page)) {
+                continue;
+            }
+
+            $images[] = $this->getImageArray($identifier, $number, $page, 1280);
+        }
+
+        return $this->render('images/show.html.twig', [
+            'images' => $images
+        ]);
+    }
+
+    /**
+     * Returns the resized image string.
+     *
+     * @param string $imageString
+     * @param int|null $width
+     * @return string
+     */
+    private function getImageResized(string $imageString, int|null $width): string
+    {
+        if (is_null($width)) {
+            return $imageString;
+        }
+
+        $imageCurrent = imagecreatefromstring($imageString);
+
+        if ($imageCurrent === false) {
+            throw new LogicException('Unable to create image from string.');
+        }
+
+        /* Get the current dimensions. */
+        $widthCurrent = imagesx($imageCurrent);
+        $heightCurrent = imagesy($imageCurrent);
+
+        /* Calculate the height according to the current aspect ratio */
+        $height = intval(round(($width / $widthCurrent) * $heightCurrent));
+
+        $image = imagecreatetruecolor($width, $height);
+
+        if (!$image instanceof GdImage) {
+            throw new LogicException('Unable to create image.');
+        }
+
+        imagecopyresampled($image, $imageCurrent, 0, 0, 0, 0, $width, $height, $widthCurrent, $heightCurrent);
+        imagedestroy($imageCurrent);
+
+        ob_start();
+        imagejpeg($image, null, 100);
+        $imageStringResized = ob_get_clean();
+
+        if ($imageStringResized === false) {
+            throw new LogicException('Unable to create image content.');
+        }
+
+        imagedestroy($image);
+
+        return $imageStringResized;
+    }
+
+    /**
+     * The controller to show the image.
+     *
+     * @param string $identifier
+     * @param int $number The number of the page (not month!)
+     * @param int|null $width
+     * @param string $format
+     * @param string|null $projectDir
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    #[Route('/v/{identifier}/{number}/{width?}.{_format?jpg}', name: 'app_get_image')]
+    public function showImage(
+        string $identifier,
+        int $number,
+        int|null $width,
+        string $format = 'jpg',
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir = null
+    ): Response
+    {
+        if (is_null($projectDir)) {
+            throw new LogicException('Unable to get project dir.');
+        }
+
+        $config = $this->getConfig($projectDir, $identifier);
+
+        if ($config->hasKey('error')) {
+            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
+        }
 
         $configKeyPath = ['pages', (string) $number, 'target'];
 
@@ -171,13 +383,26 @@ class ImageController extends AbstractController
             return $this->getErrorResponse(sprintf('Image path "%s" does not exist', $pathImage), $projectDir);
         }
 
-        $response = new BinaryFileResponse($pathImage);
+        $imageString = file_get_contents($pathImage);
 
-        /* Set the filename for user */
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, basename($pathImage));
+        if (!is_string($imageString)) {
+            return $this->getErrorResponse(sprintf('Unable to get the content of image path "%s".', $pathImage), $projectDir);
+        }
 
-        /* Set mimetype */
-        $response->headers->set('Content-Type', 'image/jpeg');
+        $imageString = $this->getImageResized($imageString, $width);
+
+        $response = new Response();
+
+        /* Set headers */
+        $response->headers->set('Cache-Control', 'private');
+        $response->headers->set('Content-type', 'image/jpeg');
+        $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($pathImage)));
+        $response->headers->set('Content-length',  (string) strlen($imageString));
+
+        /* Send headers before outputting anything */
+        $response->sendHeaders();
+        $response->setContent($imageString);
+        $response->sendContent();
 
         return $response;
     }
