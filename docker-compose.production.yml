@@ -71,7 +71,7 @@ services:
       - "traefik.http.middlewares.${NAMESPACE_UNDERLINE}_chain_without_auth.chain.middlewares=${NAMESPACE_UNDERLINE}_remove_headers"
       # service -> load balancer
       - "traefik.http.services.${NAMESPACE_UNDERLINE}_https_lb.loadbalancer.server.port=${PORT_HTTPS}"
-      - "traefik.http.services.${NAMESPACE_UNDERLINE}_https_lb.loadbalancer.server.scheme=http"
+      - "traefik.http.services.${NAMESPACE_UNDERLINE}_https_lb.loadbalancer.server.scheme=https"
       # router -> http layer -> redirect https
       - "traefik.http.routers.${NAMESPACE_UNDERLINE}_http.entrypoints=web"
       - "traefik.http.routers.${NAMESPACE_UNDERLINE}_http.rule=Host(`${URL_PRODUCTION}`)"
