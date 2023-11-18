@@ -5,59 +5,53 @@
         <title>Show calendar images</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
         <style>
+
             html, body {
-                width: 100%;
-                padding: 0;
+                height: 100%;
                 margin: 0;
             }
 
-            .container {
-                max-width: 100%;
-                overflow: hidden;
-            }
-
-            .image {
-                box-sizing: border-box;
-                float: left;
+            .container-image-link .container-image {
+                height: 37.5vw;
                 width: 50%;
-                font-size: 0;
+                background-size: 100% 100%;
+                float: left;
             }
 
-            .image:nth-child(n+2) {
+            .container-image-link:nth-child(n+2) .container-image {
+                height: 18.75vw;
                 width: 25%;
             }
 
-            img {
-                width: 99.999%;
-                margin: 0;
-                box-sizing: border-box;
-            }
-
             @media (max-width: 1024px) {
-                .image {
+                .container-image-link .container-image {
+                    height: 75vw;
                     width: 100%;
                 }
 
-                .image:nth-child(n+2) {
+                .container-image-link:nth-child(n+2) .container-image {
+                    height: 37.5vw;
                     width: 50%;
                 }
             }
 
             @media (max-width: 768px) {
-                .image {
+                .container-image-link .container-image {
+                    height: 75vw;
                     width: 100%;
                 }
 
-                .image:nth-child(n+2) {
+                .container-image-link:nth-child(n+2) .container-image {
+                    height: 75vw;
                     width: 100%;
                 }
             }
         </style>
     </head>
     <body>{% apply spaceless %}
-        <div class="container">
+        <div class="container-images">
             {% for image in images %}
-                <div class="image"><a href="{{ image.path_fullsize }}"><img src="{{ image.path }}" alt="{{ image.page_title }}"></a></div>
+                <a class="container-image-link" href="{{ image.path_fullsize }}" title="{{ image.page_title }}"><div class="container-image" style="background-image:url({{ image.path }});"></div></a>
             {% endfor %}
         </div>
     {% endapply %}</body>
