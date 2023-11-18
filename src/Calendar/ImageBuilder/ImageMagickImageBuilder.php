@@ -15,6 +15,7 @@ namespace App\Calendar\ImageBuilder;
 
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Color;
+use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use Exception;
 use Imagick;
@@ -177,16 +178,11 @@ class ImageMagickImageBuilder extends BaseImageBuilder
     /**
      * Add raw text.
      *
-     * @param string $text
-     * @param int $fontSize
-     * @param string $keyColor
-     * @param int $positionX
-     * @param int $positionY
-     * @param int $angle
-     * @return void
+     * @inheritdoc
      * @throws ImagickException
      * @throws ImagickDrawException
      * @throws ImagickPixelException
+     * @throws Exception
      */
     public function addTextRaw(
         string $text,
@@ -194,17 +190,51 @@ class ImageMagickImageBuilder extends BaseImageBuilder
         string $keyColor,
         int $positionX,
         int $positionY,
-        int $angle = 0
+        int $angle = 0,
+        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
+        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM
     ): void
     {
+        $text = str_replace('<br>', PHP_EOL, $text);
+
+        $dimension = $this->getDimension($text, $fontSize, $angle);
+
+        $positionXAlignment = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => Imagick::ALIGN_CENTER,
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => Imagick::ALIGN_RIGHT,
+            default => Imagick::ALIGN_LEFT,
+        };
+
+        $positionY = match ($valign) {
+            CalendarBuilderServiceConstants::VALIGN_TOP => $positionY + $dimension['height'],
+            CalendarBuilderServiceConstants::VALIGN_MIDDLE => $positionY - intval(round($dimension['height'] / 2)),
+            default => $positionY,
+        };
+
+        $positionX = max($positionX, 0);
+        $positionY = max($positionY, 0);
+
         /* Create an ImagickDraw object. */
         $draw = new ImagickDraw();
         $draw->setFillColor(new ImagickPixel($this->getColor($keyColor)));
         $draw->setFont($this->pathFont);
         $draw->setFontSize($fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION);
+        $draw->setTextAlignment($positionXAlignment);
+        $draw->setTextAntialias(true);
 
         /* Add text to image. */
         $this->getImageTarget()->annotateImage($draw, $positionX, $positionY, $angle, $text);
+    }
+
+    /**
+     * Gets corrected value.
+     *
+     * @param float $value
+     * @return float
+     */
+    public function getCorrectedValue(float $value): float
+    {
+        return $value * self::GD_IMAGE_TO_IMAGICK_CORRECTION;
     }
 
     /**

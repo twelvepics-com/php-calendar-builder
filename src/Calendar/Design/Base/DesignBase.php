@@ -161,6 +161,34 @@ abstract class DesignBase
     }
 
     /**
+     * Returns the configuration value from existing config or from default configuration (as string).
+     *
+     * @param string|array<int, string> $keys
+     * @return string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     */
+    protected function getConfigurationValueString(string|array $keys): string
+    {
+        $value = $this->getConfigurationValue($keys);
+
+        if (!is_int($value) && !is_string($value)) {
+            if (is_string($keys)) {
+                $keys = [$keys];
+            }
+
+            throw new LogicException(sprintf('Invalid value type "%s" for key path "%s" in configuration. "int" expected.', gettype($value), implode('.', $keys)));
+        }
+
+        return (string) $value;
+    }
+
+    /**
      * Returns the configuration value from existing config or from default configuration (as integer).
      *
      * @param string|array<int, string> $keys
@@ -178,6 +206,34 @@ abstract class DesignBase
         $value = $this->getConfigurationValue($keys);
 
         if (!is_int($value)) {
+            if (is_string($keys)) {
+                $keys = [$keys];
+            }
+
+            throw new LogicException(sprintf('Invalid value type "%s" for key path "%s" in configuration. "int" expected.', gettype($value), implode('.', $keys)));
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the configuration value from existing config or from default configuration (as array).
+     *
+     * @param string|array<int, string> $keys
+     * @return array<int|string, mixed>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     */
+    protected function getConfigurationValueArray(string|array $keys): array
+    {
+        $value = $this->getConfigurationValue($keys);
+
+        if (!is_array($value)) {
             if (is_string($keys)) {
                 $keys = [$keys];
             }

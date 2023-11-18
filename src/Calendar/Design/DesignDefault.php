@@ -42,10 +42,10 @@ class DesignDefault extends DesignBase
      */
     protected function configureDefaultConfiguration(): void
     {
-        /* settings.defaults.design.config.calendar-background-color */
+        /* settings.defaults.design.config.calendar-box-background-color */
         $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BACKGROUND_COLOR, [0, 0, 0]);
 
-        /* settings.defaults.design.config.calendar-background-transparency */
+        /* settings.defaults.design.config.calendar-box-background-transparency */
         $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY, 60);
 
         /* settings.defaults.design.config.image-vertical-align */
@@ -55,7 +55,7 @@ class DesignDefault extends DesignBase
     /**
      * Constants.
      */
-    private const CALENDAR_BOX_BOTTOM_SIZE = 9/48;
+    protected const CALENDAR_BOX_BOTTOM_SIZE = 9/48;
 
     private const MAX_LENGTH_EVENT_CAPTION = 28;
 

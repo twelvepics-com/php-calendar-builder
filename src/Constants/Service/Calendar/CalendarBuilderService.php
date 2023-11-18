@@ -48,7 +48,9 @@ class CalendarBuilderService
 
     final public const VALIGN_TOP = 1;
 
-    final public const VALIGN_BOTTOM = 2;
+    final public const VALIGN_MIDDLE = 2;
+
+    final public const VALIGN_BOTTOM = 3;
 
     final public const TARGET_HEIGHT = 4000;
 

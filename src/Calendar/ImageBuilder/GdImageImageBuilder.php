@@ -199,13 +199,8 @@ class GdImageImageBuilder extends BaseImageBuilder
     /**
      * Add raw text.
      *
-     * @param string $text
-     * @param int $fontSize
-     * @param string $keyColor
-     * @param int $positionX
-     * @param int $positionY
-     * @param int $angle
-     * @return void
+     * @inheritdoc
+     * @throws Exception
      */
     public function addTextRaw(
         string $text,
@@ -213,10 +208,41 @@ class GdImageImageBuilder extends BaseImageBuilder
         string $keyColor,
         int $positionX,
         int $positionY,
-        int $angle = 0
+        int $angle = 0,
+        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
+        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM
     ): void
     {
+        $text = str_replace('<br>', PHP_EOL, $text);
+
+        $dimension = $this->getDimension($text, $fontSize, $angle);
+
+        $positionX = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => $positionX - intval(round($dimension['width'] / 2)),
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => $positionX - $dimension['width'],
+            default => $positionX,
+        };
+
+        $positionY = match ($valign) {
+            CalendarBuilderServiceConstants::VALIGN_TOP => $positionY + $fontSize,
+            default => $positionY,
+        };
+
+        $positionX = max($positionX, 0);
+        $positionY = max($positionY, 0);
+
         imagettftext($this->getImageTarget(), $fontSize, $angle, $positionX, $positionY, $this->getColor($keyColor), $this->pathFont, $text);
+    }
+
+    /**
+     * Gets corrected value.
+     *
+     * @param float $value
+     * @return float
+     */
+    public function getCorrectedValue(float $value): float
+    {
+        return $value;
     }
 
     /**

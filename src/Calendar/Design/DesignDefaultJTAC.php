@@ -14,8 +14,10 @@ declare(strict_types=1);
 namespace App\Calendar\Design;
 
 use App\Constants\Color;
+use App\Constants\KeyJson;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use Exception;
+use LogicException;
 
 /**
  * Class DesignDefaultJTAC
@@ -25,8 +27,6 @@ use Exception;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-13)
  * @since 0.1.0 (2023-11-13) First version.
- * @SuppressWarnings(PHPMD.TooManyFields)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class DesignDefaultJTAC extends DesignDefault
 {
@@ -37,6 +37,11 @@ class DesignDefaultJTAC extends DesignDefault
      */
     protected function configureDefaultConfiguration(): void
     {
+        /* settings.defaults.design.config.background-color */
+        $this->addDefaultConfiguration(KeyJson::BACKGROUND_COLOR, [255, 0, 0]);
+
+        /* settings.defaults.design.config.text */
+        $this->addDefaultConfiguration(KeyJson::TEXT, 'CHANGEME');
     }
 
     /**
@@ -65,7 +70,17 @@ class DesignDefaultJTAC extends DesignDefault
     {
         parent::createColors();
 
-        $this->imageBuilder->createColorFromConfig(Color::CUSTOM, 'color');
+        $backgroundColor = $this->getConfigurationValueArray(KeyJson::BACKGROUND_COLOR);
+
+        $red = $backgroundColor[0];
+        $green = $backgroundColor[1];
+        $blue = $backgroundColor[2];
+
+        if (!is_int($red) ||!is_int($green) ||!is_int($blue)) {
+            throw new LogicException('Invalid value type for background color. "int" expected.');
+        }
+
+        $this->imageBuilder->createColor('background-color', $red, $green, $blue);
     }
 
     /**
@@ -81,18 +96,19 @@ class DesignDefaultJTAC extends DesignDefault
             0,
             $this->imageBuilder->getWidthTarget(),
             $this->imageBuilder->getHeightTarget(),
-            Color::CUSTOM
+            'background-color'
         );
 
         $xCenterCalendar = intval(round($this->imageBuilder->getWidthTarget() / 2));
-        $yCenterCalendar = intval(round($this->imageBuilder->getHeightTarget() / 2));
+        $yCenterCalendar = intval(round(($this->imageBuilder->getHeightTarget() - $this->imageBuilder->getHeightTarget() * self::CALENDAR_BOX_BOTTOM_SIZE) / 2));
         $this->imageBuilder->initXY($xCenterCalendar, $yCenterCalendar);
 
         $this->imageBuilder->addText(
-            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getPageTitle(),
+            $this->getConfigurationValueString(KeyJson::TEXT),
             $this->fontSizeImage,
             Color::WHITE,
-            align: CalendarBuilderServiceConstants::ALIGN_CENTER
+            align: CalendarBuilderServiceConstants::ALIGN_CENTER,
+            valign: CalendarBuilderServiceConstants::VALIGN_MIDDLE,
         );
     }
 }

@@ -543,9 +543,28 @@ abstract class BaseImageBuilder
      * @param int $positionX
      * @param int $positionY
      * @param int $angle
+     * @param int $align
+     * @param int $valign
      * @return void
      */
-    abstract public function addTextRaw(string $text, int $fontSize, string $keyColor, int $positionX, int $positionY, int $angle = 0): void;
+    abstract public function addTextRaw(
+        string $text,
+        int $fontSize,
+        string $keyColor,
+        int $positionX,
+        int $positionY,
+        int $angle = 0,
+        int $align = CalendarBuilderServiceConstants::ALIGN_LEFT,
+        int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM
+    ): void;
+
+    /**
+     * Gets corrected value.
+     *
+     * @param float $value
+     * @return float
+     */
+    abstract public function getCorrectedValue(float $value): float;
 
     /**
      * Add text.
@@ -575,23 +594,18 @@ abstract class BaseImageBuilder
             $keyColor = 'white';
         }
 
+        $this->addTextRaw(
+            $text,
+            $fontSize,
+            $keyColor,
+            $this->positionX,
+            $this->positionY + $paddingTop,
+            $angle,
+            $align,
+            $valign
+        );
+
         $dimension = $this->getDimension($text, $fontSize, $angle);
-
-        $positionX = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => $this->positionX - intval(round($dimension['width'] / 2)),
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => $this->positionX - $dimension['width'],
-            default => $this->positionX,
-        };
-
-        $positionY = match ($valign) {
-            CalendarBuilderServiceConstants::VALIGN_TOP => $this->positionY + $fontSize,
-            default => $this->positionY,
-        };
-
-        $positionX = max($positionX, 0);
-        $positionY = max($positionY, 0);
-
-        $this->addTextRaw($text, $fontSize, $keyColor, $positionX, $positionY + $paddingTop, $angle);
 
         return [
             'width' => $dimension['width'],

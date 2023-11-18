@@ -22,10 +22,14 @@ namespace App\Constants;
  */
 class KeyJson
 {
+    final public const BACKGROUND_COLOR = 'background-color';
+
     final public const CALENDAR_BOX_BACKGROUND_COLOR = 'calendar-box-background-color';
 
     final public const CALENDAR_BOX_BACKGROUND_TRANSPARENCY = 'calendar-box-background-transparency';
 
     final public const IMAGE_VERTICAL_ALIGN = 'image-vertical-align';
+
+    final public const TEXT = 'text';
 
 }
