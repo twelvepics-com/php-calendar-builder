@@ -231,6 +231,17 @@ class ImageController extends AbstractController
     }
 
     /**
+     * The controller to show the root page.
+     *
+     * @return Response
+     */
+    #[Route('/', name: 'app_root')]
+    public function index(): Response
+    {
+        return $this->forward('App\Controller\ImageController::showCalendars');
+    }
+
+    /**
      * The controller to show the image.
      *
      * @param string $identifier
