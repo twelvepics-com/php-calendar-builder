@@ -625,6 +625,7 @@ class BaseParameter
     /**
      * Returns the image builder and the design according to the config.
      *
+     * @param Json|null $config
      * @return BaseImageBuilder
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -634,11 +635,21 @@ class BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getImageBuilder(): BaseImageBuilder
+    public function getImageBuilder(Json $config = null): BaseImageBuilder
     {
-        $designEngine = $this->getDesignEngine();
-        $designType = $this->getDesignType();
-        $designConfigJson = $this->getDesignConfig();
+        $designEngine = null;
+        $designType = null;
+        $designConfigJson = null;
+
+        if (!is_null($config)) {
+            $designEngine = $config->getKeyString('engine');
+            $designType = $config->getKeyString('type');
+            $designConfigJson = $config->getKeyJson('config');
+        }
+
+        $designEngine = $designEngine ?? $this->getDesignEngine();
+        $designType = $designType ?? $this->getDesignType();
+        $designConfigJson = $designConfigJson ?? $this->getDesignConfig();
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {

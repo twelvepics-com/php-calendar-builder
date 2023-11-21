@@ -43,23 +43,74 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function getImageProperties(string $pathAbsolute): Image
+    protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image
     {
+        if (is_null($pathAbsolute)) {
+            throw new LogicException('Invalid image path given.');
+        }
+
         /* Check created image */
         if (!file_exists($pathAbsolute)) {
             throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
         }
 
         /* Get image properties */
+        print 'start'.PHP_EOL;
         $image = new Imagick($pathAbsolute);
+        print 'finish'.PHP_EOL;
+
+        /* Return the image properties */
+        $image2 = new Image($this->appKernel);
+        $image2->setPathAbsolute($pathAbsolute);
+        print '$pathAbsolute'.PHP_EOL;
+        $image2->setWidth($image->getImageWidth());
+        print 'getImageWidth'.PHP_EOL;
+        $image2->setHeight($image->getImageHeight());
+        print 'getImageHeight'.PHP_EOL;
+        $image2->setMimeType($image->getImageMimeType());
+        print 'getImageMimeType'.PHP_EOL;
+        $image2->setSizeByte($image->getImageLength());
+        print 'getImageLength'.PHP_EOL;
+        $image2->setImageString($image->getImagesBlob());
+        print 'getImagesBlob'.PHP_EOL;
+
+        return $image2;
+
+//        return (new Image($this->appKernel))
+//            ->setPathAbsolute($pathAbsolute)
+//            ->setWidth($image->getImageWidth())
+//            ->setHeight($image->getImageHeight())
+//            ->setMimeType($image->getImageMimeType())
+//            ->setSizeByte($image->getImageLength())
+//            ->setImageString($image->getImagesBlob());
+    }
+
+    /**
+     * Returns image properties from given image.
+     *
+     * @inheritdoc
+     */
+    protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image
+    {
+        $imageInformation = getimagesizefromstring($imageString);
+
+        if ($imageInformation === false) {
+            throw new LogicException(sprintf('Could not read image "%s".', $this->imageString));
+        }
+
+        $width = $imageInformation[0];
+        $height = $imageInformation[1];
+        $mimeType = $imageInformation['mime'];
 
         /* Return the image properties */
         return (new Image($this->appKernel))
             ->setPathAbsolute($pathAbsolute)
-            ->setWidth($image->getImageWidth())
-            ->setHeight($image->getImageHeight())
-            ->setMimeType($image->getImageMimeType())
-            ->setSizeByte($image->getImageLength());
+            ->setWidth($width)
+            ->setHeight($height)
+            ->setMimeType($mimeType)
+            ->setSizeByte(strlen($imageString))
+            ->setImageString($imageString)
+        ;
     }
 
     /**
@@ -115,15 +166,23 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      * Creates image from given filename.
      *
      * @inheritdoc
-     * @SupressWarnings(PHPMD.UnusedLocalVariable)
      */
-    protected function createImageFromImage(string $filename, string $type = null): Imagick
+    protected function createImageFromImage(string|null $filename, string $format = null): Imagick
     {
-        if (!file_exists($filename)) {
+        if (is_null($format)) {
+            throw new LogicException('Invalid image format given.');
+        }
+
+        if (!is_null($filename) && !file_exists($filename)) {
             throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
         }
 
         $image = new Imagick($filename);
+
+        if (is_null($filename)) {
+            $image->newImage($this->widthTarget, $this->heightTarget, new ImagickPixel('rgba(0, 255, 0, 1)'), $format);
+        }
+
         $image->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE);
 
         return $image;
@@ -339,15 +398,9 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      */
     public function getImageString(): string
     {
-        $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
-
-        if (!is_string($extension)) {
-            throw new LogicException('Unable to get extension of file.');
-        }
-
         $image = $this->getImageTarget();
 
-        switch ($extension) {
+        switch ($this->format) {
             case CalendarBuilderServiceConstants::IMAGE_JPG:
             case CalendarBuilderServiceConstants::IMAGE_JPEG:
                 $image->setImageCompression(Imagick::COMPRESSION_JPEG);
@@ -362,7 +415,7 @@ class ImageMagickImageBuilder extends BaseImageBuilder
                 break;
 
             default:
-                throw new LogicException(sprintf('Unsupported given image extension "%s"', $extension));
+                throw new LogicException(sprintf('Unsupported given image extension "%s"', $this->format));
         }
 
         return $image->getImagesBlob();

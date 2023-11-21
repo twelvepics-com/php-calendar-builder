@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d6b2cda131c5b7d60957033817c9b2fa",
+    "content-hash": "8f465d1830afcd9f0744d3c59bd99a61",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2056,16 +2056,16 @@
         },
         {
             "name": "ixnode/php-cli-image",
-            "version": "0.1.1",
+            "version": "0.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-cli-image.git",
-                "reference": "81b42ea8be269e295eb1661be3da748e6e4db8c3"
+                "reference": "48b3fa0e4f0c1b1a515ec674f4eb5579e1ff9e51"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-cli-image/zipball/81b42ea8be269e295eb1661be3da748e6e4db8c3",
-                "reference": "81b42ea8be269e295eb1661be3da748e6e4db8c3",
+                "url": "https://api.github.com/repos/ixnode/php-cli-image/zipball/48b3fa0e4f0c1b1a515ec674f4eb5579e1ff9e51",
+                "reference": "48b3fa0e4f0c1b1a515ec674f4eb5579e1ff9e51",
                 "shasum": ""
             },
             "require": {
@@ -2118,9 +2118,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-cli-image/issues",
-                "source": "https://github.com/ixnode/php-cli-image/tree/0.1.1"
+                "source": "https://github.com/ixnode/php-cli-image/tree/0.1.2"
             },
-            "time": "2023-08-14T06:18:19+00:00"
+            "time": "2023-11-20T21:20:27+00:00"
         },
         {
             "name": "ixnode/php-container",
@@ -11065,6 +11065,7 @@
     "platform": {
         "php": ">=8.2",
         "ext-ctype": "*",
+        "ext-exif": "*",
         "ext-gd": "*",
         "ext-iconv": "*"
     },

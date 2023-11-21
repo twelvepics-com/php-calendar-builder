@@ -68,7 +68,7 @@ abstract class BaseImageBuilder
     /**
      * Class cached values.
      */
-    protected string $pathSourceAbsolute;
+    protected string|null $pathSourceAbsolute = null;
 
     protected string $pathTargetAbsolute;
 
@@ -95,12 +95,13 @@ abstract class BaseImageBuilder
 
     protected int $heightSource;
 
+    protected string $format;
+
     protected int $positionX;
 
     protected int $positionY;
 
-    protected string|null $imageString = null;
-
+    protected string $imageString;
 
     /**
      * @param KernelInterface $appKernel
@@ -169,6 +170,35 @@ abstract class BaseImageBuilder
         $this->setSourceDimensions();
         $this->setTargetDimensions();
         $this->setTargetZoom();
+        $this->setFormat(pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION));
+
+        /* Font path */
+        $this->setFontPath();
+
+        /* Do some customs initializations. */
+        $this->doInit();
+    }
+
+    /**
+     * Init function.
+     *
+     * @param int $width
+     * @param int $height
+     * @param string $format
+     * @return void
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function initWithoutCalendarBuilderService(int $width, int $height, string $format): void
+    {
+        $this->setWidthSource($width);
+        $this->setHeightSource($height);
+        $this->setWidthTarget($width);
+        $this->setHeightTarget($height);
+        $this->setFormat($format);
+
+        /* Calculate all dimensions. */
+        $this->setTargetZoom();
 
         /* Font path */
         $this->setFontPath();
@@ -187,7 +217,7 @@ abstract class BaseImageBuilder
      */
     public function build(bool $writeToFile = false): ImageContainer
     {
-        /* Creates the source and target GDImages */
+        /* Creates the source and target images */
         $this->createImages();
 
         /* Do the custom-builds */
@@ -204,10 +234,16 @@ abstract class BaseImageBuilder
         /* Destroy image */
         $this->destroyImages();
 
+        if (isset($this->pathTargetAbsolute)) {
+            return (new ImageContainer())
+                ->setSource($this->getImagePropertiesFromPath($this->pathSourceAbsolute))
+                ->setTarget($this->getImagePropertiesFromImageString($this->imageString, $this->pathTargetAbsolute));
+        }
+
         /* Returns the properties of the target and source image */
         return (new ImageContainer())
-            ->setSource($this->getImageProperties($this->pathSourceAbsolute))
-            ->setTarget($this->getImageProperties($this->pathTargetAbsolute))
+            ->setSource($this->getImagePropertiesFromImageString($this->imageString))
+            ->setTarget($this->getImagePropertiesFromImageString($this->imageString))
         ;
     }
 
@@ -264,6 +300,10 @@ abstract class BaseImageBuilder
      */
     protected function setSourceDimensions(): void
     {
+        if (is_null($this->pathSourceAbsolute)) {
+            throw new LogicException('Unexpected state: $this->pathSourceAbsolute is null');
+        }
+
         $propertySources = getimagesize($this->pathSourceAbsolute);
 
         if ($propertySources === false) {
@@ -414,11 +454,21 @@ abstract class BaseImageBuilder
     /**
      * Returns image properties from given image.
      *
-     * @param string $pathAbsolute
+     * @param string|null $pathAbsolute
      * @return Image
      * @throws Exception
      */
-    abstract protected function getImageProperties(string $pathAbsolute): Image;
+    abstract protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image;
+
+    /**
+     * Returns image properties from given image.
+     *
+     * @param string $imageString
+     * @param string|null $pathAbsolute
+     * @return Image
+     * @throws Exception
+     */
+    abstract protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image;
 
     /**
      * Returns the dimension of given text, font size and angle.
@@ -445,12 +495,12 @@ abstract class BaseImageBuilder
     /**
      * Creates image from given filename.
      *
-     * @param string $filename
-     * @param string|null $type
+     * @param string|null $filename
+     * @param string|null $format
      * @return GdImage|Imagick
      * @throws Exception
      */
-    abstract protected function createImageFromImage(string $filename, string $type = null): GdImage|Imagick;
+    abstract protected function createImageFromImage(string|null $filename, string $format = null): GdImage|Imagick;
 
     /**
      * Creates the GdImage instances.
@@ -459,7 +509,7 @@ abstract class BaseImageBuilder
     protected function createImages(): void
     {
         $this->imageTarget = $this->createImage($this->widthTarget, $this->heightTarget);
-        $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute);
+        $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute, $this->format);
     }
 
     /**
@@ -681,10 +731,6 @@ abstract class BaseImageBuilder
      */
     public function writeImage(): void
     {
-        if (is_null($this->imageString)) {
-            $this->imageString = $this->getImageString();
-        }
-
         file_put_contents($this->pathTargetAbsolute, $this->imageString);
     }
 
@@ -722,11 +768,33 @@ abstract class BaseImageBuilder
     }
 
     /**
+     * @param int $widthTarget
+     * @return self
+     */
+    public function setWidthTarget(int $widthTarget): self
+    {
+        $this->widthTarget = $widthTarget;
+
+        return $this;
+    }
+
+    /**
      * @return int
      */
     public function getHeightTarget(): int
     {
         return $this->heightTarget;
+    }
+
+    /**
+     * @param int $heightTarget
+     * @return self
+     */
+    public function setHeightTarget(int $heightTarget): self
+    {
+        $this->heightTarget = $heightTarget;
+
+        return $this;
     }
 
     /**
@@ -738,10 +806,51 @@ abstract class BaseImageBuilder
     }
 
     /**
+     * @param int $widthSource
+     * @return self
+     */
+    public function setWidthSource(int $widthSource): self
+    {
+        $this->widthSource = $widthSource;
+
+        return $this;
+    }
+
+    /**
      * @return int
      */
     public function getHeightSource(): int
     {
         return $this->heightSource;
+    }
+
+    /**
+     * @param int $heightSource
+     * @return self
+     */
+    public function setHeightSource(int $heightSource): self
+    {
+        $this->heightSource = $heightSource;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFormat(): string
+    {
+        return $this->format;
+    }
+
+    /**
+     * @param string $format
+     * @return self
+     */
+    public function setFormat(string $format): self
+    {
+        $this->format = $format;
+
+        return $this;
     }
 }

@@ -39,8 +39,12 @@ class GdImageImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function getImageProperties(string $pathAbsolute): Image
+    protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image
     {
+        if (is_null($pathAbsolute)) {
+            throw new LogicException('Invalid image path given.');
+        }
+
         /* Check created image */
         if (!file_exists($pathAbsolute)) {
             throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
@@ -69,6 +73,16 @@ class GdImageImageBuilder extends BaseImageBuilder
             ->setHeight((int)$image[1])
             ->setMimeType((string)$image['mime'])
             ->setSizeByte($sizeByte);
+    }
+
+    /**
+     * Returns image properties from given image.
+     *
+     * @inheritdoc
+     */
+    protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image
+    {
+        throw new LogicException('Not implemented yet.');
     }
 
     /**
@@ -118,20 +132,20 @@ class GdImageImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function createImageFromImage(string $filename, string $type = null): GdImage
+    protected function createImageFromImage(string|null $filename, string $format = null): GdImage
     {
-        if (!file_exists($filename)) {
+        if (!is_null($filename) && !file_exists($filename)) {
             throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
         }
 
-        if (is_null($type)) {
-            $type = pathinfo($filename, PATHINFO_EXTENSION);
+        if (is_null($format)) {
+            $format = pathinfo($filename, PATHINFO_EXTENSION);
         }
 
-        $image = match ($type) {
+        $image = match ($format) {
             CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagecreatefromjpeg($filename),
             CalendarBuilderServiceConstants::IMAGE_PNG => imagecreatefrompng($filename),
-            default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $type, __FILE__, __LINE__)),
+            default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $format, __FILE__, __LINE__)),
         };
 
         if ($image === false) {

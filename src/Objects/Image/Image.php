@@ -34,9 +34,9 @@ class Image
     {
     }
 
-    private string $pathAbsolute;
+    private string|null $pathAbsolute;
 
-    private string $pathRelative;
+    private string|null $pathRelative;
 
     private int $width;
 
@@ -50,20 +50,28 @@ class Image
 
     private string $type;
 
+    private string $imageString;
+
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPathAbsolute(): string
+    public function getPathAbsolute(): string|null
     {
         return $this->pathAbsolute;
     }
 
     /**
-     * @param string $pathAbsolute
+     * @param string|null $pathAbsolute
      * @return self
      */
-    public function setPathAbsolute(string $pathAbsolute): self
+    public function setPathAbsolute(string|null $pathAbsolute): self
     {
+        if (is_null($pathAbsolute)) {
+            $this->pathAbsolute = null;
+            $this->pathRelative = null;
+            return $this;
+        }
+
         $this->pathAbsolute = $pathAbsolute;
 
         $pathRelative = preg_replace('~^'.$this->appKernel->getProjectDir().'/~', '', $pathAbsolute);
@@ -78,9 +86,9 @@ class Image
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPathRelative(): string
+    public function getPathRelative(): string|null
     {
         return $this->pathRelative;
     }
@@ -209,6 +217,25 @@ class Image
     public function setType(string $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getImageString(): string
+    {
+        return $this->imageString;
+    }
+
+    /**
+     * @param string $imageString
+     * @return self
+     */
+    public function setImageString(string $imageString): self
+    {
+        $this->imageString = $imageString;
 
         return $this;
     }
