@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
-use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\ImageContainer;
 use App\Objects\Parameter\Source;
@@ -22,7 +21,6 @@ use App\Objects\Parameter\Target;
 use DateTime;
 use DateTimeImmutable;
 use Exception;
-use Ixnode\PhpContainer\File;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
@@ -454,35 +452,6 @@ class CalendarBuilderService
     }
 
     /**
-     * Returns the target path from the given source.
-     *
-     * @param File $sourceImage
-     * @return string
-     * @throws FileNotFoundException
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
-     * @throws JsonException
-     */
-    private function getTargetPathFromSource(File $sourceImage): string
-    {
-        $target = $this->getParameterTarget();
-        $source = $this->getParameterSource();
-
-        $extension = pathinfo($sourceImage->getPathReal(), PATHINFO_EXTENSION);
-
-        $targetPath = $source->getOptionFromConfig(Option::TARGET);
-
-        if (is_null($targetPath)) {
-            $targetPath = sprintf('%s-%s.%s', $target->getYear(), $target->getMonth(), $extension);
-        }
-
-        return sprintf('%s/%s', $sourceImage->getDirectoryPath(), $targetPath);
-    }
-
-    /**
      * Builds the given source image to a calendar page.
      *
      * @param bool $writeToFile
@@ -499,7 +468,11 @@ class CalendarBuilderService
      */
     public function build(bool $writeToFile = false): ImageContainer
     {
-        $pathTargetAbsolute = $this->getTargetPathFromSource($this->parameterSource->getImage());
+        $config = $this->parameterSource->getConfig();
+
+        $config = $config->getKeyJson(['pages', (string) $this->parameterSource->getPageNumber()]);
+
+        $pathTargetAbsolute = sprintf('%s/data/calendar/%s/%s', $this->appKernel->getProjectDir(), $this->parameterSource->getIdentification(), $config->getKeyString('target'));
 
         if ($this->deleteTargetImages) {
             $this->removeTargetImages($pathTargetAbsolute);

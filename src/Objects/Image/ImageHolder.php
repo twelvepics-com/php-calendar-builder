@@ -50,10 +50,19 @@ class ImageHolder
 
     private int $height;
 
+    private string|null $path = null;
+
     /**
      * @param KernelInterface $appKernel
      * @param string $identifier
      * @param string|Json $imageConfig
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     public function __construct(protected readonly KernelInterface $appKernel, protected string $identifier, protected string|Json $imageConfig)
     {
@@ -188,11 +197,14 @@ class ImageHolder
         $format = $imageConfig->getKeyString(['config', 'format']);
 
         $imageBuilder = (new Source($this->appKernel))->getImageBuilder($imageConfig);
+
         $imageBuilder->initWithoutCalendarBuilderService($width, $height, $format);
 
         $imageContainer = $imageBuilder->build();
 
         $this->imageString = $imageContainer->getTarget()->getImageString();
+
+        $imageBuilder->setImageStringSource($this->imageString);
     }
 
     /**
@@ -209,6 +221,7 @@ class ImageHolder
      */
     private function init(): void
     {
+
         match (true) {
             is_string($this->imageConfig) => $this->initPath($this->imageConfig),
             $this->imageConfig instanceof Json => $this->initJson($this->imageConfig),
@@ -266,5 +279,10 @@ class ImageHolder
     public function getSizeHuman(): string
     {
         return (new SizeByte($this->getSizeByte()))->getHumanReadable();
+    }
+
+    public function getPath(): ?string
+    {
+        return $this->path;
     }
 }

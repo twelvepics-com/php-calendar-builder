@@ -34,9 +34,9 @@ class Image
     {
     }
 
-    private string|null $pathAbsolute;
+    private string|null $pathAbsolute = null;
 
-    private string|null $pathRelative;
+    private string|null $pathRelative = null;
 
     private int $width;
 

@@ -44,6 +44,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @since 0.1.0 (2023-11-13) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.TooManyFields)
  */
 abstract class BaseImageBuilder
 {
@@ -101,7 +102,9 @@ abstract class BaseImageBuilder
 
     protected int $positionY;
 
-    protected string $imageString;
+    protected string $imageStringSource;
+
+    protected string $imageStringTarget;
 
     /**
      * @param KernelInterface $appKernel
@@ -152,6 +155,13 @@ abstract class BaseImageBuilder
      *
      * @param CalendarBuilderService $calendarBuilderService
      * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -161,6 +171,7 @@ abstract class BaseImageBuilder
     {
         /* Sets calendar builder service. */
         $this->calendarBuilderService = $calendarBuilderService;
+        $this->imageStringSource = $this->calendarBuilderService->getParameterSource()->getImageHolder()->getImageString();
 
         /* Sets image paths */
         $this->setSourcePath();
@@ -224,7 +235,7 @@ abstract class BaseImageBuilder
         $this->doBuild();
 
         /* Save the image string */
-        $this->imageString = $this->getImageString();
+        $this->imageStringTarget = $this->getImageStringTarget();
 
         /* Write image */
         if ($writeToFile) {
@@ -236,25 +247,26 @@ abstract class BaseImageBuilder
 
         if (isset($this->pathTargetAbsolute)) {
             return (new ImageContainer())
-                ->setSource($this->getImagePropertiesFromPath($this->pathSourceAbsolute))
-                ->setTarget($this->getImagePropertiesFromImageString($this->imageString, $this->pathTargetAbsolute));
+                ->setSource($this->getImagePropertiesFromImageString($this->imageStringSource, $this->pathSourceAbsolute))
+                ->setTarget($this->getImagePropertiesFromImageString($this->imageStringTarget, $this->pathTargetAbsolute))
+            ;
         }
 
         /* Returns the properties of the target and source image */
         return (new ImageContainer())
-            ->setSource($this->getImagePropertiesFromImageString($this->imageString))
-            ->setTarget($this->getImagePropertiesFromImageString($this->imageString))
+            ->setSource($this->getImagePropertiesFromImageString($this->imageStringTarget))
+            ->setTarget($this->getImagePropertiesFromImageString($this->imageStringTarget))
         ;
     }
 
     /**
      * Returns the source image.
      *
-     * @return File
+     * @return string
      */
-    protected function getSourceImage(): File
+    protected function getSourceImageString(): string
     {
-        return $this->calendarBuilderService->getParameterSource()->getImage();
+        return $this->calendarBuilderService->getParameterSource()->getImageHolder()->getImageString();
     }
 
     /**
@@ -271,16 +283,28 @@ abstract class BaseImageBuilder
      * Sets the source image path.
      *
      * @return void
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     protected function setSourcePath(): void
     {
-        /* Check if the source image exists. */
-        if (!$this->getSourceImage()->exist()) {
-            throw new LogicException(sprintf('Given source image was not found: "%s"', $this->getSourceImage()->getPath()));
+        $config = $this->getCalendarBuilderService()->getParameterSource()->getConfig();
+
+        $page = $config->getKeyJson(['pages', (string) $this->getCalendarBuilderService()->getParameterSource()->getPageNumber()]);
+
+        $source = $page->getKey('source');
+
+        if (!is_string($source)) {
+            $this->pathSourceAbsolute = null;
+            return;
         }
 
-        /* Sets the source and target image paths. */
-        $this->pathSourceAbsolute = $this->getSourceImage()->getPath();
+        $this->pathSourceAbsolute = sprintf('%s/data/calendar/%s/%s', $this->appKernel->getProjectDir(), $this->getCalendarBuilderService()->getParameterSource()->getIdentification(), $source);
     }
 
     /**
@@ -300,18 +324,8 @@ abstract class BaseImageBuilder
      */
     protected function setSourceDimensions(): void
     {
-        if (is_null($this->pathSourceAbsolute)) {
-            throw new LogicException('Unexpected state: $this->pathSourceAbsolute is null');
-        }
-
-        $propertySources = getimagesize($this->pathSourceAbsolute);
-
-        if ($propertySources === false) {
-            throw new LogicException(sprintf('Unable to get image size (%s:%d)', __FILE__, __LINE__));
-        }
-
-        $this->widthSource = $propertySources[0];
-        $this->heightSource = $propertySources[1];
+        $this->widthSource = $this->calendarBuilderService->getParameterSource()->getImageHolder()->getWidth();
+        $this->heightSource = $this->calendarBuilderService->getParameterSource()->getImageHolder()->getHeight();
     }
 
     /**
@@ -454,15 +468,6 @@ abstract class BaseImageBuilder
     /**
      * Returns image properties from given image.
      *
-     * @param string|null $pathAbsolute
-     * @return Image
-     * @throws Exception
-     */
-    abstract protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image;
-
-    /**
-     * Returns image properties from given image.
-     *
      * @param string $imageString
      * @param string|null $pathAbsolute
      * @return Image
@@ -495,12 +500,11 @@ abstract class BaseImageBuilder
     /**
      * Creates image from given filename.
      *
-     * @param string|null $filename
-     * @param string|null $format
+     * @param string $format
      * @return GdImage|Imagick
      * @throws Exception
      */
-    abstract protected function createImageFromImage(string|null $filename, string $format = null): GdImage|Imagick;
+    abstract protected function createImageFromImage(string $format): GdImage|Imagick;
 
     /**
      * Creates the GdImage instances.
@@ -509,7 +513,7 @@ abstract class BaseImageBuilder
     protected function createImages(): void
     {
         $this->imageTarget = $this->createImage($this->widthTarget, $this->heightTarget);
-        $this->imageSource = $this->createImageFromImage($this->pathSourceAbsolute, $this->format);
+        $this->imageSource = $this->createImageFromImage($this->format);
     }
 
     /**
@@ -722,7 +726,7 @@ abstract class BaseImageBuilder
      *
      * @return string
      */
-    abstract public function getImageString(): string;
+    abstract public function getImageStringTarget(): string;
 
     /**
      * Writes target image.
@@ -731,7 +735,7 @@ abstract class BaseImageBuilder
      */
     public function writeImage(): void
     {
-        file_put_contents($this->pathTargetAbsolute, $this->imageString);
+        file_put_contents($this->pathTargetAbsolute, $this->imageStringTarget);
     }
 
     /**
@@ -851,6 +855,17 @@ abstract class BaseImageBuilder
     {
         $this->format = $format;
 
+        return $this;
+    }
+
+    public function getImageStringSource(): string
+    {
+        return $this->imageStringSource;
+    }
+
+    public function setImageStringSource(string $imageStringSource): BaseImageBuilder
+    {
+        $this->imageStringSource = $imageStringSource;
         return $this;
     }
 }

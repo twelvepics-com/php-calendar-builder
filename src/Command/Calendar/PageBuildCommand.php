@@ -16,16 +16,12 @@ namespace App\Command\Calendar;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
-use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\Image;
 use App\Objects\Image\ImageContainer;
-use App\Objects\Image\ImageHolder;
 use App\Objects\Parameter\Source;
 use App\Objects\Parameter\Target;
 use App\Service\CalendarBuilderService;
 use Exception;
-use Ixnode\PhpCliImage\CliImage;
-use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -40,7 +36,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class PageBuildCommand
@@ -65,13 +60,11 @@ class PageBuildCommand extends Command
     /**
      * CreatePageCommand constructor
      *
-     * @param KernelInterface $appKernel
      * @param CalendarBuilderService $calendarBuilderService
      * @param Source $source
      * @param Target $target
      */
     public function __construct(
-        private readonly KernelInterface $appKernel,
         private readonly CalendarBuilderService $calendarBuilderService,
         private readonly Source $source,
         private readonly Target $target
@@ -136,7 +129,7 @@ EOT
         $this->output->writeln('');
         $this->output->writeln('Source');
         $this->output->writeln('------');
-        $this->output->writeln(sprintf('Path:            %s', $this->source->getImage()->getPath()));
+        $this->output->writeln(sprintf('Path:            %s', $this->source->getImageHolder()->getPath()));
         $this->output->writeln('');
 
         $this->output->writeln('Target');
@@ -209,49 +202,6 @@ EOT
     }
 
     /**
-     * Creates the image.
-     *
-     * @return void
-     * @throws CaseUnsupportedException
-     */
-    private function createImage(): void
-    {
-        $config = [
-            'engine' => 'imagick',
-            'type' => 'text',
-            'config' => [
-                'background-color' => [ 47, 141, 171 ],
-                'calendar-box-background-color' => [ 0, 0, 0 ],
-                'calendar-box-background-transparency' => 60,
-                'image-vertical-align' => 'bottom',
-                'text-font-size' => 300,
-                'text' => 'Der beste Weg,<br>die Zukunft vorauszusagen,<br>ist, sie zu gestalten.',
-                'author-font-size' => 100,
-                'author' => 'Abraham Lincoln',
-                'width' => 6000,
-                'height' => 4000,
-                'format' => CalendarBuilderServiceConstants::IMAGE_PNG,
-            ]
-        ];
-
-        $imageConfig = '01.png';
-        $imageConfig = new Json($config);
-
-        $imageHolder = new ImageHolder($this->appKernel, '8392e77294da', $imageConfig);
-
-        print sprintf('Width: %d', $imageHolder->getWidth()).PHP_EOL;
-        print sprintf('Height: %d', $imageHolder->getHeight()).PHP_EOL;
-        print sprintf('Format: %s', $imageHolder->getMimeType()).PHP_EOL;
-        print sprintf('Size: %d', $imageHolder->getSizeByte()).PHP_EOL;
-        print sprintf('Size human: %s', $imageHolder->getSizeHuman()).PHP_EOL;
-
-        $cliImage = new CliImage($imageHolder->getImageString());
-
-        print $cliImage->getAsciiString().PHP_EOL;
-        exit();
-    }
-
-    /**
      * Execute the commands.
      *
      * @param InputInterface $input
@@ -262,8 +212,6 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->output = $output;
-
-        $this->createImage();
 
         /* Read arguments (Source). */
         $this->source->readParameter($input);

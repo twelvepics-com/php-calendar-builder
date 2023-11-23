@@ -132,24 +132,27 @@ class GdImageImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function createImageFromImage(string|null $filename, string $format = null): GdImage
+    protected function createImageFromImage(string $format): GdImage
     {
-        if (!is_null($filename) && !file_exists($filename)) {
-            throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
-        }
-
-        if (is_null($format)) {
-            $format = pathinfo($filename, PATHINFO_EXTENSION);
-        }
-
-        $image = match ($format) {
-            CalendarBuilderServiceConstants::IMAGE_JPG, CalendarBuilderServiceConstants::IMAGE_JPEG => imagecreatefromjpeg($filename),
-            CalendarBuilderServiceConstants::IMAGE_PNG => imagecreatefrompng($filename),
-            default => throw new Exception(sprintf('Unknown given image type "%s" (%s:%d)', $format, __FILE__, __LINE__)),
-        };
+        $image = imagecreate($this->widthTarget, $this->heightTarget);
 
         if ($image === false) {
             throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
+        }
+
+        if (isset($this->imageStringSource)) {
+            $source = imagecreatefromstring($this->imageStringSource);
+
+            if ($source === false) {
+                throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));
+            }
+
+            $width = imagesx($source);
+            $height = imagesy($source);
+
+            imagecopy($image, $source, 0, 0, 0, 0, $width, $height);
+
+            imagedestroy($source);
         }
 
         imagealphablending($image, true);
@@ -350,7 +353,7 @@ class GdImageImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    public function getImageString(): string
+    public function getImageStringTarget(): string
     {
         $extension = pathinfo($this->pathTargetAbsolute, PATHINFO_EXTENSION);
 

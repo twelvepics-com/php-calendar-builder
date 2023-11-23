@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter;
 
+use App\Objects\Image\ImageHolder;
 use App\Objects\Parameter\Base\BaseParameter;
 use DateTimeImmutable;
 use Ixnode\PhpCliImage\CliImage;
 use Ixnode\PhpContainer\File;
+use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -38,7 +40,7 @@ use UnexpectedValueException;
  */
 class Source extends BaseParameter
 {
-    private File $image;
+    private ImageHolder $image;
 
     private CliImage $cliImage;
 
@@ -51,9 +53,9 @@ class Source extends BaseParameter
     private string $identification;
 
     /**
-     * @return File
+     * @return ImageHolder
      */
-    public function getImage(): File
+    public function getImageHolder(): ImageHolder
     {
         if (!isset($this->image)) {
             throw new UnexpectedValueException(sprintf('Call method readParameter before using this method "%s".', __METHOD__));
@@ -63,12 +65,13 @@ class Source extends BaseParameter
     }
 
     /**
-     * @param File $image
+     * @param ImageHolder $image
+     * @param string $identification
      * @return void
      */
-    private function setImage(File $image): void
+    private function setImageHolder(ImageHolder $image, string $identification): void
     {
-        $this->setIdentification(basename(dirname($image->getPath())));
+        $this->setIdentification($identification);
 
         $this->image = $image;
     }
@@ -143,10 +146,6 @@ class Source extends BaseParameter
      */
     private function readHolidays(): void
     {
-        if (is_null($this->config)) {
-            return;
-        }
-
         $this->holidays = [];
         if ($this->config->hasKey('holidays')) {
             $holidays = $this->config->getKeyArray('holidays');
@@ -184,10 +183,6 @@ class Source extends BaseParameter
      */
     private function readBirthdays(): void
     {
-        if (is_null($this->config)) {
-            return;
-        }
-
         $this->birthdays = [];
         if ($this->config->hasKey('birthdays')) {
             $birthdays = $this->config->getKeyArray('birthdays');
@@ -230,17 +225,33 @@ class Source extends BaseParameter
     {
         $this->unsetPageNumber();
 
-        $sourcePath = $this->getSourcePath($input);
+        $identifier = $this->getIdentifier($input);
 
-        $this->setImage(new File($sourcePath, $this->appKernel->getProjectDir()));
-
-        $this->setCliImage(new CliImage($this->getImage(), $sourceCliWidth));
-
-        if (is_null($this->config)) {
-            $pathConfig = sprintf('%s/%s', pathinfo($sourcePath, PATHINFO_DIRNAME), self::CONFIG_NAME);
+        if (!isset($this->config)) {
+            $pathConfig = sprintf('%s/%s', pathinfo($this->getSourcePath($input), PATHINFO_DIRNAME), self::CONFIG_NAME);
 
             $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
         }
+
+        $page = $this->config->getKeyJson(['pages', (string) $this->getPageNumber()]);
+
+        $source = $page->getKey('source');
+
+        $imageConfig = match (true) {
+            is_string($source) => $source,
+            is_array($source) => new Json($source),
+            default => null,
+        };
+
+        if (is_null($imageConfig)) {
+            throw new LogicException('Unable to read image source.');
+        }
+
+        $imageHolder = new ImageHolder($this->appKernel, $identifier, $imageConfig);
+
+        $this->setImageHolder($imageHolder, $identifier);
+
+        $this->setCliImage(new CliImage($imageHolder->getImageString(), $sourceCliWidth));
 
         $this->readHolidays();
         $this->readBirthdays();

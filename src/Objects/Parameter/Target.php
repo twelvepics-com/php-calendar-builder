@@ -43,8 +43,6 @@ class Target extends BaseParameter
 {
     private File $image;
 
-
-
     /* Title of the page. */
     final public const DEFAULT_PAGE_TITLE = 'Page Title';
     private string $pageTitle = self::DEFAULT_PAGE_TITLE;
@@ -262,6 +260,10 @@ class Target extends BaseParameter
             return;
         }
 
+        if (is_array($value)) {
+            throw new LogicException('Array is not supported.');
+        }
+
         match ($name) {
             Option::YEAR => $this->setYear((int) $value),
             Option::MONTH => $this->setMonth((int) $value),
@@ -283,7 +285,7 @@ class Target extends BaseParameter
      * Reads and sets the parameter to this class.
      *
      * @param InputInterface $input
-     * @param Json|null $config
+     * @param Json $config
      * @return void
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -294,7 +296,7 @@ class Target extends BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function readParameter(InputInterface $input, Json|null $config = null): void
+    public function readParameter(InputInterface $input, Json $config): void
     {
         $this->unsetPageNumber();
 

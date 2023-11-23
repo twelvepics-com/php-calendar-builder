@@ -43,59 +43,12 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image
-    {
-        if (is_null($pathAbsolute)) {
-            throw new LogicException('Invalid image path given.');
-        }
-
-        /* Check created image */
-        if (!file_exists($pathAbsolute)) {
-            throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Get image properties */
-        print 'start'.PHP_EOL;
-        $image = new Imagick($pathAbsolute);
-        print 'finish'.PHP_EOL;
-
-        /* Return the image properties */
-        $image2 = new Image($this->appKernel);
-        $image2->setPathAbsolute($pathAbsolute);
-        print '$pathAbsolute'.PHP_EOL;
-        $image2->setWidth($image->getImageWidth());
-        print 'getImageWidth'.PHP_EOL;
-        $image2->setHeight($image->getImageHeight());
-        print 'getImageHeight'.PHP_EOL;
-        $image2->setMimeType($image->getImageMimeType());
-        print 'getImageMimeType'.PHP_EOL;
-        $image2->setSizeByte($image->getImageLength());
-        print 'getImageLength'.PHP_EOL;
-        $image2->setImageString($image->getImagesBlob());
-        print 'getImagesBlob'.PHP_EOL;
-
-        return $image2;
-
-//        return (new Image($this->appKernel))
-//            ->setPathAbsolute($pathAbsolute)
-//            ->setWidth($image->getImageWidth())
-//            ->setHeight($image->getImageHeight())
-//            ->setMimeType($image->getImageMimeType())
-//            ->setSizeByte($image->getImageLength())
-//            ->setImageString($image->getImagesBlob());
-    }
-
-    /**
-     * Returns image properties from given image.
-     *
-     * @inheritdoc
-     */
     protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image
     {
         $imageInformation = getimagesizefromstring($imageString);
 
         if ($imageInformation === false) {
-            throw new LogicException(sprintf('Could not read image "%s".', $this->imageString));
+            throw new LogicException(sprintf('Could not read image "%s".', $this->imageStringTarget));
         }
 
         $width = $imageInformation[0];
@@ -156,7 +109,7 @@ class ImageMagickImageBuilder extends BaseImageBuilder
     {
         $image = new Imagick();
 
-        $image->newImage($width, $height, new ImagickPixel('rgba(0, 255, 0, 1)'));
+        $image->newImage($width, $height, new ImagickPixel('rgba(0, 0, 0, 1)'));
         $image->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE);
 
         return $image;
@@ -167,20 +120,17 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      *
      * @inheritdoc
      */
-    protected function createImageFromImage(string|null $filename, string $format = null): Imagick
+    protected function createImageFromImage(string $format): Imagick
     {
-        if (is_null($format)) {
-            throw new LogicException('Invalid image format given.');
-        }
+        $image = new Imagick();
+        $image->newImage($this->widthTarget, $this->heightTarget, new ImagickPixel('rgba(0, 0, 0, 1)'), $format);
 
-        if (!is_null($filename) && !file_exists($filename)) {
-            throw new Exception(sprintf('Unable to find image "%s" (%s:%d)', $filename, __FILE__, __LINE__));
-        }
+        if (isset($this->imageStringSource)) {
+            $source = new Imagick();
+            $source->readImageBlob($this->imageStringSource);
+            $source->scaleImage($this->widthTarget, $this->heightTarget);
 
-        $image = new Imagick($filename);
-
-        if (is_null($filename)) {
-            $image->newImage($this->widthTarget, $this->heightTarget, new ImagickPixel('rgba(0, 255, 0, 1)'), $format);
+            $image->compositeImage($source, Imagick::COMPOSITE_OVER, 0, 0);
         }
 
         $image->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE);
@@ -396,7 +346,7 @@ class ImageMagickImageBuilder extends BaseImageBuilder
      * @inheritdoc
      * @throws ImagickException
      */
-    public function getImageString(): string
+    public function getImageStringTarget(): string
     {
         $image = $this->getImageTarget();
 
