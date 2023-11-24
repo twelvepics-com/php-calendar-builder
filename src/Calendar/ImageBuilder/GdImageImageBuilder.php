@@ -35,57 +35,6 @@ use LogicException;
 class GdImageImageBuilder extends BaseImageBuilder
 {
     /**
-     * Returns image properties from given image.
-     *
-     * @inheritdoc
-     */
-    protected function getImagePropertiesFromPath(string|null $pathAbsolute): Image
-    {
-        if (is_null($pathAbsolute)) {
-            throw new LogicException('Invalid image path given.');
-        }
-
-        /* Check created image */
-        if (!file_exists($pathAbsolute)) {
-            throw new Exception(sprintf('Missing file "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Get image properties */
-        $image = getimagesize($pathAbsolute);
-
-        /* Check image properties */
-        if ($image === false) {
-            throw new Exception(sprintf('Unable to get file information from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Get file size */
-        $sizeByte = filesize($pathAbsolute);
-
-        /* Check image properties */
-        if ($sizeByte === false) {
-            throw new Exception(sprintf('Unable to get file size from "%s" (%s:%d).', $pathAbsolute, __FILE__, __LINE__));
-        }
-
-        /* Return the image properties */
-        return (new Image($this->appKernel))
-            ->setPathAbsolute($pathAbsolute)
-            ->setWidth((int)$image[0])
-            ->setHeight((int)$image[1])
-            ->setMimeType((string)$image['mime'])
-            ->setSizeByte($sizeByte);
-    }
-
-    /**
-     * Returns image properties from given image.
-     *
-     * @inheritdoc
-     */
-    protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image
-    {
-        throw new LogicException('Not implemented yet.');
-    }
-
-    /**
      * Returns the dimension of given text, font size and angle.
      *
      * @inheritdoc
@@ -134,7 +83,7 @@ class GdImageImageBuilder extends BaseImageBuilder
      */
     protected function createImageFromImage(string $format): GdImage
     {
-        $image = imagecreate($this->widthTarget, $this->heightTarget);
+        $image = imagecreatetruecolor($this->widthTarget, $this->heightTarget);
 
         if ($image === false) {
             throw new Exception(sprintf('Unable to create image (%s:%d)', __FILE__, __LINE__));

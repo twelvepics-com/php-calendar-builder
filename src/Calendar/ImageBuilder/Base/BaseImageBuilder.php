@@ -473,7 +473,28 @@ abstract class BaseImageBuilder
      * @return Image
      * @throws Exception
      */
-    abstract protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image;
+    protected function getImagePropertiesFromImageString(string $imageString, string|null $pathAbsolute = null): Image
+    {
+        $imageInformation = getimagesizefromstring($imageString);
+
+        if ($imageInformation === false) {
+            throw new LogicException(sprintf('Could not read image "%s".', $this->imageStringTarget));
+        }
+
+        $width = $imageInformation[0];
+        $height = $imageInformation[1];
+        $mimeType = $imageInformation['mime'];
+
+        /* Return the image properties */
+        return (new Image($this->appKernel))
+            ->setPathAbsolute($pathAbsolute)
+            ->setWidth($width)
+            ->setHeight($height)
+            ->setMimeType($mimeType)
+            ->setSizeByte(strlen($imageString))
+            ->setImageString($imageString)
+        ;
+    }
 
     /**
      * Returns the dimension of given text, font size and angle.
