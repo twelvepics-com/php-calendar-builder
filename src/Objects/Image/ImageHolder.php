@@ -93,17 +93,28 @@ class ImageHolder
     /**
      * Sets the image string.
      *
-     * @param string $pathAbsolute
+     * @param string $pathRelative
      * @return void
      */
-    private function setImageString(string $pathAbsolute): void
+    private function setImageString(string $pathRelative): void
     {
+        $pathAbsolute = sprintf('%s/%s', $this->appKernel->getProjectDir(), $pathRelative);
+
+        if (!file_exists($pathAbsolute)) {
+            throw new LogicException(sprintf('Image "%s" not found.', $pathAbsolute));
+        }
+
+        if (!$this->isImage($pathAbsolute)) {
+            throw new LogicException(sprintf('Image "%s" is not an image.', $pathAbsolute));
+        }
+
         $imageString = file_get_contents($pathAbsolute);
 
         if ($imageString === false) {
             throw new LogicException(sprintf('Could not read image "%s".', $pathAbsolute));
         }
 
+        $this->path = $pathRelative;
         $this->imageString = $imageString;
     }
 
@@ -162,19 +173,7 @@ class ImageHolder
      */
     private function initPath(string $imageConfig): void
     {
-        $pathRelative = sprintf('%s/%s/%s', self::PATH_CALENDAR, $this->identifier, $imageConfig);
-
-        $pathAbsolute = sprintf('%s/%s', $this->appKernel->getProjectDir(), $pathRelative);
-
-        if (!file_exists($pathAbsolute)) {
-            throw new LogicException(sprintf('Image "%s" not found.', $pathAbsolute));
-        }
-
-        if (!$this->isImage($pathAbsolute)) {
-            throw new LogicException(sprintf('Image "%s" is not an image.', $pathAbsolute));
-        }
-
-        $this->setImageString($pathAbsolute);
+        $this->setImageString(sprintf('%s/%s/%s', self::PATH_CALENDAR, $this->identifier, $imageConfig));
     }
 
     /**
@@ -189,6 +188,7 @@ class ImageHolder
      * @throws FunctionJsonEncodeException
      * @throws TypeInvalidException
      * @throws JsonException
+     * @throws Exception
      */
     private function initJson(Json $imageConfig): void
     {
@@ -221,9 +221,11 @@ class ImageHolder
      */
     private function init(): void
     {
-
         match (true) {
+            /* Build image from the path. */
             is_string($this->imageConfig) => $this->initPath($this->imageConfig),
+
+            /* Build image from config. */
             $this->imageConfig instanceof Json => $this->initJson($this->imageConfig),
         };
 
