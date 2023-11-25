@@ -13,14 +13,18 @@ declare(strict_types=1);
 
 namespace App\Objects\Image;
 
+use App\Objects\Exif\ExifCoordinate;
 use App\Objects\Parameter\Source;
 use Exception;
 use Ixnode\PhpContainer\Json;
+use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -48,6 +52,8 @@ class ImageHolder
     private int $width;
 
     private int $height;
+
+    private Coordinate|null $coordinate = null;
 
     private string|null $path = null;
 
@@ -165,14 +171,33 @@ class ImageHolder
     }
 
     /**
+     * Sets the image coordinate.
+     *
+     * @return void
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function setImageCoordinate(): void
+    {
+        if (is_null($this->path)) {
+            return;
+        }
+
+        $this->coordinate = (new ExifCoordinate($this->path))->getCoordinate();
+    }
+
+    /**
      * Initializes the image holder (according to the image path).
      *
      * @param string $imageConfig
      * @return void
+     * @throws CaseUnsupportedException
+     * @throws ParserException
      */
     private function initPath(string $imageConfig): void
     {
         $this->setImageString(sprintf('%s/%s/%s', self::PATH_CALENDAR, $this->identifier, $imageConfig));
+        $this->setImageCoordinate();
     }
 
     /**
@@ -255,6 +280,24 @@ class ImageHolder
     public function getHeight(): int
     {
         return $this->height;
+    }
+
+    /**
+     * @return Coordinate|null
+     */
+    public function getCoordinate(): ?Coordinate
+    {
+        return $this->coordinate;
+    }
+
+    /**
+     * @param Coordinate|null $coordinate
+     * @return $this
+     */
+    public function setCoordinate(?Coordinate $coordinate): ImageHolder
+    {
+        $this->coordinate = $coordinate;
+        return $this;
     }
 
     /**

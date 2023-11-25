@@ -20,6 +20,15 @@ use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServ
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
+use Ixnode\PhpCoordinate\Coordinate;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use JsonException;
 use LogicException;
 
 /**
@@ -107,11 +116,17 @@ class DesignDefault extends DesignBase
     protected array $positionDays = [];
 
 
-
     /**
      * Do the main init for XXXDefault.php
      *
-     * @inheritdoc 
+     * @inheritdoc
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
      */
     public function doInit(): void
     {
@@ -261,6 +276,29 @@ class DesignDefault extends DesignBase
     }
 
     /**
+     * Returns the coordinate string.
+     *
+     * @return string
+     * @throws CaseUnsupportedException
+     */
+    private function getCoordinateString(): string
+    {
+        $coordinateString = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getCoordinate();
+
+        if ($coordinateString !== 'auto') {
+            return $coordinateString;
+        }
+
+        $coordinate = $this->imageBuilder->getCalendarBuilderService()->getParameterSource()->getImageHolder()->getCoordinate();
+
+        if (is_null($coordinate)) {
+            throw new LogicException('Unable to get the coordinate of the image holder.');
+        }
+
+        return $coordinate->getStringDMS();
+    }
+
+    /**
      * Add the title and position.
      *
      * @throws Exception
@@ -285,7 +323,7 @@ class DesignDefault extends DesignBase
         $xPosition = $this->paddingCalendarDays + $this->fontSizePosition;
         $yPosition = $this->yCalendarBoxBottom - $this->paddingCalendarDays;
         $this->imageBuilder->addTextRaw(
-            $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getCoordinate(),
+            $this->getCoordinateString(),
             $this->fontSizePosition,
             Color::WHITE,
             $xPosition,
