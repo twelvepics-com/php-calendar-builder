@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.2] - 2023-11-25
+
+* Add text generator to source
+* Text generator and source image can now be used (see data/examples/quote)
+* Add config reader
+* Add new quote examples
+* Update README.md documentation
+* Complete refactoring
+
 ### [0.1.1] - 2023-11-11
 
 * Add CalendarBuilderService
