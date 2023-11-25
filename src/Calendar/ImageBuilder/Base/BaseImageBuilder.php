@@ -260,16 +260,6 @@ abstract class BaseImageBuilder
     }
 
     /**
-     * Returns the source image.
-     *
-     * @return string
-     */
-    protected function getSourceImageString(): string
-    {
-        return $this->calendarBuilderService->getParameterSource()->getImageHolder()->getImageString();
-    }
-
-    /**
      * Returns the target image.
      *
      * @return File

@@ -71,7 +71,20 @@ class BaseParameter
      */
     public function __construct(protected readonly KernelInterface $appKernel)
     {
+        $this->unsetAll();
+    }
+
+    /**
+     * Unsets all.
+     *
+     * @return void
+     */
+    public function unsetAll(): void
+    {
         $this->unsetPageNumber();
+        $this->unsetConfig();
+        $this->unsetYear();
+        $this->unsetMonth();
     }
 
     /**
@@ -82,6 +95,36 @@ class BaseParameter
     public function unsetPageNumber(): void
     {
         unset($this->pageNumber);
+    }
+
+    /**
+     * Unsets the config.
+     *
+     * @return void
+     */
+    public function unsetConfig(): void
+    {
+        unset($this->config);
+    }
+
+    /**
+     * Unsets the year.
+     *
+     * @return void
+     */
+    public function unsetYear(): void
+    {
+        unset($this->year);
+    }
+
+    /**
+     * Unsets the month.
+     *
+     * @return void
+     */
+    public function unsetMonth(): void
+    {
+        unset($this->month);
     }
 
     /**

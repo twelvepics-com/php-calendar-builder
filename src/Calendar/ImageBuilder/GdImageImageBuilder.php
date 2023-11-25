@@ -15,7 +15,6 @@ namespace App\Calendar\ImageBuilder;
 
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
-use App\Objects\Image\Image;
 use Exception;
 use GdImage;
 use JetBrains\PhpStorm\ArrayShape;

@@ -223,7 +223,7 @@ class Source extends BaseParameter
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
     {
-        $this->unsetPageNumber();
+        $this->unsetAll();
 
         $identifier = $this->getIdentifier($input);
 

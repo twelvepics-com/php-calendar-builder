@@ -22,7 +22,6 @@ use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
-use Ixnode\PhpSizeByte\SizeByte;
 use JsonException;
 use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -272,15 +271,6 @@ class ImageHolder
     public function getSizeByte(): int
     {
         return $this->sizeByte;
-    }
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    public function getSizeHuman(): string
-    {
-        return (new SizeByte($this->getSizeByte()))->getHumanReadable();
     }
 
     public function getPath(): ?string

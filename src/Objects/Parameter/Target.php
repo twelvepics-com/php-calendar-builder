@@ -298,7 +298,7 @@ class Target extends BaseParameter
      */
     public function readParameter(InputInterface $input, Json $config): void
     {
-        $this->unsetPageNumber();
+        $this->unsetAll();
 
         $this->config = $config;
 

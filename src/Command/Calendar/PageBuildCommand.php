@@ -215,6 +215,8 @@ EOT
     {
         $this->output = $output;
 
+        print PHP_EOL.'XXX'.PHP_EOL;
+
         /* Read arguments (Source). */
         $this->source->readParameter($input);
 
