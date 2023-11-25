@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.3] - 2023-11-25
+
+* Add EXIF coordinate reader
+
 ### [0.1.2] - 2023-11-25
 
 * Add text generator to source
