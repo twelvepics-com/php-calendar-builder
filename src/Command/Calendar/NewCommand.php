@@ -13,12 +13,14 @@ declare(strict_types=1);
 
 namespace App\Command\Calendar;
 
+use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use Exception;
 use LogicException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -39,12 +41,22 @@ class NewCommand extends Command
 
     final public const COMMAND_DESCRIPTION = 'Creates a new calendar from basic example';
 
+    final public const CALENDAR_TYPE_QUOTE = 'quote';
+
+    final public const CALENDAR_TYPE_SIMPLE = 'simple';
+
+    final public const AVAILABLE_CALENDAR_TYPES = [
+        self::CALENDAR_TYPE_QUOTE,
+        self::CALENDAR_TYPE_SIMPLE,
+    ];
+
     /**
      * Configures the command.
      */
     protected function configure(): void
     {
         $this
+            ->addOption(Option::CALENDAR_TYPE, 'f', InputOption::VALUE_REQUIRED, sprintf('The calendar type (%s)', implode(', ', self::AVAILABLE_CALENDAR_TYPES)), self::CALENDAR_TYPE_SIMPLE)
             ->setHelp(
                 <<<'EOT'
 The <info>calendar:new</info> creates all calendar pages:
@@ -94,9 +106,20 @@ EOT
             }
 
             while (false !== ($file = readdir($dir))) {
-                if (($file != '.') && ($file != '..')) {
-                    $this->copyDirectory(sprintf('%s/%s', $source, $file), sprintf('%s/%s', $target, $file));
+                /* Skip dot and dot-dot files. */
+                if (in_array($file, ['.', '..'])) {
+                    continue;
                 }
+
+                $sourcePath = sprintf('%s/%s', $source, $file);
+                $targetPath = sprintf('%s/%s', $target, $file);
+
+                if ($file === 'ready' && is_dir($sourcePath)) {
+                    mkdir($targetPath);
+                    continue;
+                }
+
+                $this->copyDirectory($sourcePath, $targetPath);
             }
 
             closedir($dir);
@@ -118,7 +141,19 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $source = CalendarBuilderService::PATH_EXAMPLE_RELATIVE;
+        $calendarType = $input->getOption(Option::CALENDAR_TYPE);
+
+        if (!is_string($calendarType)) {
+            throw new LogicException('The calendar type must be a string.');
+        }
+
+        if (!in_array($calendarType, self::AVAILABLE_CALENDAR_TYPES, true)) {
+            $output->writeln(sprintf('The calendar type "%s" is not available. Allowed: %s', $calendarType, implode(', ', self::AVAILABLE_CALENDAR_TYPES)));
+            return Command::INVALID;
+        }
+
+        $source = sprintf(CalendarBuilderService::PATH_EXAMPLE_RELATIVE, $calendarType);
+
         $pathCalendarRelative = $this->getAvailableDirectoryName(CalendarBuilderService::PATH_CALENDAR_RELATIVE);
         $pathConfigFileRelative = sprintf('%s/%s', $pathCalendarRelative, CalendarBuilderService::CONFIG_FILENAME);
         $pathImagesReady = sprintf('%s/%s/*', $pathCalendarRelative, CalendarBuilderService::PATH_IMAGES_READY);

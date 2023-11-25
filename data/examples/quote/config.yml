@@ -58,18 +58,9 @@ birthdays:
     1990-08-12: Max Giesinger # pop musician and singer
 pages:
     -
-        source: 00.png
-        target: ready/2024-00.jpg
-        page-title: 2024
-        title: 2024
-        subtitle: Made with love <3
-        url: auto
-        coordinate: 55.950956, -3.161530
-        year: 2024
-        month: 0
-        design:
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 47, 141, 171 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -79,17 +70,21 @@ pages:
                 text: Der beste Weg,<br>die Zukunft vorauszusagen,<br>ist, sie zu gestalten.
                 author-font-size: 100
                 author: Abraham Lincoln
-    -
-        source: 01.png
-        target: ready/2024-01.jpg
-        page-title: 2024, Januar
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-00.jpg
+        page-title: 2024
+        title: 2024
+        subtitle: Made with love <3
         url: auto
-        coordinate: 57.863972, -3.777696
+        coordinate: 55.950956, -3.161530
         year: 2024
-        month: 1
-        design:
+        month: 0
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 226, 135, 67 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -99,17 +94,19 @@ pages:
                 text: Das Leben ist eine aufregende Reise,<br>und das Abenteuer beginnt<br>jeden Morgen.
                 author-font-size: 100
                 author: Shrek
-    -
-        source: 02.png
-        target: ready/2024-02.jpg
-        page-title: 2024, Februar
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-01.jpg
+        page-title: 2024, Januar
         url: auto
-        coordinate: 56.875841, -5.427997
+        coordinate: 57.863972, -3.777696
         year: 2024
-        month: 2
-        design:
+        month: 1
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 87, 112, 64 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -119,17 +116,19 @@ pages:
                 text: Das Geheimnis des Erfolgs liegt darin,<br>zu wissen,<br>wann die Zeit gekommen ist, zu handeln.
                 author-font-size: 100
                 author: Benjamin Disraeli
-    -
-        source: 03.png
-        target: ready/2024-03.jpg
-        page-title: 2024, März
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-02.jpg
+        page-title: 2024, Februar
         url: auto
-        coordinate: 55.954760, -3.184240
+        coordinate: 56.875841, -5.427997
         year: 2024
-        month: 3
-        design:
+        month: 2
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 132, 157, 193 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -139,17 +138,19 @@ pages:
                 text: Die Zukunft gehört denen,<br>die an die Schönheit<br>ihrer Träume glauben.
                 author-font-size: 100
                 author: Eleanor Roosevelt
-    -
-        source: 04.png
-        target: ready/2024-04.jpg
-        page-title: 2024, April
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-03.jpg
+        page-title: 2024, März
         url: auto
-        coordinate: 55.950900, -3.201673
+        coordinate: 55.954760, -3.184240
         year: 2024
-        month: 4
-        design:
+        month: 3
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 158, 171, 43 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -159,17 +160,19 @@ pages:
                 text: Der einzige Weg, großartige Arbeit zu leisten,<br>besteht darin,<br>das zu lieben, was du tust.
                 author-font-size: 100
                 author: Steve Jobs
-    -
-        source: 05.png
-        target: ready/2024-05.jpg
-        page-title: 2024, May
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-04.jpg
+        page-title: 2024, April
         url: auto
-        coordinate: 55.949547, -3.192335
+        coordinate: 55.950900, -3.201673
         year: 2024
-        month: 5
-        design:
+        month: 4
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 79, 156, 98 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -179,17 +182,19 @@ pages:
                 text: Der Anfang<br>ist die Hälfte des Ganzen.
                 author-font-size: 100
                 author: Aristoteles
-    -
-        source: 06.png
-        target: ready/2024-06.jpg
-        page-title: 2024, Juni
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-05.jpg
+        page-title: 2024, May
         url: auto
-        coordinate: 57.251286, -6.234564
+        coordinate: 55.949547, -3.192335
         year: 2024
-        month: 6
-        design:
+        month: 5
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 222, 173, 89 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -199,17 +204,19 @@ pages:
                 text: Sei die Veränderung,<br>die du in der Welt sehen möchtest.
                 author-font-size: 100
                 author: Mahatma Gandhi
-    -
-        source: 07.png
-        target: ready/2024-07.jpg
-        page-title: 2024, Juli
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-06.jpg
+        page-title: 2024, Juni
         url: auto
-        coordinate: 55.948798, -3.192929
+        coordinate: 57.251286, -6.234564
         year: 2024
-        month: 7
-        design:
+        month: 6
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 80, 72, 130 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -219,17 +226,19 @@ pages:
                 text: Das Geheimnis des Glücks liegt nicht im Besitz,<br>sondern im Geben.<br>Wer andere glücklich macht, wird glücklich.
                 author-font-size: 100
                 author: André Gide
-    -
-        source: 08.png
-        target: ready/2024-08.jpg
-        page-title: 2024, August
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-07.jpg
+        page-title: 2024, Juli
         url: auto
-        coordinate: 55.946235, -3.174380
+        coordinate: 55.948798, -3.192929
         year: 2024
-        month: 8
-        design:
+        month: 7
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 122, 72, 130 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -239,17 +248,19 @@ pages:
                 text: Das Leben ist 10% das,<br>was uns passiert,<br>und 90% wie wir darauf reagieren.
                 author-font-size: 100
                 author: Charles R. Swindoll
-    -
-        source: 09.png
-        target: ready/2024-09.jpg
-        page-title: 2024, September
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-08.jpg
+        page-title: 2024, August
         url: auto
-        coordinate: 57.511210, -6.174409
+        coordinate: 55.946235, -3.174380
         year: 2024
-        month: 9
-        design:
+        month: 8
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 130, 72, 72 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -259,17 +270,19 @@ pages:
                 text: Das Glück ist das einzige,<br>was sich verdoppelt,<br>wenn man es teilt.
                 author-font-size: 100
                 author: Albert Schweitzer
-    -
-        source: 10.png
-        target: ready/2024-10.jpg
-        page-title: 2024, Oktober
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-09.jpg
+        page-title: 2024, September
         url: auto
-        coordinate: 55.949655, -3.192743
+        coordinate: 57.511210, -6.174409
         year: 2024
-        month: 10
-        design:
+        month: 9
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 72, 130, 129 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -279,17 +292,19 @@ pages:
                 text: Das Geheimnis des Erfolgs liegt darin,<br>dass man dort anfängt,<br>wo andere aufhören.
                 author-font-size: 100
                 author: Albert Einstein
-    -
-        source: 11.png
-        target: ready/2024-11.jpg
-        page-title: 2024, November
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-10.jpg
+        page-title: 2024, Oktober
         url: auto
-        coordinate: 57.834379, -3.829939
+        coordinate: 55.949655, -3.192743
         year: 2024
-        month: 11
-        design:
+        month: 10
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 116, 130, 72 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -299,17 +314,19 @@ pages:
                 text: Das Glück besteht nicht darin, dass du tun kannst,<br>was du willst, sondern darin,<br>dass du immer willst, was du tust.
                 author-font-size: 100
                 author: Leo Tolstoi
-    -
-        source: 12.png
-        target: ready/2024-12.jpg
-        page-title: 2024, Dezember
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-11.jpg
+        page-title: 2024, November
         url: auto
-        coordinate: 56.870857, -5.434450
+        coordinate: 57.834379, -3.829939
         year: 2024
-        month: 12
-        design:
+        month: 11
+    -
+        source:
             engine: imagick
-            type: default-jtac
+            type: text
             config:
                 background-color: [ 130, 72, 109 ]
                 calendar-box-background-color: [ 0, 0, 0 ]
@@ -319,3 +336,12 @@ pages:
                 text: Du kannst die Wellen nicht stoppen,<br>aber du kannst lernen zu surfen.
                 author-font-size: 100
                 author: Jon Kabat-Zinn
+                width: 6000
+                height: 4000
+                format: png
+        target: ready/2024-12.jpg
+        page-title: 2024, Dezember
+        url: auto
+        coordinate: 56.870857, -5.434450
+        year: 2024
+        month: 12

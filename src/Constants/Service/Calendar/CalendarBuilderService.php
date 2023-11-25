@@ -34,7 +34,7 @@ class CalendarBuilderService
 
     final public const PATH_FONT_ABSOLUTE = '%s/data/font/OpenSansCondensed-Light.ttf';
 
-    final public const PATH_EXAMPLE_RELATIVE = 'data/examples/simple';
+    final public const PATH_EXAMPLE_RELATIVE = 'data/examples/%s';
 
     final public const PATH_IMAGES_READY = 'ready';
 

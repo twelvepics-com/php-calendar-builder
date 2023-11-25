@@ -20,25 +20,10 @@ git clone https://github.com/bjoern-hempel/php-calendar-builder.git && cd php-ca
 ```
 
 ```bash
-docker compose up -d
-```
-
-```bash
 docker compose exec php composer install
 ```
 
-Open the project in your browser:
-
-* https://www.calendar-builder.localhost/
-* https://www.calendar-builder.localhost/api/v1
-* https://www.calendar-builder.localhost/api/v1/version.json
-
-> Hint: If you want to use real urls instead of using port numbers,
-> try to use https://github.com/bjoern-hempel/local-traefik-proxy
-
 ## Create your first calendar on command line
-
-### Create new directory structure
 
 ```bash
 bin/console calendar:new
@@ -54,6 +39,14 @@ bin/console calendar:new
 → The 13 calendar pages are then located here by default: "data/calendar/2c93279fb467/ready/*"
 → Enjoy
 
+```
+
+## Create your first calendar on command line in detail
+
+### Create new directory structure
+
+```bash
+bin/console calendar:new [-f <quote|simple>]
 ```
 
 ### Add your own images to the folder created above
@@ -101,6 +94,27 @@ ls data/calendar/2c93279fb467/ready
 ```
 
 Example images can be found here: [Example Images](./data/examples/simple/ready)
+
+## Calendar UI
+
+You can use a calendar UI to display the built calendars or have access to the api.
+
+```bash
+docker compose up -d
+```
+
+Open the project in your browser:
+
+* https://localhost:5443 (List available calendars)
+* https://localhost:5443/api/v1 (Swagger UI)
+* https://localhost:5443/api/v1/version.json (Show version of this app)
+
+> Hint: If you want to use real urls instead of using port numbers,
+> try to use https://github.com/bjoern-hempel/local-traefik-proxy
+>
+> * https://www.calendar-builder.localhost/
+> * https://www.calendar-builder.localhost/api/v1
+> * https://www.calendar-builder.localhost/api/v1/version.json
 
 ## Test command
 

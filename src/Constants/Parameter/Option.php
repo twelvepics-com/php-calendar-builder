@@ -49,4 +49,7 @@ class Option
     final public const DESIGN_ENGINE_DEFAULT = 'design-engine-default';
     final public const DESIGN_TYPE_DEFAULT = 'design-type-default';
     final public const DESIGN_CONFIG_DEFAULT = 'design-config-default';
+
+    /* New calendar */
+    final public const CALENDAR_TYPE = 'calendar-type';
 }
