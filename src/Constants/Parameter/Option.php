@@ -22,6 +22,9 @@ namespace App\Constants\Parameter;
  */
 class Option
 {
+    /* General */
+    final public const SHOW_INFO = 'show-info';
+
     /* Source options */
     final public const SOURCE = 'source';
 

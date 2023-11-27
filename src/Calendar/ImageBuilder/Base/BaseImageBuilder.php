@@ -266,7 +266,7 @@ abstract class BaseImageBuilder
      */
     protected function getTargetImage(): File
     {
-        return $this->calendarBuilderService->getParameterTarget()->getImage();
+        return $this->calendarBuilderService->getParameterTarget()->getPath();
     }
 
     /**

@@ -16,6 +16,7 @@ namespace App\Objects\Image;
 use App\Objects\Exif\ExifCoordinate;
 use App\Objects\Parameter\Source;
 use Exception;
+use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -55,7 +56,7 @@ class ImageHolder
 
     private Coordinate|null $coordinate = null;
 
-    private string|null $path = null;
+    private File|null $path = null;
 
     /**
      * @param KernelInterface $appKernel
@@ -119,7 +120,8 @@ class ImageHolder
             throw new LogicException(sprintf('Could not read image "%s".', $pathAbsolute));
         }
 
-        $this->path = $pathRelative;
+        $this->setPath(new File($pathRelative, $this->appKernel->getProjectDir()));
+
         $this->imageString = $imageString;
     }
 
@@ -179,11 +181,13 @@ class ImageHolder
      */
     private function setImageCoordinate(): void
     {
-        if (is_null($this->path)) {
+        $path = $this->getPath();
+
+        if (is_null($path)) {
             return;
         }
 
-        $this->coordinate = (new ExifCoordinate($this->path))->getCoordinate();
+        $this->setCoordinate((new ExifCoordinate($path->getPath()))->getCoordinate());
     }
 
     /**
@@ -237,10 +241,12 @@ class ImageHolder
      * @return void
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws CaseUnsupportedException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
+     * @throws ParserException
      * @throws TypeInvalidException
      */
     private function init(): void
@@ -316,8 +322,26 @@ class ImageHolder
         return $this->sizeByte;
     }
 
-    public function getPath(): ?string
+    /**
+     * Gets the path to the image.
+     *
+     * @return File|null
+     */
+    public function getPath(): ?File
     {
         return $this->path;
+    }
+
+    /**
+     * Sets the path to the image.
+     *
+     * @param File|null $path
+     * @return $this
+     */
+    public function setPath(?File $path): self
+    {
+        $this->path = $path;
+
+        return $this;
     }
 }

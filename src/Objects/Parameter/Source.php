@@ -17,7 +17,6 @@ use App\Objects\Image\ImageHolder;
 use App\Objects\Parameter\Base\BaseParameter;
 use DateTimeImmutable;
 use Ixnode\PhpCliImage\CliImage;
-use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -147,8 +146,8 @@ class Source extends BaseParameter
     private function readHolidays(): void
     {
         $this->holidays = [];
-        if ($this->config->hasKey('holidays')) {
-            $holidays = $this->config->getKeyArray('holidays');
+        if ($this->getConfig()->hasKey('holidays')) {
+            $holidays = $this->getConfig()->getKeyArray('holidays');
 
             foreach ($holidays as $date => $title) {
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string)$date);
@@ -184,8 +183,8 @@ class Source extends BaseParameter
     private function readBirthdays(): void
     {
         $this->birthdays = [];
-        if ($this->config->hasKey('birthdays')) {
-            $birthdays = $this->config->getKeyArray('birthdays');
+        if ($this->getConfig()->hasKey('birthdays')) {
+            $birthdays = $this->getConfig()->getKeyArray('birthdays');
 
             foreach ($birthdays as $date => $title) {
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string) $date);
@@ -223,17 +222,9 @@ class Source extends BaseParameter
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
     {
-        $this->unsetAll();
-
         $identifier = $this->getIdentifier($input);
 
-        if (!isset($this->config)) {
-            $pathConfig = sprintf('%s/%s', pathinfo($this->getSourcePath($input), PATHINFO_DIRNAME), self::CONFIG_NAME);
-
-            $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
-        }
-
-        $page = $this->config->getKeyJson(['pages', (string) $this->getPageNumber()]);
+        $page = $this->getConfig()->getKeyJson(['pages', (string) $this->getPageNumber()]);
 
         $source = $page->getKey('source');
 

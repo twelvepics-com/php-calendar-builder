@@ -42,4 +42,6 @@ class KeyJson
 
     final public const TEXT_FONT_SIZE = 'text-font-size';
 
+    final public const TITLE = 'title';
+
 }

@@ -16,6 +16,7 @@ namespace App\Service;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Objects\Image\ImageContainer;
+use App\Objects\Parameter\ParameterWrapper;
 use App\Objects\Parameter\Source;
 use App\Objects\Parameter\Target;
 use DateTime;
@@ -46,9 +47,7 @@ class CalendarBuilderService
 {
     private BaseImageBuilder $design;
 
-    private Source $parameterSource;
-
-    private Target $parameterTarget;
+    private ParameterWrapper $parameterWrapper;
 
     /** @var array<array{name: string[]}> $eventsAndHolidaysRaw */
     protected array $eventsAndHolidaysRaw = [];
@@ -69,39 +68,46 @@ class CalendarBuilderService
     }
 
     /**
+     * Returns the parameter wrapper.
+     *
+     * @return ParameterWrapper
+     */
+    public function getParameterWrapper(): ParameterWrapper
+    {
+        return $this->parameterWrapper;
+    }
+
+    /**
+     * Sets the parameter wrapper.
+     *
+     * @param ParameterWrapper $parameterWrapper
+     * @return self
+     */
+    public function setParameterWrapper(ParameterWrapper $parameterWrapper): self
+    {
+        $this->parameterWrapper = $parameterWrapper;
+
+        return $this;
+    }
+
+    /**
+     * Returns the source parameter.
+     *
      * @return Source
      */
     public function getParameterSource(): Source
     {
-        return $this->parameterSource;
+        return $this->parameterWrapper->getSource();
     }
 
     /**
-     * @param Source $parameterSource
-     * @return CalendarBuilderService
-     */
-    public function setParameterSource(Source $parameterSource): CalendarBuilderService
-    {
-        $this->parameterSource = $parameterSource;
-        return $this;
-    }
-
-    /**
+     * Returns the target parameter.
+     *
      * @return Target
      */
     public function getParameterTarget(): Target
     {
-        return $this->parameterTarget;
-    }
-
-    /**
-     * @param Target $parameterTarget
-     * @return CalendarBuilderService
-     */
-    public function setParameterTarget(Target $parameterTarget): CalendarBuilderService
-    {
-        $this->parameterTarget = $parameterTarget;
-        return $this;
+        return $this->parameterWrapper->getTarget();
     }
 
     /**
@@ -123,26 +129,29 @@ class CalendarBuilderService
     /**
      * Init function.
      *
-     * @param Source $parameterSource
-     * @param Target $parameterTarget
+     * @param ParameterWrapper $parameterWrapper
      * @param BaseImageBuilder $imageBuilder
-     * @throws Exception
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     public function init(
-        Source $parameterSource,
-        Target $parameterTarget,
+        ParameterWrapper $parameterWrapper,
         BaseImageBuilder $imageBuilder
     ): void
     {
-        $this->setParameterSource($parameterSource);
-        $this->setParameterTarget($parameterTarget);
+        $this->setParameterWrapper($parameterWrapper);
 
         $this->design = $imageBuilder;
         $this->design->init(calendarBuilderService: $this);
     }
 
     /**
-     * Get days for left and write.
+     * Get days for the left and right side.
      *
      * @return array{left: array<int>, right: array<int>}
      * @throws Exception
@@ -150,7 +159,7 @@ class CalendarBuilderService
     #[ArrayShape(['left' => "array", 'right' => "array"])]
     public function getDays(): array
     {
-        $days = intval((new DateTime(sprintf('%d%02d01', $this->parameterTarget->getYear(), $this->parameterTarget->getMonth())))->format('t'));
+        $days = intval((new DateTime(sprintf('%d%02d01', $this->getParameterTarget()->getYear(), $this->getParameterTarget()->getMonth())))->format('t'));
 
         $dayToLeft = intval(ceil($days / 2));
 
@@ -244,7 +253,7 @@ class CalendarBuilderService
      */
     public function getDayKey(int $day): string
     {
-        return sprintf('%04d-%02d-%02d', $this->parameterTarget->getYear(), $this->parameterTarget->getMonth(), $day);
+        return sprintf('%04d-%02d-%02d', $this->getParameterTarget()->getYear(), $this->getParameterTarget()->getMonth(), $day);
     }
 
     /**
@@ -468,11 +477,11 @@ class CalendarBuilderService
      */
     public function build(bool $writeToFile = false): ImageContainer
     {
-        $config = $this->parameterSource->getConfig();
+        $config = $this->getParameterWrapper()->getConfig();
 
-        $config = $config->getKeyJson(['pages', (string) $this->parameterSource->getPageNumber()]);
+        $config = $config->getKeyJson(['pages', (string) $this->parameterWrapper->getPageNumber()]);
 
-        $pathTargetAbsolute = sprintf('%s/data/calendar/%s/%s', $this->appKernel->getProjectDir(), $this->parameterSource->getIdentification(), $config->getKeyString('target'));
+        $pathTargetAbsolute = sprintf('%s/data/calendar/%s/%s', $this->appKernel->getProjectDir(), $this->parameterWrapper->getIdentification(), $config->getKeyString('target'));
 
         if ($this->deleteTargetImages) {
             $this->removeTargetImages($pathTargetAbsolute);

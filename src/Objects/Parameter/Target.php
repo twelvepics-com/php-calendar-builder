@@ -17,7 +17,6 @@ use App\Constants\Parameter\Option;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Parameter\Base\BaseParameter;
 use Ixnode\PhpContainer\File;
-use Ixnode\PhpContainer\Json;
 use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -41,7 +40,7 @@ use UnexpectedValueException;
  */
 class Target extends BaseParameter
 {
-    private File $image;
+    private File $path;
 
     /* Title of the page. */
     final public const DEFAULT_PAGE_TITLE = 'Page Title';
@@ -76,18 +75,18 @@ class Target extends BaseParameter
     /**
      * @return File
      */
-    public function getImage(): File
+    public function getPath(): File
     {
-        return $this->image;
+        return $this->path;
     }
 
     /**
-     * @param File $image
+     * @param File $path
      * @return self
      */
-    public function setImage(File $image): self
+    public function setPath(File $path): self
     {
-        $this->image = $image;
+        $this->path = $path;
 
         return $this;
     }
@@ -175,7 +174,6 @@ class Target extends BaseParameter
     /**
      * Returns the url of this page.
      *
-     * @param string $identification
      * @return string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -185,8 +183,10 @@ class Target extends BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getUrl(string $identification): string
+    public function getUrl(): string
     {
+        $identification = $this->getParameterWrapper()->getIdentification();
+
         if ($this->url === self::DEFAULT_URL) {
             return match (true) {
                 $this->getMonth() === 0 => sprintf(self::URL_TWELVEPICS_LIST, $identification),
@@ -251,9 +251,9 @@ class Target extends BaseParameter
     private function setOptionFromParameter(InputInterface $input, string $name): void
     {
         $value = match (true) {
-            $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
-            $this->hasOptionFromConfig($name) => $this->getOptionFromConfig($name),
-            default => $this->getOptionFromParameter($input, $name),
+            $this->getParameterWrapper()->hasOptionFromParameter($input, $name) => $this->getParameterWrapper()->getOptionFromParameter($input, $name),
+            $this->getParameterWrapper()->hasOptionFromConfig($name) => $this->getParameterWrapper()->getOptionFromConfig($name),
+            default => $this->getParameterWrapper()->getOptionFromParameter($input, $name),
         };
 
         if (is_null($value)) {
@@ -265,9 +265,6 @@ class Target extends BaseParameter
         }
 
         match ($name) {
-            Option::YEAR => $this->setYear((int) $value),
-            Option::MONTH => $this->setMonth((int) $value),
-
             Option::PAGE_TITLE => $this->setPageTitle((string) $value),
             Option::TITLE => $this->setTitle((string) $value),
             Option::SUBTITLE => $this->setSubtitle((string) $value),
@@ -285,7 +282,6 @@ class Target extends BaseParameter
      * Reads and sets the parameter to this class.
      *
      * @param InputInterface $input
-     * @param Json $config
      * @return void
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -296,16 +292,8 @@ class Target extends BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function readParameter(InputInterface $input, Json $config): void
+    public function readParameter(InputInterface $input): void
     {
-        $this->unsetAll();
-
-        $this->config = $config;
-
-        /* Set calendar month and year (must be called first!). */
-        $this->setOptionFromParameter($input, Option::YEAR);
-        $this->setOptionFromParameter($input, Option::MONTH);
-
         /* Set calendar texts. */
         $this->setOptionFromParameter($input, Option::PAGE_TITLE);
         $this->setOptionFromParameter($input, Option::TITLE);
@@ -324,6 +312,6 @@ class Target extends BaseParameter
         }
 
         /* Sets the target image. */
-        $this->setImage(new File($this->getTargetPath($input, $this->getYear(), $this->getMonth()), $this->appKernel->getProjectDir()));
+        $this->setPath(new File($this->getTargetPath($input), $this->appKernel->getProjectDir()));
     }
 }

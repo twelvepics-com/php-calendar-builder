@@ -23,7 +23,7 @@ use App\Calendar\ImageBuilder\ImageMagickImageBuilder;
 use App\Constants\Design;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
-use Ixnode\PhpContainer\File;
+use App\Objects\Parameter\ParameterWrapper;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -35,17 +35,16 @@ use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Yaml\Yaml;
 
 /**
- * Class Target
+ * Abstract class BaseParameter
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-08)
  * @since 0.1.0 (2023-11-08) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class BaseParameter
+abstract class BaseParameter
 {
     /* Constants. */
     final public const CONFIG_NAME = 'config.yml';
@@ -54,125 +53,68 @@ class BaseParameter
 
     protected const URL_TWELVEPICS_DETAIL = 'https://c.twelvepics.com/d/%s/%d';
 
-    /* Year of the page. */
-    final public const DEFAULT_YEAR = 2024;
-    private int $year = self::DEFAULT_YEAR;
-
-    /* Month of the page. */
-    final public const DEFAULT_MONTH = 1;
-    private int $month = self::DEFAULT_MONTH;
-
-    protected Json $config;
-
-    private int $pageNumber;
+    private ParameterWrapper $parameterWrapper;
 
     /**
      * @param KernelInterface $appKernel
      */
-    public function __construct(protected readonly KernelInterface $appKernel)
+    public function __construct(
+        protected readonly KernelInterface $appKernel
+    )
     {
-        $this->unsetAll();
     }
 
     /**
-     * Unsets all.
+     * Returns the parameter wrapper.
      *
-     * @return void
+     * @return ParameterWrapper
      */
-    public function unsetAll(): void
+    public function getParameterWrapper(): ParameterWrapper
     {
-        $this->unsetPageNumber();
-        $this->unsetConfig();
-        $this->unsetYear();
-        $this->unsetMonth();
+        return $this->parameterWrapper;
     }
 
     /**
-     * Unsets the page number.
+     * Sets the parameter wrapper.
      *
-     * @return void
+     * @param ParameterWrapper $parameterWrapper
+     * @return $this
      */
-    public function unsetPageNumber(): void
+    public function setParameterWrapper(ParameterWrapper $parameterWrapper): self
     {
-        unset($this->pageNumber);
+        $this->parameterWrapper = $parameterWrapper;
+
+        return $this;
     }
 
     /**
-     * Unsets the config.
+     * Returns the configuration.
      *
-     * @return void
-     */
-    public function unsetConfig(): void
-    {
-        unset($this->config);
-    }
-
-    /**
-     * Unsets the year.
-     *
-     * @return void
-     */
-    public function unsetYear(): void
-    {
-        unset($this->year);
-    }
-
-    /**
-     * Unsets the month.
-     *
-     * @return void
-     */
-    public function unsetMonth(): void
-    {
-        unset($this->month);
-    }
-
-    /**
-     * @return int
-     */
-    public function getYear(): int
-    {
-        return $this->year;
-    }
-
-    /**
-     * @param int $year
-     */
-    protected function setYear(int $year): void
-    {
-        $this->year = $year;
-    }
-
-    /**
-     * @return int
-     */
-    public function getMonth(): int
-    {
-        return $this->month;
-    }
-
-    /**
-     * @param int $month
-     */
-    protected function setMonth(int $month): void
-    {
-        $this->month = $month;
-    }
-
-    /**
      * @return Json
      */
     public function getConfig(): Json
     {
-        return $this->config;
+        return $this->parameterWrapper->getConfig();
     }
 
     /**
-     * @param Json $config
+     * Returns the year.
+     *
+     * @return int
      */
-    public function setConfig(Json $config): void
+    public function getYear(): int
     {
-        $this->config = $config;
+        return $this->parameterWrapper->getYear();
+    }
+
+    /**
+     * Returns the month.
+     *
+     * @return int
+     */
+    public function getMonth(): int
+    {
+        return $this->parameterWrapper->getMonth();
     }
 
     /**
@@ -186,330 +128,33 @@ class BaseParameter
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function getPageNumber(): int
     {
-        if (isset($this->pageNumber)) {
-            return $this->pageNumber;
-        }
-
-        if (!$this->config->hasKey('pages')) {
-            throw new LogicException('Config.yml does not contain "pages" key.');
-        }
-
-        $pages = $this->config->getKeyArray('pages');
-
-        $pageNumber = null;
-
-        $index = -1;
-
-        foreach ($pages as $page) {
-            if (!is_array($page)) {
-                throw new LogicException('Config.yml contains invalid format for a single page. Array expected.');
-            }
-
-            $index++;
-
-            if (!array_key_exists('year', $page) || !array_key_exists('month', $page)) {
-                continue;
-            }
-
-            if ((int) $page['year'] === $this->year && (int) $page['month'] === $this->month) {
-                $pageNumber = $index;
-                break;
-            }
-        }
-
-        if (is_null($pageNumber)) {
-            throw new LogicException(sprintf('Could not find page with year "%s" and month "%s". Please check your config.yml.', $this->year, $this->month));
-        }
-
-        $this->pageNumber = $pageNumber;
-
-        return $pageNumber;
+        return $this->parameterWrapper->getPageNumber();
     }
 
     /**
-     * Returns the config path.
-     *
-     * @param string $name
-     * @return array<int, string>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getConfigPath(string $name): array
-    {
-        return match ($name) {
-
-            /* Source options */
-            Option::SOURCE => ['pages', (string) $this->getPageNumber(), 'source'],
-
-            /* Target options */
-            Option::YEAR => ['settings', 'defaults', 'year'],
-            Option::MONTH => ['settings', 'defaults', 'month'],
-            Option::TARGET => ['pages', (string) $this->getPageNumber(), 'target'],
-            Option::PAGE_TITLE => ['pages', (string) $this->getPageNumber(), 'page-title'],
-            Option::TITLE => ['pages', (string) $this->getPageNumber(), 'title'],
-            Option::SUBTITLE => ['pages', (string) $this->getPageNumber(), 'subtitle'],
-            Option::URL => ['pages', (string) $this->getPageNumber(), 'url'],
-            Option::COORDINATE => ['pages', (string) $this->getPageNumber(), 'coordinate'],
-
-            /* Output options */
-            Option::OUTPUT_QUALITY => ['settings', 'output', 'quality'],
-            Option::OUTPUT_FORMAT => ['settings', 'output', 'transparency'],
-
-            /* Design options (default) */
-            Option::DESIGN_ENGINE_DEFAULT => ['settings', 'defaults', 'design', 'engine'],
-            Option::DESIGN_TYPE_DEFAULT => ['settings', 'defaults', 'design', 'type'],
-            Option::DESIGN_CONFIG_DEFAULT => ['settings', 'defaults', 'design', 'config'],
-
-            /* Design options (via page) */
-            Option::DESIGN_ENGINE => ['pages', (string) $this->getPageNumber(), 'design', 'engine'],
-            Option::DESIGN_TYPE => ['pages', (string) $this->getPageNumber(), 'design', 'type'],
-            Option::DESIGN_CONFIG => ['pages', (string) $this->getPageNumber(), 'design', 'config'],
-
-            default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
-        };
-    }
-
-    /**
-     * Returns if config exists within the config.yml file.
-     *
-     * @param string $name
-     * @return bool
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function hasOptionFromConfig(string $name): bool
-    {
-        $configPath = $this->getConfigPath($name);
-
-        return $this->config->hasKey($configPath);
-    }
-
-    /**
-     * Tries to get Option from parameter.
-     *
-     * @param string $name
-     * @return int|string|array<int|string, mixed>|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getOptionFromConfig(string $name): int|string|array|null
-    {
-        if (!$this->hasOptionFromConfig($name)) {
-            return null;
-        }
-
-        $configPath = $this->getConfigPath($name);
-
-        $value = $this->config->getKey($configPath);
-
-        if (!is_int($value) && !is_string($value) && !is_array($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Tries to get Option from parameter as an array.
-     *
-     * @param string $name
-     * @return array<int|string, mixed>|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getOptionFromConfigAsArray(string $name): array|null
-    {
-        if (!$this->hasOptionFromConfig($name)) {
-            return null;
-        }
-
-        $configPath = $this->getConfigPath($name);
-
-        $value = $this->config->getKey($configPath);
-
-        if (is_int($value) || is_string($value)) {
-            $value = [$value];
-        }
-
-        if (!is_array($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Returns if the option was given via parameter.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return bool
-     */
-    protected function hasOptionFromParameter(InputInterface $input, string $name): bool
-    {
-        return $input->hasParameterOption(sprintf('--%s', $name));
-    }
-
-    /**
-     * Tries to get option from parameter.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return int|string|null
-     */
-    public function getOptionFromParameter(InputInterface $input, string $name): int|string|null
-    {
-        $value = $input->getOption($name);
-
-        if (is_null($value)) {
-            return null;
-        }
-
-        if (!is_int($value) && !is_string($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Sets the option to this class.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return void
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    private function setOptionFromParameter(InputInterface $input, string $name): void
-    {
-        $value = match (true) {
-            $input->hasParameterOption(sprintf('--%s', $name)) => $this->getOptionFromParameter($input, $name),
-            $this->hasOptionFromConfig($name) => $this->getOptionFromConfig($name),
-            default => $this->getOptionFromParameter($input, $name),
-        };
-
-        if (is_null($value)) {
-            return;
-        }
-
-        match ($name) {
-            Option::YEAR => $this->setYear((int) $value),
-            Option::MONTH => $this->setMonth((int) $value),
-
-            default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
-        };
-    }
-
-    /**
-     * Adds given config file to config.
-     *
-     * @param File $config
-     * @return void
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function addConfig(File $config): void
-    {
-        /* Check if the config file exists. */
-        try {
-            $config->getPathReal();
-
-            $parsedConfig = Yaml::parse($config->getContentAsText());
-
-            if (!is_array($parsedConfig)) {
-                throw new LogicException('Invalid configuration');
-            }
-
-            $this->setConfig(new Json($parsedConfig));
-        } catch (FileNotFoundException) {
-            throw new LogicException('Configuration file not found.');
-        }
-    }
-
-    /**
-     * Returns the source path from the image.
+     * Returns the source directory of the project.
      *
      * @param InputInterface $input
      * @return string
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
      */
-    protected function getSourcePath(InputInterface $input): string
+    protected function getSourceDirectory(InputInterface $input): string
     {
         $source = $input->getArgument(Argument::SOURCE);
 
-        if (!is_string($source) && !is_int($source)) {
+        if (!is_string($source)) {
             throw new LogicException(sprintf('Invalid argument for source "%s".', Argument::SOURCE));
         }
 
-        $sourcePath = (string) $source;
+        $sourceDirectory = pathinfo($source, PATHINFO_DIRNAME);
 
-        $configGiven = is_dir($sourcePath) || basename($sourcePath) === self::CONFIG_NAME;
-
-        if ($configGiven) {
-            $pathConfig = match (true) {
-                is_dir($sourcePath) => sprintf('%s/%s', $sourcePath, self::CONFIG_NAME),
-                default => $sourcePath,
-            };
-
-            if (!is_dir($sourcePath)) {
-                $sourcePath = dirname($sourcePath);
-            }
-
-            $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
-
-            /* Set calendar month and year (must be called first!). */
-            $this->setOptionFromParameter($input, Option::YEAR);
-            $this->setOptionFromParameter($input, Option::MONTH);
-
-            $source = $this->getOptionFromConfig(Option::SOURCE);
-
-            if (is_array($source)) {
-                $source = '_tmp.png';
-            }
-
-            $sourcePath = sprintf('%s/%s', $sourcePath, $source);
+        if (!is_string($sourceDirectory)) {
+            throw new LogicException(sprintf('Invalid argument for source "%s".', Argument::SOURCE));
         }
 
-        return $sourcePath;
+        return $sourceDirectory;
     }
 
     /**
@@ -539,8 +184,6 @@ class BaseParameter
      * Returns the target path from the image.
      *
      * @param InputInterface $input
-     * @param int $year
-     * @param int $month
      * @return string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -550,25 +193,21 @@ class BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function getTargetPath(InputInterface $input, int $year, int $month): string
+    protected function getTargetPath(InputInterface $input): string
     {
-        $sourcePath = $this->getSourcePath($input);
+        $sourceDirectory = $this->getSourceDirectory($input);
 
-        $sourceDirectory = pathinfo($sourcePath, PATHINFO_DIRNAME);
-
-        if ($this->hasOptionFromConfig(Option::TARGET)) {
-            $target = $this->getOptionFromConfig(Option::TARGET);
-
-            if (!is_string($target)) {
-                throw new LogicException(sprintf('Invalid value for option "%s".', Option::TARGET));
-            }
-
-            return sprintf('%s/%s', $sourceDirectory, $target);
+        if (!$this->parameterWrapper->hasOptionFromConfig(Option::TARGET)) {
+            throw new LogicException(sprintf('Missing option "%s".', Option::TARGET));
         }
 
-        $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
+        $target = $this->parameterWrapper->getOptionFromConfig(Option::TARGET);
 
-        return sprintf('%s/%s-%s.%s', $sourceDirectory, $year, $month, $extension);
+        if (!is_string($target)) {
+            throw new LogicException(sprintf('Invalid value for option "%s".', Option::TARGET));
+        }
+
+        return sprintf('%s/%s', $sourceDirectory, $target);
     }
 
     /**
@@ -586,8 +225,8 @@ class BaseParameter
     public function getDesignEngine(): string
     {
         $engine = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getOptionFromConfig(Option::DESIGN_ENGINE),
-            $this->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_ENGINE),
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
             default => 'imagick',
         };
 
@@ -613,8 +252,8 @@ class BaseParameter
     public function getDesignType(): string
     {
         $type = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getOptionFromConfig(Option::DESIGN_TYPE),
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_TYPE),
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
             default => Design::DEFAULT,
         };
 
@@ -640,14 +279,14 @@ class BaseParameter
     public function getDesignConfig(): Json|null
     {
         $designConfigSource = match (true) {
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
-            $this->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
+            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
             default => null,
         };
 
         $designConfig = match (true) {
             is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
-            $this->hasOptionFromConfig($designConfigSource) => $this->getOptionFromConfigAsArray($designConfigSource),
+            $this->getParameterWrapper()->hasOptionFromConfig($designConfigSource) => $this->getParameterWrapper()->getOptionFromConfigAsArray($designConfigSource),
             default => null,
         };
 
