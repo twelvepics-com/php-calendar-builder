@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace App\Objects\Image;
 
+use App\Calendar\Design\DesignText;
+use App\Calendar\ImageBuilder\ImageBuilderFactory;
 use App\Objects\Exif\ExifCoordinate;
-use App\Objects\Parameter\Source;
+use App\Objects\Parameter\ParameterWrapper;
 use Exception;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
@@ -62,15 +64,18 @@ class ImageHolder
      * @param KernelInterface $appKernel
      * @param string $identifier
      * @param string|Json $imageConfig
+     * @param ParameterWrapper $parameterWrapper
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws CaseUnsupportedException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
+     * @throws ParserException
      * @throws TypeInvalidException
      */
-    public function __construct(protected readonly KernelInterface $appKernel, protected string $identifier, protected string|Json $imageConfig)
+    public function __construct(protected readonly KernelInterface $appKernel, protected string $identifier, protected string|Json $imageConfig, protected ParameterWrapper $parameterWrapper)
     {
         $this->init();
     }
@@ -218,16 +223,24 @@ class ImageHolder
      * @throws JsonException
      * @throws Exception
      */
-    private function initJson(Json $imageConfig): void
+    private function initViaConfig(Json $imageConfig): void
     {
         $width = $imageConfig->getKeyInteger(['config', 'width']);
         $height = $imageConfig->getKeyInteger(['config', 'height']);
         $format = $imageConfig->getKeyString(['config', 'format']);
 
-        $imageBuilder = (new Source($this->appKernel))->getImageBuilder($imageConfig);
+        $imageBuilder = (new ImageBuilderFactory($this->appKernel->getProjectDir(), $this->parameterWrapper))->getImageBuilder($imageConfig);
+
+        $design = $imageBuilder->getDesign();
+
+        /* Check if the design is a text design. */
+        if (!$design instanceof DesignText) {
+            throw new LogicException(sprintf('Only text design (DesignText) is supported for source image. %s given. Check and add other designs if needed.', $design::class));
+        }
 
         $imageBuilder->initWithoutCalendarBuilderService($width, $height, $format);
 
+        /* Builds the image via target. */
         $imageContainer = $imageBuilder->build();
 
         $this->imageString = $imageContainer->getTarget()->getImageString();
@@ -256,7 +269,7 @@ class ImageHolder
             is_string($this->imageConfig) => $this->initPath($this->imageConfig),
 
             /* Build image from config. */
-            $this->imageConfig instanceof Json => $this->initJson($this->imageConfig),
+            $this->imageConfig instanceof Json => $this->initViaConfig($this->imageConfig),
         };
 
         $this->setImageFormat();

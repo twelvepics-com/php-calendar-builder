@@ -24,6 +24,7 @@ use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -219,6 +220,7 @@ class Source extends BaseParameter
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws ParserException
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
     {
@@ -238,7 +240,7 @@ class Source extends BaseParameter
             throw new LogicException('Unable to read image source.');
         }
 
-        $imageHolder = new ImageHolder($this->appKernel, $identifier, $imageConfig);
+        $imageHolder = new ImageHolder($this->appKernel, $identifier, $imageConfig, $this->getParameterWrapper());
 
         $this->setImageHolder($imageHolder, $identifier);
 

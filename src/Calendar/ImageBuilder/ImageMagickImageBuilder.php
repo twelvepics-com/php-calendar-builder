@@ -16,7 +16,6 @@ namespace App\Calendar\ImageBuilder;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Color;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
-use App\Objects\Image\Image;
 use Exception;
 use Imagick;
 use ImagickDraw;

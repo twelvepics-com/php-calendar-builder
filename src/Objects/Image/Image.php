@@ -16,7 +16,6 @@ namespace App\Objects\Image;
 use Exception;
 use Ixnode\PhpSizeByte\SizeByte;
 use LogicException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class Image
@@ -28,9 +27,9 @@ use Symfony\Component\HttpKernel\KernelInterface;
 class Image
 {
     /**
-     * @param KernelInterface $appKernel
+     * @param string $projectDir
      */
-    public function __construct(protected KernelInterface $appKernel)
+    public function __construct(protected string $projectDir)
     {
     }
 
@@ -74,7 +73,7 @@ class Image
 
         $this->pathAbsolute = $pathAbsolute;
 
-        $pathRelative = preg_replace('~^'.$this->appKernel->getProjectDir().'/~', '', $pathAbsolute);
+        $pathRelative = preg_replace('~^'.$this->projectDir.'/~', '', $pathAbsolute);
 
         if (!is_string($pathRelative)) {
             throw new LogicException('Unable to build relative path.');

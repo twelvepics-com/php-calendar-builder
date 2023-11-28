@@ -34,7 +34,6 @@ use Ixnode\PhpException\Type\TypeInvalidException;
 use JetBrains\PhpStorm\ArrayShape;
 use JsonException;
 use LogicException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Abstract class BaseBuilder
@@ -107,17 +106,17 @@ abstract class BaseImageBuilder
     protected string $imageStringTarget;
 
     /**
-     * @param KernelInterface $appKernel
+     * @param string $projectDir
      * @param DesignBase $design
      * @param Json|null $config
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function __construct(protected KernelInterface $appKernel, protected DesignBase $design, protected Json|null $config = null)
+    public function __construct(protected string $projectDir, protected DesignBase $design, protected Json|null $config = null)
     {
         $design->setImageBuilder($this);
-        $design->setAppKernel($appKernel);
+        $design->setProjectDir($projectDir);
 
         if (!is_null($config)) {
             $design->setConfig($config);
@@ -294,7 +293,7 @@ abstract class BaseImageBuilder
             return;
         }
 
-        $this->pathSourceAbsolute = sprintf('%s/data/calendar/%s/%s', $this->appKernel->getProjectDir(), $this->getCalendarBuilderService()->getParameterSource()->getIdentification(), $source);
+        $this->pathSourceAbsolute = sprintf('%s/data/calendar/%s/%s', $this->projectDir, $this->getCalendarBuilderService()->getParameterSource()->getIdentification(), $source);
     }
 
     /**
@@ -352,7 +351,7 @@ abstract class BaseImageBuilder
      */
     protected function setFontPath(): void
     {
-        $pathData = sprintf('%s/data', $this->appKernel->getProjectDir());
+        $pathData = sprintf('%s/data', $this->projectDir);
         $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT);
     }
 
@@ -476,7 +475,7 @@ abstract class BaseImageBuilder
         $mimeType = $imageInformation['mime'];
 
         /* Return the image properties */
-        return (new Image($this->appKernel))
+        return (new Image($this->projectDir))
             ->setPathAbsolute($pathAbsolute)
             ->setWidth($width)
             ->setHeight($height)

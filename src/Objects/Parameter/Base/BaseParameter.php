@@ -327,17 +327,17 @@ abstract class BaseParameter
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
-                Design::DEFAULT => new GdImageImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new GdImageImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
-                Design::IMAGE => new GdImageImageBuilder($this->appKernel, new DesignImage(), $designConfigJson),
-                Design::TEXT => new GdImageImageBuilder($this->appKernel, new DesignText(), $designConfigJson),
+                Design::DEFAULT => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignDefault(), $designConfigJson),
+                Design::DEFAULT_JTAC => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignDefaultJTAC(), $designConfigJson),
+                Design::IMAGE => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignImage(), $designConfigJson),
+                Design::TEXT => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignText(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             'imagick' => match ($designType) {
-                Design::DEFAULT => new ImageMagickImageBuilder($this->appKernel, new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new ImageMagickImageBuilder($this->appKernel, new DesignDefaultJTAC(), $designConfigJson),
-                Design::IMAGE => new ImageMagickImageBuilder($this->appKernel, new DesignImage(), $designConfigJson),
-                Design::TEXT => new ImageMagickImageBuilder($this->appKernel, new DesignText(), $designConfigJson),
+                Design::DEFAULT => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignDefault(), $designConfigJson),
+                Design::DEFAULT_JTAC => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignDefaultJTAC(), $designConfigJson),
+                Design::IMAGE => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignImage(), $designConfigJson),
+                Design::TEXT => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignText(), $designConfigJson),
                 default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
             },
             default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),

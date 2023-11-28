@@ -23,7 +23,6 @@ use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Abstract class DesignHelperBase
@@ -36,7 +35,7 @@ abstract class DesignBase
 {
     protected BaseImageBuilder $imageBuilder;
 
-    protected KernelInterface $appKernel;
+    protected string $projectDir;
 
     protected Json $config;
 
@@ -86,12 +85,12 @@ abstract class DesignBase
     }
 
     /**
-     * @param KernelInterface $appKernel
+     * @param string $projectDir
      * @return self
      */
-    public function setAppKernel(KernelInterface $appKernel): self
+    public function setProjectDir(string $projectDir): self
     {
-        $this->appKernel = $appKernel;
+        $this->projectDir = $projectDir;
 
         return $this;
     }
