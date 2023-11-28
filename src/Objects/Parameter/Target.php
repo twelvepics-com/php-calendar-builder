@@ -312,6 +312,6 @@ class Target extends BaseParameter
         }
 
         /* Sets the target image. */
-        $this->setPath(new File($this->getTargetPath($input), $this->appKernel->getProjectDir()));
+        $this->setPath(new File($this->getTargetPath($input), $this->projectDir));
     }
 }

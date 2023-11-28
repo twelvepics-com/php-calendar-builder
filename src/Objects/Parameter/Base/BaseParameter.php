@@ -13,14 +13,6 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter\Base;
 
-use App\Calendar\Design\DesignImage;
-use App\Calendar\Design\DesignText;
-use App\Calendar\Design\DesignDefault;
-use App\Calendar\Design\DesignDefaultJTAC;
-use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
-use App\Calendar\ImageBuilder\GdImageImageBuilder;
-use App\Calendar\ImageBuilder\ImageMagickImageBuilder;
-use App\Constants\Design;
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
 use App\Objects\Parameter\ParameterWrapper;
@@ -34,7 +26,6 @@ use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Abstract class BaseParameter
@@ -56,10 +47,10 @@ abstract class BaseParameter
     private ParameterWrapper $parameterWrapper;
 
     /**
-     * @param KernelInterface $appKernel
+     * @param string $projectDir
      */
     public function __construct(
-        protected readonly KernelInterface $appKernel
+        protected readonly string $projectDir
     )
     {
     }
@@ -208,139 +199,5 @@ abstract class BaseParameter
         }
 
         return sprintf('%s/%s', $sourceDirectory, $target);
-    }
-
-    /**
-     * Returns the design engine.
-     *
-     * @return string
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getDesignEngine(): string
-    {
-        $engine = match (true) {
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_ENGINE),
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
-            default => 'imagick',
-        };
-
-        if (!is_string($engine)) {
-            return 'imagick';
-        }
-
-        return $engine;
-    }
-
-    /**
-     * Returns the design type.
-     *
-     * @return string
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getDesignType(): string
-    {
-        $type = match (true) {
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_TYPE),
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->getParameterWrapper()->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
-            default => Design::DEFAULT,
-        };
-
-        if (!is_string($type)) {
-            return Design::DEFAULT;
-        }
-
-        return $type;
-    }
-
-    /**
-     * Returns the design configuration.
-     *
-     * @return Json|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getDesignConfig(): Json|null
-    {
-        $designConfigSource = match (true) {
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
-            $this->getParameterWrapper()->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
-            default => null,
-        };
-
-        $designConfig = match (true) {
-            is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
-            $this->getParameterWrapper()->hasOptionFromConfig($designConfigSource) => $this->getParameterWrapper()->getOptionFromConfigAsArray($designConfigSource),
-            default => null,
-        };
-
-        return match (true) {
-            is_array($designConfig) => new Json($designConfig),
-            default => null,
-        };
-    }
-
-    /**
-     * Returns the image builder and the design according to the config.
-     *
-     * @param Json|null $config
-     * @return BaseImageBuilder
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getImageBuilder(Json $config = null): BaseImageBuilder
-    {
-        $designEngine = null;
-        $designType = null;
-        $designConfigJson = null;
-
-        if (!is_null($config)) {
-            $designEngine = $config->getKeyString('engine');
-            $designType = $config->getKeyString('type');
-            $designConfigJson = $config->getKeyJson('config');
-        }
-
-        $designEngine ??= $this->getDesignEngine();
-        $designType ??= $this->getDesignType();
-        $designConfigJson ??= $this->getDesignConfig();
-
-        return match ($designEngine) {
-            'gdimage' => match ($designType) {
-                Design::DEFAULT => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignDefaultJTAC(), $designConfigJson),
-                Design::IMAGE => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignImage(), $designConfigJson),
-                Design::TEXT => new GdImageImageBuilder($this->appKernel->getProjectDir(), new DesignText(), $designConfigJson),
-                default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
-            },
-            'imagick' => match ($designType) {
-                Design::DEFAULT => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignDefault(), $designConfigJson),
-                Design::DEFAULT_JTAC => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignDefaultJTAC(), $designConfigJson),
-                Design::IMAGE => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignImage(), $designConfigJson),
-                Design::TEXT => new ImageMagickImageBuilder($this->appKernel->getProjectDir(), new DesignText(), $designConfigJson),
-                default => throw new LogicException(sprintf('Unsupported design type "%s" for engine "%s" was given.', $designType, $designEngine)),
-            },
-            default => throw new LogicException(sprintf('Unsupported design engine "%s" was given.', $designEngine)),
-        };
     }
 }

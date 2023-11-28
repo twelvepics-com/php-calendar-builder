@@ -31,7 +31,6 @@ use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class ImageHolder
@@ -61,7 +60,7 @@ class ImageHolder
     private File|null $path = null;
 
     /**
-     * @param KernelInterface $appKernel
+     * @param string $projectDir
      * @param string $identifier
      * @param string|Json $imageConfig
      * @param ParameterWrapper $parameterWrapper
@@ -75,7 +74,7 @@ class ImageHolder
      * @throws ParserException
      * @throws TypeInvalidException
      */
-    public function __construct(protected readonly KernelInterface $appKernel, protected string $identifier, protected string|Json $imageConfig, protected ParameterWrapper $parameterWrapper)
+    public function __construct(protected readonly string $projectDir, protected string $identifier, protected string|Json $imageConfig, protected ParameterWrapper $parameterWrapper)
     {
         $this->init();
     }
@@ -109,7 +108,7 @@ class ImageHolder
      */
     private function setImageString(string $pathRelative): void
     {
-        $pathAbsolute = sprintf('%s/%s', $this->appKernel->getProjectDir(), $pathRelative);
+        $pathAbsolute = sprintf('%s/%s', $this->projectDir, $pathRelative);
 
         if (!file_exists($pathAbsolute)) {
             throw new LogicException(sprintf('Image "%s" not found.', $pathAbsolute));
@@ -125,7 +124,7 @@ class ImageHolder
             throw new LogicException(sprintf('Could not read image "%s".', $pathAbsolute));
         }
 
-        $this->setPath(new File($pathRelative, $this->appKernel->getProjectDir()));
+        $this->setPath(new File($pathRelative, $this->projectDir));
 
         $this->imageString = $imageString;
     }
@@ -229,7 +228,7 @@ class ImageHolder
         $height = $imageConfig->getKeyInteger(['config', 'height']);
         $format = $imageConfig->getKeyString(['config', 'format']);
 
-        $imageBuilder = (new ImageBuilderFactory($this->appKernel->getProjectDir(), $this->parameterWrapper))->getImageBuilder($imageConfig);
+        $imageBuilder = (new ImageBuilderFactory($this->projectDir, $this->parameterWrapper))->getImageBuilder($imageConfig);
 
         $design = $imageBuilder->getDesign();
 

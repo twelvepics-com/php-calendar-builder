@@ -240,7 +240,7 @@ class Source extends BaseParameter
             throw new LogicException('Unable to read image source.');
         }
 
-        $imageHolder = new ImageHolder($this->appKernel, $identifier, $imageConfig, $this->getParameterWrapper());
+        $imageHolder = new ImageHolder($this->projectDir, $identifier, $imageConfig, $this->getParameterWrapper());
 
         $this->setImageHolder($imageHolder, $identifier);
 
