@@ -15,6 +15,7 @@ namespace App\Objects\Parameter;
 
 use App\Constants\Parameter\Argument;
 use App\Constants\Parameter\Option;
+use App\Objects\Input\Input;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -42,6 +43,8 @@ class ParameterWrapper
 {
     private Json $config;
 
+    private Input $input;
+
     /* Year of the page. */
     final public const DEFAULT_YEAR = 2024;
     private int $year = self::DEFAULT_YEAR;
@@ -49,9 +52,6 @@ class ParameterWrapper
     /* Month of the page. */
     final public const DEFAULT_MONTH = 1;
     private int $month = self::DEFAULT_MONTH;
-
-    /* Page number. */
-    private int $pageNumber;
 
     /**
      * @param Source $source
@@ -92,12 +92,113 @@ class ParameterWrapper
         /* Add the configuration file. */
         $this->addConfig(new File($pathConfig, $this->appKernel->getProjectDir()));
 
+        $this->input = new Input($input, $this->getConfig());
+
         /* Set the year and month. */
-        $this->setOptionFromParameter($input, Option::YEAR);
-        $this->setOptionFromParameter($input, Option::MONTH);
+        $this->setOptionFromParameter(Option::YEAR);
+        $this->setOptionFromParameter(Option::MONTH);
 
         $this->source->setParameterWrapper($this);
         $this->target->setParameterWrapper($this);
+    }
+
+    /**
+     * Returns the page number according to the given year and month.
+     *
+     * @return int
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getPageNumber(): int
+    {
+        return $this->input->getPageNumber($this->year, $this->month);
+    }
+
+    /**
+     * Returns if option exists within the parameter.
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function hasOptionFromParameter(string $name): bool
+    {
+        return $this->input->hasOptionFromParameter($name);
+    }
+
+    /**
+     * Returns the option from the parameter.
+     *
+     * @param string $name
+     * @return int|string|null
+     */
+    public function getOptionFromParameter(string $name): int|string|null
+    {
+        return $this->input->getOptionFromParameter($name);
+    }
+
+    /**
+     * Returns if option exists within the configuration.
+     *
+     * @param string $name
+     * @param int|null $year
+     * @param int|null $month
+     * @return bool
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function hasOptionFromConfig(string $name, int $year = null, int $month = null): bool
+    {
+        return $this->input->hasOptionFromConfig($name, $year, $month);
+    }
+
+    /**
+     * Returns the option from the configuration.
+     *
+     * @param string $name
+     * @param int|null $year
+     * @param int|null $month
+     * @return int|string|array<int|string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getOptionFromConfig(string $name, int $year = null, int $month = null): array|int|string|null
+    {
+        return $this->input->getOptionFromConfig($name, $year, $month);
+    }
+
+    /**
+     * Returns the option from the configuration as array.
+     *
+     * @param string $name
+     * @param int|null $year
+     * @param int|null $month
+     * @return array<int|string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getOptionFromConfigAsArray(string $name, int $year = null, int $month = null): array|null
+    {
+        return $this->input->getOptionFromConfigAsArray($name, $year, $month);
     }
 
     /**
@@ -107,20 +208,9 @@ class ParameterWrapper
      */
     public function unsetAll(): void
     {
-        $this->unsetPageNumber();
         $this->unsetConfig();
         $this->unsetYear();
         $this->unsetMonth();
-    }
-
-    /**
-     * Unsets the page number.
-     *
-     * @return void
-     */
-    public function unsetPageNumber(): void
-    {
-        unset($this->pageNumber);
     }
 
     /**
@@ -231,57 +321,8 @@ class ParameterWrapper
     }
 
     /**
-     * Returns the config path.
-     *
-     * @param string $name
-     * @return array<int, string>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getConfigPath(string $name): array
-    {
-        return match ($name) {
-
-            /* Source options */
-            Option::SOURCE => ['pages', (string) $this->getPageNumber(), 'source'],
-
-            /* Target options */
-            Option::YEAR => ['settings', 'defaults', 'year'],
-            Option::MONTH => ['settings', 'defaults', 'month'],
-            Option::TARGET => ['pages', (string) $this->getPageNumber(), 'target'],
-            Option::PAGE_TITLE => ['pages', (string) $this->getPageNumber(), 'page-title'],
-            Option::TITLE => ['pages', (string) $this->getPageNumber(), 'title'],
-            Option::SUBTITLE => ['pages', (string) $this->getPageNumber(), 'subtitle'],
-            Option::URL => ['pages', (string) $this->getPageNumber(), 'url'],
-            Option::COORDINATE => ['pages', (string) $this->getPageNumber(), 'coordinate'],
-
-            /* Output options */
-            Option::OUTPUT_QUALITY => ['settings', 'output', 'quality'],
-            Option::OUTPUT_FORMAT => ['settings', 'output', 'transparency'],
-
-            /* Design options (default) */
-            Option::DESIGN_ENGINE_DEFAULT => ['settings', 'defaults', 'design', 'engine'],
-            Option::DESIGN_TYPE_DEFAULT => ['settings', 'defaults', 'design', 'type'],
-            Option::DESIGN_CONFIG_DEFAULT => ['settings', 'defaults', 'design', 'config'],
-
-            /* Design options (via page) */
-            Option::DESIGN_ENGINE => ['pages', (string) $this->getPageNumber(), 'design', 'engine'],
-            Option::DESIGN_TYPE => ['pages', (string) $this->getPageNumber(), 'design', 'type'],
-            Option::DESIGN_CONFIG => ['pages', (string) $this->getPageNumber(), 'design', 'config'],
-
-            default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
-        };
-    }
-
-    /**
      * Sets the option to this class.
      *
-     * @param InputInterface $input
      * @param string $name
      * @return void
      * @throws ArrayKeyNotFoundException
@@ -292,12 +333,12 @@ class ParameterWrapper
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    private function setOptionFromParameter(InputInterface $input, string $name): void
+    private function setOptionFromParameter(string $name): void
     {
         $value = match (true) {
-            $this->hasOptionFromParameter($input, $name) => $this->getOptionFromParameter($input, $name),
-            $this->hasOptionFromConfig($name) => $this->getOptionFromConfig($name),
-            default => $this->getOptionFromParameter($input, $name),
+            $this->input->hasOptionFromParameter($name) => $this->input->getOptionFromParameter($name),
+            $this->input->hasOptionFromConfig($name) => $this->input->getOptionFromConfig($name),
+            default => $this->input->getOptionFromParameter($name),
         };
 
         if (is_null($value)) {
@@ -310,180 +351,6 @@ class ParameterWrapper
 
             default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
         };
-    }
-
-    /**
-     * Returns if the option was given via parameter.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return bool
-     */
-    public function hasOptionFromParameter(InputInterface $input, string $name): bool
-    {
-        return $input->hasParameterOption(sprintf('--%s', $name));
-    }
-
-    /**
-     * Tries to get option from parameter.
-     *
-     * @param InputInterface $input
-     * @param string $name
-     * @return int|string|null
-     */
-    public function getOptionFromParameter(InputInterface $input, string $name): int|string|null
-    {
-        $value = $input->getOption($name);
-
-        if (is_null($value)) {
-            return null;
-        }
-
-        if (!is_int($value) && !is_string($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Tries to get Option from parameter as an array.
-     *
-     * @param string $name
-     * @return array<int|string, mixed>|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getOptionFromConfigAsArray(string $name): array|null
-    {
-        if (!$this->hasOptionFromConfig($name)) {
-            return null;
-        }
-
-        $configPath = $this->getConfigPath($name);
-
-        $value = $this->getConfig()->getKey($configPath);
-
-        if (is_int($value) || is_string($value)) {
-            $value = [$value];
-        }
-
-        if (!is_array($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Returns if config exists within the config.yml file.
-     *
-     * @param string $name
-     * @return bool
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function hasOptionFromConfig(string $name): bool
-    {
-        $configPath = $this->getConfigPath($name);
-
-        return $this->getConfig()->hasKey($configPath);
-    }
-
-    /**
-     * Tries to get Option from parameter.
-     *
-     * @param string $name
-     * @return int|string|array<int|string, mixed>|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getOptionFromConfig(string $name): int|string|array|null
-    {
-        if (!$this->hasOptionFromConfig($name)) {
-            return null;
-        }
-
-        $configPath = $this->getConfigPath($name);
-
-        $value = $this->getConfig()->getKey($configPath);
-
-        if (!is_int($value) && !is_string($value) && !is_array($value)) {
-            throw new LogicException('Unexpected value for option.');
-        }
-
-        return $value;
-    }
-
-    /**
-     * Returns the page number according to the given year and month.
-     *
-     * @return int
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     */
-    public function getPageNumber(): int
-    {
-        if (isset($this->pageNumber)) {
-            return $this->pageNumber;
-        }
-
-        if (!$this->getConfig()->hasKey('pages')) {
-            throw new LogicException('Config.yml does not contain "pages" key.');
-        }
-
-        $pages = $this->getConfig()->getKeyArray('pages');
-
-        $pageNumber = null;
-
-        $index = -1;
-
-        foreach ($pages as $page) {
-            if (!is_array($page)) {
-                throw new LogicException('Config.yml contains invalid format for a single page. Array expected.');
-            }
-
-            $index++;
-
-            if (!array_key_exists('year', $page) || !array_key_exists('month', $page)) {
-                continue;
-            }
-
-            if ((int) $page['year'] === $this->year && (int) $page['month'] === $this->month) {
-                $pageNumber = $index;
-                break;
-            }
-        }
-
-        if (is_null($pageNumber)) {
-            throw new LogicException(sprintf('Could not find page with year "%s" and month "%s". Please check your config.yml.', $this->year, $this->month));
-        }
-
-        $this->pageNumber = $pageNumber;
-
-        return $pageNumber;
     }
 
     /**

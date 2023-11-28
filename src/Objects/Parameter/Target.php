@@ -236,7 +236,6 @@ class Target extends BaseParameter
     /**
      * Sets the option to this class.
      *
-     * @param InputInterface $input
      * @param string $name
      * @return void
      * @throws ArrayKeyNotFoundException
@@ -248,12 +247,12 @@ class Target extends BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    private function setOptionFromParameter(InputInterface $input, string $name): void
+    private function setOptionFromParameter(string $name): void
     {
         $value = match (true) {
-            $this->getParameterWrapper()->hasOptionFromParameter($input, $name) => $this->getParameterWrapper()->getOptionFromParameter($input, $name),
+            $this->getParameterWrapper()->hasOptionFromParameter($name) => $this->getParameterWrapper()->getOptionFromParameter($name),
             $this->getParameterWrapper()->hasOptionFromConfig($name) => $this->getParameterWrapper()->getOptionFromConfig($name),
-            default => $this->getParameterWrapper()->getOptionFromParameter($input, $name),
+            default => $this->getParameterWrapper()->getOptionFromParameter($name),
         };
 
         if (is_null($value)) {
@@ -295,15 +294,15 @@ class Target extends BaseParameter
     public function readParameter(InputInterface $input): void
     {
         /* Set calendar texts. */
-        $this->setOptionFromParameter($input, Option::PAGE_TITLE);
-        $this->setOptionFromParameter($input, Option::TITLE);
-        $this->setOptionFromParameter($input, Option::SUBTITLE);
-        $this->setOptionFromParameter($input, Option::URL);
-        $this->setOptionFromParameter($input, Option::COORDINATE);
+        $this->setOptionFromParameter(Option::PAGE_TITLE);
+        $this->setOptionFromParameter(Option::TITLE);
+        $this->setOptionFromParameter(Option::SUBTITLE);
+        $this->setOptionFromParameter(Option::URL);
+        $this->setOptionFromParameter(Option::COORDINATE);
 
         /* Set calendar options. */
-        $this->setOptionFromParameter($input, Option::OUTPUT_QUALITY);
-        $this->setOptionFromParameter($input, Option::OUTPUT_FORMAT);
+        $this->setOptionFromParameter(Option::OUTPUT_QUALITY);
+        $this->setOptionFromParameter(Option::OUTPUT_FORMAT);
 
         /* Reset title and subtitle if the main calendar page is currently generated. */
         if ($this->getMonth() !== 0) {
