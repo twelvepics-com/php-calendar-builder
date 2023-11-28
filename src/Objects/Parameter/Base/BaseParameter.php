@@ -26,6 +26,7 @@ use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Abstract class BaseParameter
@@ -50,6 +51,7 @@ abstract class BaseParameter
      * @param string $projectDir
      */
     public function __construct(
+        #[Autowire('%kernel.project_dir%')]
         protected readonly string $projectDir
     )
     {
