@@ -24,6 +24,7 @@ use App\Objects\Parameter\ParameterWrapper;
 use App\Objects\Parameter\Target;
 use App\Service\CalendarBuilderService;
 use Exception;
+use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -279,6 +280,23 @@ EOT
     }
 
     /**
+     * Returns the image configuration.
+     *
+     * @return Json
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    private function getDesignConfig(): Json
+    {
+        return $this->parameterWrapper->getConfig()->getKeyJson(['settings', 'defaults', 'design']);
+    }
+
+    /**
      * Execute the commands.
      *
      * @param InputInterface $input
@@ -295,7 +313,7 @@ EOT
         $this->init();
 
         /* Get image builder. */
-        $imageBuilder = (new ImageBuilderFactory($this->projectDir, $this->parameterWrapper))->getImageBuilder();
+        $imageBuilder = (new ImageBuilderFactory($this->projectDir))->getImageBuilder($input, $this->getDesignConfig());
 
         /* Print details */
         $this->printParameter($imageBuilder);

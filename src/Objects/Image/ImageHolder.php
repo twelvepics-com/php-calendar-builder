@@ -16,7 +16,6 @@ namespace App\Objects\Image;
 use App\Calendar\Design\DesignText;
 use App\Calendar\ImageBuilder\ImageBuilderFactory;
 use App\Objects\Exif\ExifCoordinate;
-use App\Objects\Parameter\ParameterWrapper;
 use Exception;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Json;
@@ -31,6 +30,7 @@ use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
+use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * Class ImageHolder
@@ -63,7 +63,7 @@ class ImageHolder
      * @param string $projectDir
      * @param string $identifier
      * @param string|Json $imageConfig
-     * @param ParameterWrapper $parameterWrapper
+     * @param InputInterface $input
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws CaseUnsupportedException
@@ -74,7 +74,7 @@ class ImageHolder
      * @throws ParserException
      * @throws TypeInvalidException
      */
-    public function __construct(protected readonly string $projectDir, protected string $identifier, protected string|Json $imageConfig, protected ParameterWrapper $parameterWrapper)
+    public function __construct(protected readonly string $projectDir, protected string $identifier, protected string|Json $imageConfig, protected InputInterface $input)
     {
         $this->init();
     }
@@ -228,7 +228,7 @@ class ImageHolder
         $height = $imageConfig->getKeyInteger(['config', 'height']);
         $format = $imageConfig->getKeyString(['config', 'format']);
 
-        $imageBuilder = (new ImageBuilderFactory($this->projectDir, $this->parameterWrapper))->getImageBuilder($imageConfig);
+        $imageBuilder = (new ImageBuilderFactory($this->projectDir))->getImageBuilder($this->input, $imageConfig);
 
         $design = $imageBuilder->getDesign();
 

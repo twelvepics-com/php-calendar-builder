@@ -20,7 +20,7 @@ use App\Calendar\Design\DesignText;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Design;
 use App\Constants\Parameter\Option;
-use App\Objects\Parameter\ParameterWrapper;
+use App\Objects\Input\Input;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -30,6 +30,7 @@ use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
+use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * Abstract class ImageBuilderFactory
@@ -42,15 +43,15 @@ readonly class ImageBuilderFactory
 {
     /**
      * @param string $projectDir
-     * @param ParameterWrapper $parameterWrapper
      */
-    public function __construct(private string $projectDir, private ParameterWrapper $parameterWrapper)
+    public function __construct(private string $projectDir)
     {
     }
 
     /**
      * Returns the image builder and the design according to the config.
      *
+     * @param InputInterface $input
      * @param Json|null $config
      * @return BaseImageBuilder
      * @throws ArrayKeyNotFoundException
@@ -61,7 +62,7 @@ readonly class ImageBuilderFactory
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getImageBuilder(Json $config = null): BaseImageBuilder
+    public function getImageBuilder(InputInterface $input, Json $config = null): BaseImageBuilder
     {
         $designEngine = null;
         $designType = null;
@@ -73,9 +74,11 @@ readonly class ImageBuilderFactory
             $designConfigJson = $config->getKeyJson('config');
         }
 
-        $designEngine ??= $this->getDesignEngine();
-        $designType ??= $this->getDesignType();
-        $designConfigJson ??= $this->getDesignConfig();
+        $input = new Input($input, $config);
+
+        $designEngine ??= $this->getDesignEngine($input);
+        $designType ??= $this->getDesignType($input);
+        $designConfigJson ??= $this->getDesignConfig($input);
 
         return match ($designEngine) {
             'gdimage' => match ($designType) {
@@ -99,6 +102,7 @@ readonly class ImageBuilderFactory
     /**
      * Returns the design engine.
      *
+     * @param Input $input
      * @return string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -108,11 +112,11 @@ readonly class ImageBuilderFactory
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    private function getDesignEngine(): string
+    private function getDesignEngine(Input $input): string
     {
         $engine = match (true) {
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_ENGINE) => $this->parameterWrapper->getOptionFromConfig(Option::DESIGN_ENGINE),
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $this->parameterWrapper->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
+            $input->hasOptionFromConfig(Option::DESIGN_ENGINE) => $input->getOptionFromConfig(Option::DESIGN_ENGINE),
+            $input->hasOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT) => $input->getOptionFromConfig(Option::DESIGN_ENGINE_DEFAULT),
             default => 'imagick',
         };
 
@@ -126,6 +130,7 @@ readonly class ImageBuilderFactory
     /**
      * Returns the design type.
      *
+     * @param Input $input
      * @return string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -135,11 +140,11 @@ readonly class ImageBuilderFactory
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    private function getDesignType(): string
+    private function getDesignType(Input $input): string
     {
         $type = match (true) {
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_TYPE) => $this->parameterWrapper->getOptionFromConfig(Option::DESIGN_TYPE),
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $this->parameterWrapper->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
+            $input->hasOptionFromConfig(Option::DESIGN_TYPE) => $input->getOptionFromConfig(Option::DESIGN_TYPE),
+            $input->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => $input->getOptionFromConfig(Option::DESIGN_TYPE_DEFAULT),
             default => Design::DEFAULT,
         };
 
@@ -153,6 +158,7 @@ readonly class ImageBuilderFactory
     /**
      * Returns the design configuration.
      *
+     * @param Input $input
      * @return Json|null
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -162,17 +168,17 @@ readonly class ImageBuilderFactory
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    private function getDesignConfig(): Json|null
+    private function getDesignConfig(Input $input): Json|null
     {
         $designConfigSource = match (true) {
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
-            $this->parameterWrapper->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
+            $input->hasOptionFromConfig(Option::DESIGN_TYPE) => Option::DESIGN_CONFIG,
+            $input->hasOptionFromConfig(Option::DESIGN_TYPE_DEFAULT) => Option::DESIGN_CONFIG_DEFAULT,
             default => null,
         };
 
         $designConfig = match (true) {
             is_null($designConfigSource) => throw new LogicException('Invalid design config.'),
-            $this->parameterWrapper->hasOptionFromConfig($designConfigSource) => $this->parameterWrapper->getOptionFromConfigAsArray($designConfigSource),
+            $input->hasOptionFromConfig($designConfigSource) => $input->getOptionFromConfigAsArray($designConfigSource),
             default => null,
         };
 

@@ -38,11 +38,11 @@ class Input
 
     /**
      * @param InputInterface $input
-     * @param Json $config
+     * @param Json|null $config
      */
     public function __construct(
         private readonly InputInterface $input,
-        private readonly Json $config
+        private readonly Json|null $config = null
     )
     {
     }
@@ -146,6 +146,10 @@ class Input
      */
     public function hasOptionFromConfig(string $name, int $year = null, int $month = null): bool
     {
+        if (is_null($this->config)) {
+            return false;
+        }
+
         $configPath = $this->getConfigPath($name, $year, $month);
 
         return $this->config->hasKey($configPath);
@@ -169,6 +173,10 @@ class Input
     public function getOptionFromConfigAsArray(string $name, int $year = null, int $month = null): array|null
     {
         if (!$this->hasOptionFromConfig($name, $year, $month)) {
+            return null;
+        }
+
+        if (is_null($this->config)) {
             return null;
         }
 
@@ -208,6 +216,10 @@ class Input
             return null;
         }
 
+        if (is_null($this->config)) {
+            return null;
+        }
+
         $configPath = $this->getConfigPath($name, $year, $month);
 
         $value = $this->config->getKey($configPath);
@@ -243,6 +255,10 @@ class Input
 
         if (is_null($year) && is_null($month)) {
             throw new LogicException('Both year and month must be given.');
+        }
+
+        if (is_null($this->config)) {
+            throw new LogicException('Config must be set.');
         }
 
         if (!$this->config->hasKey('pages')) {
