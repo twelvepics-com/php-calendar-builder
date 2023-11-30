@@ -20,7 +20,6 @@ use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServ
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
-use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;

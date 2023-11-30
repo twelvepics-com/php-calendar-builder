@@ -293,8 +293,11 @@ EOT
      */
     private function getDesignConfig(): Json
     {
+        /* TODO: Get config via pages if given */
         return $this->parameterWrapper->getConfig()->getKeyJson(['settings', 'defaults', 'design']);
     }
+
+
 
     /**
      * Execute the commands.

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
 use Ixnode\PhpContainer\File;
@@ -49,7 +50,7 @@ class ImageController extends AbstractController
      */
     private function getErrorResponse(string $message, string $projectDir): Response
     {
-        $font = sprintf(CalendarBuilderService::PATH_FONT_ABSOLUTE, $projectDir);
+        $font = sprintf(CalendarBuilderService::PATH_FONT_ABSOLUTE, $projectDir, BaseImageBuilder::FONT_DEFAULT);
 
         $image = imagecreatetruecolor(
             CalendarBuilderService::ERROR_WIDTH,

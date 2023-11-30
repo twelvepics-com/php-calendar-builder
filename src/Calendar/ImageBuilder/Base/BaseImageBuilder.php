@@ -50,7 +50,9 @@ abstract class BaseImageBuilder
     /**
      * Constants.
      */
-    protected const FONT = 'OpenSansCondensed-Light.ttf';
+    final public const FONT_DEFAULT = 'OpenSansCondensed-Light.ttf';
+
+    final public const FONT_EMOJI = 'Seguiemj.ttf';
 
     protected const ASPECT_RATIO = 3 / 2;
 
@@ -73,6 +75,8 @@ abstract class BaseImageBuilder
     protected string $pathTargetAbsolute;
 
     protected string $pathFont;
+
+    protected string $pathFontEmoji;
 
     /** @var int[]|string[] $colors */
     protected array $colors = [];
@@ -352,7 +356,9 @@ abstract class BaseImageBuilder
     protected function setFontPath(): void
     {
         $pathData = sprintf('%s/data', $this->projectDir);
-        $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT);
+
+        $this->pathFont = sprintf('%s/font/%s', $pathData, self::FONT_DEFAULT);
+        $this->pathFontEmoji = sprintf('%s/font/%s', $pathData, self::FONT_EMOJI);
     }
 
     /**

@@ -156,6 +156,31 @@ class ImageMagickImageBuilder extends BaseImageBuilder
     }
 
     /**
+     * Extracts the emoji from the given text.
+     *
+     * @param string $text
+     * @return array{text: string, emoji: string|null}
+     */
+    private function extractEmoji(string $text): array
+    {
+        $pattern = '~^(.*?)<emoji>(.*?)</emoji>$~';
+
+        $matches = [];
+
+        if (!preg_match($pattern, $text, $matches)) {
+            return [
+                'text' => $text,
+                'emoji' => null,
+            ];
+        }
+
+        return [
+            'text' => $matches[1],
+            'emoji' => $matches[2],
+        ];
+    }
+
+    /**
      * Add raw text.
      *
      * @inheritdoc
@@ -175,14 +200,16 @@ class ImageMagickImageBuilder extends BaseImageBuilder
         int $valign = CalendarBuilderServiceConstants::VALIGN_BOTTOM
     ): void
     {
+        ['text' => $text, 'emoji' => $emoji] = $this->extractEmoji($text);
+
         $text = str_replace('<br>', PHP_EOL, $text);
 
         $dimension = $this->getDimension($text, $fontSize, $angle);
 
-        $positionXAlignment = match ($align) {
-            CalendarBuilderServiceConstants::ALIGN_CENTER => Imagick::ALIGN_CENTER,
-            CalendarBuilderServiceConstants::ALIGN_RIGHT => Imagick::ALIGN_RIGHT,
-            default => Imagick::ALIGN_LEFT,
+        $positionX = match ($align) {
+            CalendarBuilderServiceConstants::ALIGN_CENTER => $positionX - intval(round($dimension['width'] / 2)),
+            CalendarBuilderServiceConstants::ALIGN_RIGHT => $positionX - $dimension['width'],
+            default => $positionX,
         };
 
         $positionY = match ($valign) {
@@ -194,16 +221,42 @@ class ImageMagickImageBuilder extends BaseImageBuilder
         $positionX = max($positionX, 0);
         $positionY = max($positionY, 0);
 
+        $texts = [
+            [
+                'text' => $text,
+                'fillColor' => $this->getColor($keyColor),
+                'font' => $this->pathFont,
+                'fontSize' => $fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION,
+                'yCorr' => 0,
+            ],
+
+        ];
+
+        if (!is_null($emoji)) {
+            $texts[] = [
+                'text' => $emoji,
+                'fillColor' => $this->getColor(Color::RED),
+                'font' => $this->pathFontEmoji,
+                'fontSize' => $fontSize,
+                'yCorr' => intval(round(($fontSize - $fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION) / 1.9)),
+            ];
+        }
+
         /* Create an ImagickDraw object. */
         $draw = new ImagickDraw();
-        $draw->setFillColor(new ImagickPixel($this->getColor($keyColor)));
-        $draw->setFont($this->pathFont);
-        $draw->setFontSize($fontSize * self::GD_IMAGE_TO_IMAGICK_CORRECTION);
-        $draw->setTextAlignment($positionXAlignment);
         $draw->setTextAntialias(true);
 
-        /* Add text to image. */
-        $this->getImageTarget()->annotateImage($draw, $positionX, $positionY, $angle, $text);
+        foreach ($texts as $textConfig) {
+            $draw->setFillColor(new ImagickPixel($textConfig['fillColor']));
+            $draw->setFont($textConfig['font']);
+            $draw->setFontSize($textConfig['fontSize']);
+
+            $metrics = $this->getImageTarget()->queryFontMetrics($draw, $textConfig['text'], false);
+
+            $this->getImageTarget()->annotateImage($draw, $positionX, $positionY + $textConfig['yCorr'], $angle, $textConfig['text']);
+
+            $positionX += $metrics['textWidth'];
+        }
     }
 
     /**
