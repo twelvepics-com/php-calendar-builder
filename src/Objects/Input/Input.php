@@ -76,6 +76,7 @@ class Input
             Option::PAGE_TITLE => ['pages', (string) $this->getPageNumber($year, $month), 'page-title'],
             Option::TITLE => ['pages', (string) $this->getPageNumber($year, $month), 'title'],
             Option::SUBTITLE => ['pages', (string) $this->getPageNumber($year, $month), 'subtitle'],
+            Option::LOGO => ['pages', (string) $this->getPageNumber($year, $month), 'logo'],
             Option::URL => ['pages', (string) $this->getPageNumber($year, $month), 'url'],
             Option::COORDINATE => ['pages', (string) $this->getPageNumber($year, $month), 'coordinate'],
 

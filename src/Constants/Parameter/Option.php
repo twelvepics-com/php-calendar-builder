@@ -31,6 +31,7 @@ class Option
     /* Target options */
     final public const MONTH = 'month';
     final public const YEAR = 'year';
+    final public const LOGO = 'logo';
 
     final public const TARGET = 'target';
     final public const PAGE_TITLE = 'page-title';

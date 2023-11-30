@@ -363,6 +363,30 @@ class DesignDefault extends DesignBase
             CalendarBuilderServiceConstants::VALIGN_TOP
         );
         $this->imageBuilder->addY($dimensionYear['height'] + $paddingTopSubtext);
+
+        $logo = $target->getLogo();
+
+        if (!is_null($logo)) {
+            $path = dirname($target->getPath()->getPath(), 2);
+
+            $pathLogo = sprintf('%s/%s', $path, $logo);
+
+            /* Set background color */
+            $backgroundColor = [255, 0, 0];
+
+            $imageBlob = file_get_contents($pathLogo);
+
+            if ($imageBlob !== false) {
+                $this->imageBuilder->addImageBlob(
+                    $imageBlob,
+                    $this->imageBuilder->getWidthTarget() - $this->widthQrCode - $this->paddingCalendarDays,
+                    $this->imageBuilder->getHeightTarget() - $this->paddingCalendarDays - $this->heightQrCode,
+                    $this->widthQrCode,
+                    $this->heightQrCode,
+                    $backgroundColor
+                );
+            }
+        }
     }
 
     /**

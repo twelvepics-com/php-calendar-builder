@@ -58,6 +58,10 @@ class Target extends BaseParameter
     final public const DEFAULT_URL = 'auto';
     private string $url = self::DEFAULT_SUBTITLE;
 
+    /* LOGO of the page. */
+    final public const DEFAULT_LOGO = null;
+    private string|null $logo = self::DEFAULT_LOGO;
+
     /* Coordinate of the picture. */
     final public const DEFAULT_COORDINATE = 'Coordinate';
     private string $coordinate = self::DEFAULT_COORDINATE;
@@ -172,6 +176,22 @@ class Target extends BaseParameter
     }
 
     /**
+     * @return string|null
+     */
+    public function getLogo(): string|null
+    {
+        return $this->logo;
+    }
+
+    /**
+     * @param string|null $logo
+     */
+    private function setLogo(string|null $logo): void
+    {
+        $this->logo = $logo;
+    }
+
+    /**
      * Returns the url of this page.
      *
      * @return string
@@ -266,6 +286,7 @@ class Target extends BaseParameter
         match ($name) {
             Option::PAGE_TITLE => $this->setPageTitle((string) $value),
             Option::TITLE => $this->setTitle((string) $value),
+            Option::LOGO => $this->setLogo((string) $value),
             Option::SUBTITLE => $this->setSubtitle((string) $value),
             Option::URL => $this->setUrl((string) $value),
             Option::COORDINATE => $this->setCoordinate((string) $value),
@@ -297,6 +318,7 @@ class Target extends BaseParameter
         $this->setOptionFromParameter(Option::PAGE_TITLE);
         $this->setOptionFromParameter(Option::TITLE);
         $this->setOptionFromParameter(Option::SUBTITLE);
+        $this->setOptionFromParameter(Option::LOGO);
         $this->setOptionFromParameter(Option::URL);
         $this->setOptionFromParameter(Option::COORDINATE);
 

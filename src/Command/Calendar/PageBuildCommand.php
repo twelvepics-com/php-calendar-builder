@@ -101,6 +101,7 @@ class PageBuildCommand extends Command
             ->addOption(Option::PAGE_TITLE, null, InputOption::VALUE_REQUIRED, 'The page title of the page.', Target::DEFAULT_PAGE_TITLE)
             ->addOption(Option::TITLE, null, InputOption::VALUE_REQUIRED, 'The title of the page.', Target::DEFAULT_TITLE)
             ->addOption(Option::SUBTITLE, null, InputOption::VALUE_REQUIRED, 'The subtitle of the page.', Target::DEFAULT_SUBTITLE)
+            ->addOption(Option::LOGO, null, InputOption::VALUE_REQUIRED, 'The logo of the page.', Target::DEFAULT_LOGO)
             ->addOption(Option::URL, null, InputOption::VALUE_REQUIRED, 'The url of the page.', Target::DEFAULT_SUBTITLE)
             ->addOption(Option::COORDINATE, null, InputOption::VALUE_REQUIRED, 'The position/coordinate of the picture.', Target::DEFAULT_COORDINATE)
 

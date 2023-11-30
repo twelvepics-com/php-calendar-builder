@@ -169,6 +169,8 @@ class Source extends BaseParameter
         }
     }
 
+
+
     /**
      * Reads all birthdays.
      *
@@ -188,6 +190,12 @@ class Source extends BaseParameter
             $birthdays = $this->getConfig()->getKeyArray('birthdays');
 
             foreach ($birthdays as $date => $title) {
+
+                if (is_array($title) && array_key_exists('date', $title) && array_key_exists('title', $title)) {
+                    $date = $title['date'];
+                    $title = $title['title'];
+                }
+
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string) $date);
 
                 if ((!$dateImmutable instanceof DateTimeImmutable)) {
