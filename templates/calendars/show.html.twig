@@ -8,7 +8,7 @@
     <body>{% apply spaceless %}
         <ul>
             {% for calendar in calendars %}
-                <li><a href="{{ calendar }}">{{ calendar }}</a></li>
+                <li><a href="{{ calendar.url }}">{{ calendar.name }}</a></li>
             {% endfor %}
         </ul>
     {% endapply %}</body>

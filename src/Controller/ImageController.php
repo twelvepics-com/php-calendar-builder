@@ -29,6 +29,7 @@ use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Yaml\Yaml;
 
@@ -41,6 +42,13 @@ use Symfony\Component\Yaml\Yaml;
  */
 class ImageController extends AbstractController
 {
+    /**
+     * @param KernelInterface $appKernel
+     */
+    public function __construct(protected KernelInterface $appKernel)
+    {
+    }
+
     /**
      * Returns the given error message as png image response.
      *
@@ -188,7 +196,14 @@ class ImageController extends AbstractController
      * Returns all calendar ids.
      *
      * @param string $path
-     * @return string[]
+     * @return array<int, array{url: string, name: string}>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     protected function getCalendars(string $path): array {
         $calendars = [];
@@ -203,7 +218,32 @@ class ImageController extends AbstractController
             return $calendars;
         }
 
-        return array_filter($scanned, fn($element) => is_dir($path.'/'.$element) && !in_array($element, ['.', '..']));
+        $paths = array_filter($scanned, fn($element) => is_dir($path.'/'.$element) && !in_array($element, ['.', '..']));
+
+        foreach ($paths as $path) {
+            $configPath = $this->appKernel->getProjectDir().'/data/calendar/'.$path.'/config.yml';
+
+            $config = new File($configPath);
+
+            if (!$config->exist()) {
+                throw new LogicException(sprintf('Config file "%s" does not exist.', $configPath));
+            }
+
+            $parsedConfig = Yaml::parse($config->getContentAsText());
+
+            if (!is_array($parsedConfig)) {
+                throw new LogicException(sprintf('Config file "%s" is not a valid YAML file.', $configPath));
+            }
+
+            $json = new Json($parsedConfig);
+
+            $calendars[] = [
+                'url' => sprintf('/v/%s/all', $path),
+                'name' => $json->getKeyString('title'),
+            ];
+        }
+
+        return $calendars;
     }
 
     /**
@@ -211,6 +251,13 @@ class ImageController extends AbstractController
      *
      * @param string $projectDir
      * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
      */
     #[Route('/v', name: 'app_get_calendars')]
     public function showCalendars(
@@ -221,10 +268,6 @@ class ImageController extends AbstractController
         $path = $projectDir.'/data/calendar';
 
         $calendars = $this->getCalendars($path);
-
-        foreach ($calendars as $key => $calendar) {
-            $calendars[$key] = sprintf('/v/%s/all', $calendar);
-        }
 
         return $this->render('calendars/show.html.twig', [
             'calendars' => $calendars
