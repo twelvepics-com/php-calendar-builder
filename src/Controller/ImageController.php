@@ -238,6 +238,7 @@ class ImageController extends AbstractController
             $json = new Json($parsedConfig);
 
             $calendars[] = [
+                'path' => $path,
                 'url' => sprintf('/v/%s/all', $path),
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $path,
             ];
