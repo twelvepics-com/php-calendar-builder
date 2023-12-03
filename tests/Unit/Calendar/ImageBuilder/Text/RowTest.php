@@ -351,6 +351,96 @@ final class RowTest extends TestCase
                     ],
                 ],
             ]],
+            [++$number, new Row([
+                new Text('Text ', 'Arial', 20, 0),
+                new Text('Text Text Text ', 'Arial', 24, 0),
+                new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 16, 0),
+            ]), 200, 100, Align::LEFT, Valign::BOTTOM, [
+                'width' => 684,
+                'height' => 24,
+                'x' => 200,
+                'y' => 100,
+                'row' => [
+                    [
+                        'width' => 100,
+                        'height' => 20,
+                        'x' => 200,
+                        'y' => 100,
+                    ],
+                    [
+                        'width' => 360,
+                        'height' => 24,
+                        'x' => 200 + 100,
+                        'y' => 100,
+                    ],
+                    [
+                        'width' => 224,
+                        'height' => 16,
+                        'x' => 200 + 460,
+                        'y' => 100,
+                    ],
+                ],
+            ]],
+            [++$number, new Row([
+                new Text('Text ', 'Arial', $fontSize1 = 20, 0),
+                new Text('Text Text Text ', 'Arial', $fontSize2 = 24, 0),
+                new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', $fontSize3 = 16, 0),
+            ]), $positionX = 200, $positionY = 100, Align::LEFT, Valign::MIDDLE, [
+                'width' => $width = 684,
+                'height' => $height = $fontSize2, // highest font size
+                'x' => $positionX,
+                'y' => $positionY + $height/2,
+                'row' => [
+                    [
+                        'width' => $width1 = 100,
+                        'height' => $fontSize1,
+                        'x' => $positionX,
+                        'y' => $positionY + $height/2,
+                    ],
+                    [
+                        'width' => $width2 = 360,
+                        'height' => $fontSize2,
+                        'x' => $positionX + $width1,
+                        'y' => $positionY + $height/2,
+                    ],
+                    [
+                        'width' => 224,
+                        'height' => $fontSize3,
+                        'x' => $positionX + $width1 + $width2,
+                        'y' => $positionY + $height/2,
+                    ],
+                ],
+            ]],
+            [++$number, new Row([
+                new Text('Text ', 'Arial', $fontSize1 = 20, 0),
+                new Text('Text Text Text ', 'Arial', $fontSize2 = 24, 0),
+                new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', $fontSize3 = 16, 0),
+            ]), $positionX, $positionY, Align::RIGHT, Valign::MIDDLE, [
+                'width' => $width,
+                'height' => $height = $fontSize2, // highest font size
+                'x' => $positionX - $width,
+                'y' => $positionY + $height/2,
+                'row' => [
+                    [
+                        'width' => $width1,
+                        'height' => $fontSize1,
+                        'x' => $positionX - $width,
+                        'y' => $positionY + $height/2,
+                    ],
+                    [
+                        'width' => $width2,
+                        'height' => $fontSize2,
+                        'x' => $positionX + $width1 - $width,
+                        'y' => $positionY + $height/2,
+                    ],
+                    [
+                        'width' => 224,
+                        'height' => $fontSize3,
+                        'x' => $positionX + $width1 + $width2 - $width,
+                        'y' => $positionY + $height/2,
+                    ],
+                ],
+            ]],
         ];
     }
 }
