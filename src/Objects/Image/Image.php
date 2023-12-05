@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace App\Objects\Image;
 
 use Exception;
+use Ixnode\PhpCliImage\CliImage;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpSizeByte\SizeByte;
 use LogicException;
 
@@ -32,6 +34,8 @@ class Image
     public function __construct(protected string $projectDir)
     {
     }
+
+    final public const CLI_IMAGE_WIDTH = 120;
 
     private string|null $pathAbsolute = null;
 
@@ -237,5 +241,14 @@ class Image
         $this->imageString = $imageString;
 
         return $this;
+    }
+
+    /**
+     * @return CliImage
+     * @throws CaseUnsupportedException
+     */
+    public function getCliImage(): CliImage
+    {
+        return new CliImage($this->imageString, self::CLI_IMAGE_WIDTH);
     }
 }

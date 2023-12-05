@@ -69,12 +69,23 @@ class Target extends BaseParameter
 
 
     /* Output quality from bad 0 to best 100. */
+    final public const OUTPUT_QUALITY_MAX = 100;
+    final public const OUTPUT_QUALITY_MIN = 1;
     final public const DEFAULT_OUTPUT_QUALITY = 100;
     private int $outputQuality = self::DEFAULT_OUTPUT_QUALITY;
 
     /* Output format. */
+    final public const DEFAULT_ALLOWED_OUTPUT_FORMATS = [CalendarBuilderService::IMAGE_JPG, CalendarBuilderService::IMAGE_JPEG, CalendarBuilderService::IMAGE_PNG];
     final public const DEFAULT_OUTPUT_FORMAT = CalendarBuilderService::IMAGE_JPG;
     private string $outputFormat = self::DEFAULT_OUTPUT_FORMAT;
+
+    /* Output width. */
+    final public const DEFAULT_OUTPUT_WIDTH = 6000;
+    private int $outputWidth = self::DEFAULT_OUTPUT_WIDTH;
+
+    /* Output height. */
+    final public const DEFAULT_OUTPUT_HEIGHT = 4000;
+    private int $outputHeight = self::DEFAULT_OUTPUT_HEIGHT;
 
     /**
      * @return File
@@ -125,6 +136,42 @@ class Target extends BaseParameter
     public function setOutputFormat(string $outputFormat): void
     {
         $this->outputFormat = $outputFormat;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOutputWidth(): int
+    {
+        return $this->outputWidth;
+    }
+
+    /**
+     * @param int $outputWidth
+     * @return Target
+     */
+    public function setOutputWidth(int $outputWidth): Target
+    {
+        $this->outputWidth = $outputWidth;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOutputHeight(): int
+    {
+        return $this->outputHeight;
+    }
+
+    /**
+     * @param int $outputHeight
+     * @return Target
+     */
+    public function setOutputHeight(int $outputHeight): Target
+    {
+        $this->outputHeight = $outputHeight;
+        return $this;
     }
 
     /**
@@ -293,9 +340,23 @@ class Target extends BaseParameter
 
             Option::OUTPUT_QUALITY => $this->setQuality((int) $value),
             Option::OUTPUT_FORMAT => $this->setOutputFormat((string) $value),
+            Option::OUTPUT_WIDTH => $this->setOutputWidth((int) $value),
+            Option::OUTPUT_HEIGHT => $this->setOutputHeight((int) $value),
 
             default => throw new LogicException(sprintf('Unsupported option "%s"', $name)),
         };
+
+        if ($name === Option::OUTPUT_QUALITY && $value < self::OUTPUT_QUALITY_MIN) {
+            throw new LogicException(sprintf('Option "%s" must be greater or equal to %d. %d given.', Option::OUTPUT_QUALITY, self::OUTPUT_QUALITY_MIN, $value));
+        }
+
+        if ($name === Option::OUTPUT_QUALITY && $value > self::OUTPUT_QUALITY_MAX) {
+            throw new LogicException(sprintf('Option "%s" must be lower or equal to %d. %d given.', Option::OUTPUT_QUALITY, self::OUTPUT_QUALITY_MAX, $value));
+        }
+
+        if ($name === Option::OUTPUT_FORMAT && !in_array($value, self::DEFAULT_ALLOWED_OUTPUT_FORMATS)) {
+            throw new LogicException(sprintf('Option "%s" must be one of "%s". %s given.', Option::OUTPUT_FORMAT, implode('", "', self::DEFAULT_ALLOWED_OUTPUT_FORMATS), $value));
+        }
     }
 
     /**
@@ -325,6 +386,8 @@ class Target extends BaseParameter
         /* Set calendar options. */
         $this->setOptionFromParameter(Option::OUTPUT_QUALITY);
         $this->setOptionFromParameter(Option::OUTPUT_FORMAT);
+        $this->setOptionFromParameter(Option::OUTPUT_WIDTH);
+        $this->setOptionFromParameter(Option::OUTPUT_HEIGHT);
 
         /* Reset title and subtitle if the main calendar page is currently generated. */
         if ($this->getMonth() !== 0) {

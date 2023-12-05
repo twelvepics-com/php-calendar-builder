@@ -43,6 +43,8 @@ class Option
     /* Output options */
     final public const OUTPUT_FORMAT = 'format';
     final public const OUTPUT_QUALITY = 'quality';
+    final public const OUTPUT_WIDTH = 'width';
+    final public const OUTPUT_HEIGHT = 'height';
 
     /* Design options (default) */
     final public const DESIGN_ENGINE = 'design-engine';

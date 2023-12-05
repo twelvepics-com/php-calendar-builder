@@ -66,6 +66,10 @@ class PageBuildCommand extends Command
 
     private const CONFIG_INDENTATION = 20;
 
+    private const INDENTATION = 2;
+
+    private const INDENTATION_IMAGE = 20;
+
     private OutputInterface $output;
 
     private InputInterface $input;
@@ -107,6 +111,9 @@ class PageBuildCommand extends Command
 
             ->addOption(Option::OUTPUT_FORMAT, null, InputOption::VALUE_REQUIRED, 'The output format.', Target::DEFAULT_OUTPUT_FORMAT)
             ->addOption(Option::OUTPUT_QUALITY, null, InputOption::VALUE_REQUIRED, 'The output quality.', Target::DEFAULT_OUTPUT_QUALITY)
+
+            ->addOption(Option::OUTPUT_WIDTH, null, InputOption::VALUE_REQUIRED, 'The output width.', Target::DEFAULT_OUTPUT_WIDTH)
+            ->addOption(Option::OUTPUT_HEIGHT, null, InputOption::VALUE_REQUIRED, 'The output height.', Target::DEFAULT_OUTPUT_HEIGHT)
 
             ->addArgument(Argument::SOURCE, InputArgument::REQUIRED, 'The path to the source image.')
             ->setHelp(
@@ -191,6 +198,8 @@ EOT
         $this->output->writeln(sprintf('  Path:             %s', $target->getPath()->getPath()));
         $this->output->writeln(sprintf('  Format:           %s', $target->getOutputFormat()));
         $this->output->writeln(sprintf('  Quality:          %s', $target->getOutputQuality()));
+        $this->output->writeln(sprintf('  Width:            %s', $target->getOutputWidth()));
+        $this->output->writeln(sprintf('  Height:           %s', $target->getOutputHeight()));
         $this->output->writeln('');
         $this->output->writeln(sprintf('  Title:            %s', $target->getTitle() ?? 'n/a'));
         $this->output->writeln(sprintf('  Subtitle:         %s', $target->getSubtitle() ?? 'n/a'));
@@ -206,7 +215,6 @@ EOT
         $this->output->writeln(sprintf('  Design:           %s', $imageBuilder->getDesign()::class));
         $this->output->writeln(sprintf('  Config:           %s', $this->formatTextWithIndentation($imageBuilder->getDesign()->getConfig()->getJsonStringFormatted(), self::CONFIG_INDENTATION)));
         $this->output->writeln('');
-        $this->output->writeln('');
     }
 
     /**
@@ -217,7 +225,10 @@ EOT
     private function printWaitScreen(): void
     {
         $this->output->writeln('');
-        $this->output->write(sprintf('Create calendar at %s. Please wait.. ', date('Y-m-d H:i:s')));
+        $this->output->writeln('  D) Create calendar');
+        $this->output->writeln('  ==================');
+        $this->output->writeln('');
+        $this->output->writeln(sprintf('  Create calendar at %s. Please wait.. ', date('Y-m-d H:i:s')));
         $this->output->writeln('');
     }
 
@@ -232,25 +243,34 @@ EOT
     private function printBuildInformation(ImageContainer $buildInformation, float $timeTaken): void
     {
         $this->output->writeln('');
-        $this->output->writeln(sprintf('→ Time taken: %.2fs', $timeTaken));
+        $this->output->writeln('  E) Result');
+        $this->output->writeln('  =========');
 
         $source = $buildInformation->getSource();
         $target = $buildInformation->getTarget();
 
         /** @var Image $image */
-        foreach ([$source, $target] as $image) {
+        foreach ([$source, $target] as $index => $image) {
             $caption = $image->getType() === ImageContainer::TYPE_SOURCE ?
-                'Calendar page built from:' :
-                'Calendar page written to:';
+                sprintf('  %d. Calendar page built from:', $index + 1) :
+                sprintf('  %d. Calendar page written to:', $index + 1);
 
             $this->output->writeln('');
             $this->output->writeln($caption);
-            $this->output->writeln(sprintf('→ Path:      %s', $image->getPathRelative() ?? self::GENERATED_BY_CONFIG));
-            $this->output->writeln(sprintf('→ Mime:      %s', $image->getMimeType()));
-            $this->output->writeln(sprintf('→ Size:      %s (%d Bytes)', $image->getSizeHuman(), $image->getSizeByte()));
-            $this->output->writeln(sprintf('→ Dimension: %dx%d', $image->getWidth(), $image->getHeight()));
+            $this->output->writeln(str_repeat(' ', self::INDENTATION).str_repeat('-', strlen($caption) - self::INDENTATION));
+            $this->output->writeln(sprintf('  Path:             %s', $image->getPathRelative() ?? self::GENERATED_BY_CONFIG));
+            $this->output->writeln(sprintf('  Mime:             %s', $image->getMimeType()));
+            $this->output->writeln(sprintf('  Size:             %s (%d Bytes)', $image->getSizeHuman(), $image->getSizeByte()));
+            $this->output->writeln(sprintf('  Dimension:        %dx%d', $image->getWidth(), $image->getHeight()));
+
+            /* Print target image. */
+            $this->output->writeln('  Image:            '.$this->formatTextWithIndentation($image->getCliImage()->getAsciiString(), self::INDENTATION_IMAGE));
         }
 
+        $this->output->writeln('');
+        $this->output->writeln('');
+        $this->output->writeln(sprintf('  → Done. Time taken: %.2fs', $timeTaken));
+        $this->output->writeln('');
         $this->output->writeln('');
     }
 

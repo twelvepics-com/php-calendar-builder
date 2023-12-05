@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Objects\Parameter;
 
+use App\Objects\Image\Image;
 use App\Objects\Image\ImageHolder;
 use App\Objects\Parameter\Base\BaseParameter;
 use DateTimeImmutable;
@@ -230,7 +231,7 @@ class Source extends BaseParameter
      * @throws TypeInvalidException
      * @throws ParserException
      */
-    public function readParameter(InputInterface $input, int $sourceCliWidth = 80): void
+    public function readParameter(InputInterface $input, int $sourceCliWidth = Image::CLI_IMAGE_WIDTH): void
     {
         $identifier = $this->getIdentifier($input);
 

@@ -3,6 +3,8 @@ settings:
     output:
         quality: 100
         format: jpg
+        width: 6000
+        height: 4000
     defaults:
         year: 2024
         month: 1

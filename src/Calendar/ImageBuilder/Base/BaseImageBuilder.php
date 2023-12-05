@@ -54,8 +54,6 @@ abstract class BaseImageBuilder
 
     final public const FONT_EMOJI = 'Seguiemj.ttf';
 
-    protected const ASPECT_RATIO = 3 / 2;
-
     protected const DEFAULT_COLOR = [47, 141, 171];
 
     protected const EXPECTED_COLOR_VALUES = 3;
@@ -328,8 +326,8 @@ abstract class BaseImageBuilder
      */
     protected function setTargetDimensions(): void
     {
-        $this->heightTarget = CalendarBuilderServiceConstants::TARGET_HEIGHT;
-        $this->widthTarget = intval(floor($this->heightTarget * self::ASPECT_RATIO));
+        $this->widthTarget = $this->getCalendarBuilderService()->getParameterTarget()->getOutputWidth();
+        $this->heightTarget = $this->getCalendarBuilderService()->getParameterTarget()->getOutputHeight();
     }
 
     /**

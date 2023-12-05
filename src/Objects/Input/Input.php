@@ -82,7 +82,9 @@ class Input
 
             /* Output options */
             Option::OUTPUT_QUALITY => ['settings', 'output', 'quality'],
-            Option::OUTPUT_FORMAT => ['settings', 'output', 'transparency'],
+            Option::OUTPUT_FORMAT => ['settings', 'output', 'format'],
+            Option::OUTPUT_WIDTH => ['settings', 'output', 'width'],
+            Option::OUTPUT_HEIGHT => ['settings', 'output', 'height'],
 
             /* Design options (default) */
             Option::DESIGN_ENGINE_DEFAULT => ['settings', 'defaults', 'design', 'engine'],
