@@ -14,10 +14,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
+use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
-use Ixnode\PhpContainer\File;
-use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
@@ -29,9 +28,7 @@ use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class ImageController
@@ -43,9 +40,11 @@ use Symfony\Component\Yaml\Yaml;
 class ImageController extends AbstractController
 {
     /**
-     * @param KernelInterface $appKernel
+     * @param CalendarStructure $calendarStructure
      */
-    public function __construct(protected KernelInterface $appKernel)
+    public function __construct(
+        private readonly CalendarStructure $calendarStructure
+    )
     {
     }
 
@@ -122,41 +121,6 @@ class ImageController extends AbstractController
     }
 
     /**
-     * Returns the config for given identifier.
-     *
-     * @param string $projectDir
-     * @param string $identifier
-     * @return Json
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    private function getConfig(string $projectDir, string $identifier): Json
-    {
-        $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $projectDir, $identifier);
-
-        if (!is_dir($pathCalendarAbsolute)) {
-            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
-        }
-
-        $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $projectDir);
-
-        if (!$configFileRelative->exist()) {
-            return new Json(['error' => sprintf('Config path "%s" does not exist', $configFileRelative->getPath())]);
-        }
-
-        $configArray = Yaml::parse($configFileRelative->getContentAsText());
-
-        if (!is_array($configArray)) {
-            return new Json(['error' => sprintf('Config file "%s" is not an array', $configFileRelative->getPath())]);
-        }
-
-        return new Json($configArray);
-    }
-
-    /**
      * Returns the image from given path.
      *
      * @param string $identifier
@@ -193,64 +157,8 @@ class ImageController extends AbstractController
     }
 
     /**
-     * Returns all calendar ids.
-     *
-     * @param string $path
-     * @return array<int, array{url: string, name: string}>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getCalendars(string $path): array {
-        $calendars = [];
-
-        if (!is_dir($path)) {
-            return $calendars;
-        }
-
-        $scanned = scandir($path);
-
-        if ($scanned === false) {
-            return $calendars;
-        }
-
-        $paths = array_filter($scanned, fn($element) => is_dir($path.'/'.$element) && !in_array($element, ['.', '..']));
-
-        foreach ($paths as $path) {
-            $configPath = $this->appKernel->getProjectDir().'/data/calendar/'.$path.'/config.yml';
-
-            $config = new File($configPath);
-
-            if (!$config->exist()) {
-                throw new LogicException(sprintf('Config file "%s" does not exist.', $configPath));
-            }
-
-            $parsedConfig = Yaml::parse($config->getContentAsText());
-
-            if (!is_array($parsedConfig)) {
-                throw new LogicException(sprintf('Config file "%s" is not a valid YAML file.', $configPath));
-            }
-
-            $json = new Json($parsedConfig);
-
-            $calendars[] = [
-                'path' => $path,
-                'url' => sprintf('/v/%s/all', $path),
-                'name' => $json->hasKey('title') ? $json->getKeyString('title') : $path,
-            ];
-        }
-
-        return $calendars;
-    }
-
-    /**
      * The controller to show the image.
      *
-     * @param string $projectDir
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -261,17 +169,10 @@ class ImageController extends AbstractController
      * @throws TypeInvalidException
      */
     #[Route('/v', name: 'app_get_calendars')]
-    public function showCalendars(
-        #[Autowire('%kernel.project_dir%')]
-        string $projectDir
-    ): Response
+    public function showCalendars(): Response
     {
-        $path = $projectDir.'/data/calendar';
-
-        $calendars = $this->getCalendars($path);
-
         return $this->render('calendars/show.html.twig', [
-            'calendars' => $calendars
+            'calendars' => $this->calendarStructure->getCalendars()
         ]);
     }
 
@@ -307,7 +208,7 @@ class ImageController extends AbstractController
         string $projectDir
     ): Response
     {
-        $config = $this->getConfig($projectDir, $identifier);
+        $config = $this->calendarStructure->getConfig($identifier);
 
         if ($config->hasKey('error')) {
             return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
@@ -375,7 +276,7 @@ class ImageController extends AbstractController
         imagedestroy($imageCurrent);
 
         ob_start();
-        imagejpeg($image, null, 90);
+        imagejpeg($image, null, 85);
         $imageStringResized = ob_get_clean();
 
         if ($imageStringResized === false) {
@@ -419,7 +320,7 @@ class ImageController extends AbstractController
             throw new LogicException('Unable to get project dir.');
         }
 
-        $config = $this->getConfig($projectDir, $identifier);
+        $config = $this->calendarStructure->getConfig($identifier);
 
         if ($config->hasKey('error')) {
             return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
