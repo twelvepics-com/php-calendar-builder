@@ -38,6 +38,8 @@ class CalendarStructure
 {
     private const CALENDAR_DIRECTORY = '%s/data/calendar';
 
+    private const PROJECT_DIRECTORY = '%s/data/calendar/%s';
+
     private const CONFIG_FILE = '%s/data/calendar/%s/config.yml';
 
     private readonly string $calendarDirectory;
@@ -53,7 +55,7 @@ class CalendarStructure
     /**
      * Returns all calendar paths, id's and names.
      *
-     * @return array<int, array{path: string, url: string, name: string}>
+     * @return array<int, array{identifier: string, path: string, config: string, url: string, name: string}>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -96,7 +98,9 @@ class CalendarStructure
             $json = new Json($parsedConfig);
 
             $calendars[] = [
-                'path' => $identifier,
+                'identifier' => $identifier,
+                'path' => sprintf(self::PROJECT_DIRECTORY, $this->appKernel->getProjectDir(), $identifier),
+                'config' => sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier),
                 'url' => sprintf('/v/%s/all', $identifier),
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
             ];

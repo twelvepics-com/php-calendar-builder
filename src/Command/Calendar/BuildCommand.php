@@ -105,8 +105,8 @@ EOT
 
         $calendars = $this->calendarStructure->getCalendars();
 
-        $calendarIdentifiers = array_map(fn(array $calendar): string => $calendar['path'], $calendars);
-        $calendarDescriptions = array_map(fn(array $calendar): string => sprintf('%s: %s', $calendar['path'], $calendar['name']), $calendars);
+        $calendarIdentifiers = array_map(fn(array $calendar): string => $calendar['identifier'], $calendars);
+        $calendarDescriptions = array_map(fn(array $calendar): string => sprintf('%s: %s', $calendar['identifier'], $calendar['name']), $calendars);
 
         $output->writeln('');
         $question = new ChoiceQuestion(
