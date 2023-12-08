@@ -61,6 +61,7 @@ final class RowsTest extends TestCase
      * Data provider for Row::getDimension.
      *
      * @return array<int, array<int, mixed>>
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     public function dataProvider(): array
     {
@@ -99,22 +100,59 @@ final class RowsTest extends TestCase
                 ],
             ]],
 
-//            /* Two lines text */
-//            [++$number, new Rows([
-//                new Row([
-//                    new Text('Text', 'Arial', 20, 0),
-//                ]),
-//                new Row([
-//                    new Text('Text', 'Arial', 20, 0),
-//                ]),
-//            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
-//                'width' => 80,
-//                'height' => 40,
-//                'x' => 0,
-//                'y' => 0,
-//                'rows' => [],
-//            ]],
-//
+            /* Two lines text */
+            [++$number, new Rows([
+                new Row([
+                    new Text('Text', 'Arial', 20, 0),
+                ]),
+                new Row([
+                    new Text('Text', 'Arial', 20, 0),
+                ]),
+            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
+                'width' => 80,
+                'height' => 40,
+                'x' => 0,
+                'y' => 0,
+                'rows' => [
+                    [
+                        'width' => 80,
+                        'height' => 20,
+                        'x' => 0,
+                        'y' => 0,
+                        'row' => [
+                            [
+                                'width' => 80,
+                                'height' => 20,
+                                'x' => 0,
+                                'y' => 0,
+                                'text' => 'Text',
+                                'font' => 'Arial',
+                                'font-size' => 20,
+                                'angle' => 0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'width' => 80,
+                        'height' => 20,
+                        'x' => 20,
+                        'y' => 0,
+                        'row' => [
+                            [
+                                'width' => 80,
+                                'height' => 20,
+                                'x' => 20,
+                                'y' => 0,
+                                'text' => 'Text',
+                                'font' => 'Arial',
+                                'font-size' => 20,
+                                'angle' => 0,
+                            ],
+                        ],
+                    ],
+                ],
+            ]],
+
 //            /* Two lines text with distance */
 //            [++$number, new Rows([
 //                new Row([
