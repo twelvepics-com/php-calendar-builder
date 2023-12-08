@@ -71,29 +71,29 @@ final class RowsTest extends TestCase
             /* Single Text */
             [++$number, new Rows([
                 new Row([
-                    new Text('Text', 'Arial', 20, 0),
-                ]),
-            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => 0,
-                'y' => 0,
+                    new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
+                ])
+            ], $distance = 0), $positionX = 0, $positionY = 0, Align::LEFT, Valign::BOTTOM, [
+                'width' => $width = mb_strlen($text) * 20,
+                'height' => $height = $fontSize,
+                'x' => $positionX,
+                'y' => $positionY,
                 'rows' => [
                     [
-                        'width' => 80,
-                        'height' => 20,
-                        'x' => 0,
-                        'y' => 0,
+                        'width' => $width,
+                        'height' => $height,
+                        'x' => $positionX,
+                        'y' => $positionY,
                         'row' => [
                             [
-                                'width' => 80,
-                                'height' => 20,
-                                'x' => 0,
-                                'y' => 0,
-                                'text' => 'Text',
-                                'font' => 'Arial',
-                                'font-size' => 20,
-                                'angle' => 0,
+                                'width' => $width,
+                                'height' => $height,
+                                'x' => $positionX,
+                                'y' => $positionY,
+                                'text' => $text,
+                                'font' => $font,
+                                'font-size' => $fontSize,
+                                'angle' => $angle,
                             ]
                         ]
                     ]
@@ -103,50 +103,50 @@ final class RowsTest extends TestCase
             /* Two lines text */
             [++$number, new Rows([
                 new Row([
-                    new Text('Text', 'Arial', 20, 0),
+                    new Text($text1 = 'Text', $font1 = 'Arial', $fontSize1 = 20, $angle1 = 0),
                 ]),
                 new Row([
-                    new Text('Text', 'Arial', 20, 0),
+                    new Text($text2 = 'Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
-            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 40,
-                'x' => 0,
-                'y' => 0,
+            ]), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text1) * 20,
+                'height' => $fontSize1  + $fontSize2 + $distance,
+                'x' => $positionX,
+                'y' => $positionY,
                 'rows' => [
                     [
-                        'width' => 80,
-                        'height' => 20,
-                        'x' => 0,
-                        'y' => 0,
+                        'width' => $width1 = mb_strlen($text1) * 20,
+                        'height' => $height1 = $fontSize1,
+                        'x' => $positionX,
+                        'y' => $positionY,
                         'row' => [
                             [
-                                'width' => 80,
-                                'height' => 20,
-                                'x' => 0,
-                                'y' => 0,
-                                'text' => 'Text',
-                                'font' => 'Arial',
-                                'font-size' => 20,
-                                'angle' => 0,
+                                'width' => $width1,
+                                'height' => $height1,
+                                'x' => $positionX,
+                                'y' => $positionY,
+                                'text' => $text1,
+                                'font' => $font1,
+                                'font-size' => $fontSize1,
+                                'angle' => $angle1,
                             ],
                         ],
                     ],
                     [
-                        'width' => 80,
-                        'height' => 20,
-                        'x' => 20,
-                        'y' => 0,
+                        'width' => mb_strlen($text2) * 20,
+                        'height' => $height2 = $fontSize2,
+                        'x' => $positionX2 = $positionX,
+                        'y' => $positionY2 = $positionY + $height1,
                         'row' => [
                             [
-                                'width' => 80,
-                                'height' => 20,
-                                'x' => 20,
-                                'y' => 0,
-                                'text' => 'Text',
-                                'font' => 'Arial',
-                                'font-size' => 20,
-                                'angle' => 0,
+                                'width' => $width,
+                                'height' => $height2,
+                                'x' => $positionX2,
+                                'y' => $positionY2,
+                                'text' => $text2,
+                                'font' => $font2,
+                                'font-size' => $fontSize2,
+                                'angle' => $angle2,
                             ],
                         ],
                     ],

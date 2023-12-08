@@ -51,10 +51,10 @@ readonly class Rows
 
         $rows = [];
 
-        $positionXOverall = $positionX;
+        $positionYOverall = $positionY;
         foreach ($this->rows as $row) {
-            $dimension = $row->getMetrics($positionXOverall, $positionY, $align, $valign);
-            $positionXOverall += $dimension['height'];
+            $dimension = $row->getMetrics($positionX, $positionYOverall, $align, $valign);
+            $positionYOverall += $dimension['height'];
 
             $width = max($width, $dimension['width']);
             $height += $dimension['height'];
