@@ -136,7 +136,7 @@ final class RowsTest extends TestCase
                         'width' => $width,
                         'height' => $height2 = $fontSize2,
                         'x' => $positionX2 = $positionX,
-                        'y' => $positionY2 = $positionY + $height1,
+                        'y' => $positionY2 = $positionY + $height1 + $distance,
                         'row' => [
                             [
                                 'width' => $width,
