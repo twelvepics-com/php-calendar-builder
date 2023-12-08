@@ -109,19 +109,19 @@ final class RowsTest extends TestCase
                     new Text($text2 = 'Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
             ]), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
-                'width' => mb_strlen($text1) * 20,
-                'height' => $fontSize1  + $fontSize2 + $distance,
+                'width' => $width = max(mb_strlen($text1) * 20,  mb_strlen($text2) * 20),
+                'height' => $fontSize1 + $fontSize2 + $distance,
                 'x' => $positionX,
                 'y' => $positionY,
                 'rows' => [
                     [
-                        'width' => $width1 = mb_strlen($text1) * 20,
+                        'width' => $width,
                         'height' => $height1 = $fontSize1,
                         'x' => $positionX,
                         'y' => $positionY,
                         'row' => [
                             [
-                                'width' => $width1,
+                                'width' => $width,
                                 'height' => $height1,
                                 'x' => $positionX,
                                 'y' => $positionY,
@@ -133,7 +133,7 @@ final class RowsTest extends TestCase
                         ],
                     ],
                     [
-                        'width' => mb_strlen($text2) * 20,
+                        'width' => $width,
                         'height' => $height2 = $fontSize2,
                         'x' => $positionX2 = $positionX,
                         'y' => $positionY2 = $positionY + $height1,
