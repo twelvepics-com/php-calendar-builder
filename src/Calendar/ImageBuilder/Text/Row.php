@@ -78,6 +78,10 @@ readonly class Row
                 'height' => $currentHeight,
                 'x' => $positionCurrent->getPositionX($currentWidth),
                 'y' => $positionYOverall,
+                'text' => $text->getText(),
+                'font' => $text->getFont(),
+                'font-size' => $text->getFontSize(),
+                'angle' => $text->getAngle(),
             ];
 
             $positionXOverall += $currentWidth;

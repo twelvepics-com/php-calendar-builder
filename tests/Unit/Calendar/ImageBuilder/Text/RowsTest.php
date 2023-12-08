@@ -13,9 +13,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Calendar\ImageBuilder\Text;
 
+use App\Calendar\ImageBuilder\Text\Align;
 use App\Calendar\ImageBuilder\Text\Row;
 use App\Calendar\ImageBuilder\Text\Rows;
 use App\Calendar\ImageBuilder\Text\Text;
+use App\Calendar\ImageBuilder\Text\Valign;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,14 +39,18 @@ final class RowsTest extends TestCase
      * @testdox $number) Test Row::getDimension
      * @param int $number
      * @param Rows $rows
+     * @param int $positionX
+     * @param int $positionY
+     * @param int $align
+     * @param int $valign
      * @param array<string, int> $expected
      */
-    public function wrapper(int $number, Rows $rows, array $expected): void
+    public function wrapper(int $number, Rows $rows, int $positionX, int $positionY, int $align, int $valign, array $expected): void
     {
         /* Arrange */
 
         /* Act */
-        $metrics = $rows->getMetrics();
+        $metrics = $rows->getMetrics($positionX, $positionY, $align, $valign);
 
         /* Assert */
         $this->assertIsNumeric($number); // To avoid phpmd warning.
@@ -65,78 +71,82 @@ final class RowsTest extends TestCase
             [++$number, new Rows([
                 new Row([
                     new Text('Text', 'Arial', 20, 0),
-                ])
-            ]), [
+                ]),
+            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
                 'width' => 80,
                 'height' => 20,
-                'rows' => [],
+                'x' => 0,
+                'y' => 0,
+                'rows' => [
+                    [
+                        'width' => 80,
+                        'height' => 20,
+                        'x' => 0,
+                        'y' => 0,
+                        'row' => [
+                            [
+                                'width' => 80,
+                                'height' => 20,
+                                'x' => 0,
+                                'y' => 0,
+                                'text' => 'Text',
+                                'font' => 'Arial',
+                                'font-size' => 20,
+                                'angle' => 0,
+                            ]
+                        ]
+                    ]
+                ],
             ]],
+
+//            /* Two lines text */
 //            [++$number, new Rows([
 //                new Row([
-//                    new Text('Text Text Text', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 280,
-//                'height' => 20,
-//            ]],
-//            [++$number, new Rows([
+//                    new Text('Text', 'Arial', 20, 0),
+//                ]),
 //                new Row([
-//                    new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 280,
-//                'height' => 20,
-//            ]],
-//            [++$number, new Rows([
-//                new Row([
-//                    new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0),
-//                ])
-//            ], 10), [
-//                'width' => 280,
-//                'height' => 20,
+//                    new Text('Text', 'Arial', 20, 0),
+//                ]),
+//            ]), 0, 0, Align::LEFT, Valign::BOTTOM, [
+//                'width' => 80,
+//                'height' => 40,
+//                'x' => 0,
+//                'y' => 0,
+//                'rows' => [],
 //            ]],
 //
-//            /* Multiple Text */
+//            /* Two lines text with distance */
 //            [++$number, new Rows([
 //                new Row([
-//                    new Text('Text ', 'Arial', 20, 0),
-//                    new Text('Text Text Text', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 380,
-//                'height' => 20,
-//            ]],
-//            [++$number, new Rows([
+//                    new Text('Text', 'Arial', 20, 0),
+//                ]),
 //                new Row([
-//                    new Text('Text ', 'Arial', 20, 0),
-//                    new Text('Text Text Text ', 'Arial', 20, 0),
-//                    new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 680,
-//                'height' => 20,
+//                    new Text('Text', 'Arial', 20, 0),
+//                ]),
+//            ], 10), 0, 0, Align::LEFT, Valign::BOTTOM, [
+//                'width' => 80,
+//                'height' => 50,
+//                'x' => 0,
+//                'y' => 0,
+//                'rows' => [],
 //            ]],
 //
-//            /* Multiple Rows */
+//            /* Two lines text with distance and different text lengths */
 //            [++$number, new Rows([
 //                new Row([
-//                    new Text('Text ', 'Arial', 20, 0),
-//                    new Text('Text Text Text', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 380,
-//                'height' => 20,
-//            ]],
-//            [++$number, new Rows([
+//                    new Text('Text', 'Arial', 20, 0),
+//                ]),
 //                new Row([
-//                    new Text('Text ', 'Arial', 20, 0),
-//                    new Text('Text Text Text ', 'Arial', 20, 0),
-//                    new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0),
-//                ])
-//            ]), [
-//                'width' => 680,
-//                'height' => 20,
+//                    new Text('Text Text', 'Arial', 20, 0),
+//                ]),
+//            ], 10), 0, 0, Align::LEFT, Valign::BOTTOM, [
+//                'width' => 180,
+//                'height' => 50,
+//                'x' => 0,
+//                'y' => 0,
+//                'rows' => [],
 //            ]],
+
         ];
     }
 }

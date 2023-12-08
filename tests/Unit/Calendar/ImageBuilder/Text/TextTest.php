@@ -67,101 +67,157 @@ final class TextTest extends TestCase
 
         return [
             /* Default alignment */
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => 0,
-                'y' => 0,
+            [++$number, new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0), $positionX = 0, $positionY = 0, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height = $fontSize,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text Text Text', 'Arial', 20, 0), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 280,
-                'height' => 20,
-                'x' => 0,
-                'y' => 0,
+            [++$number, new Text($text = 'Text Text Text', $font, $fontSize, $angle), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 280,
-                'height' => 20,
-                'x' => 0,
-                'y' => 0,
+            [++$number, new Text($text = 'AÄÀÁÅ OÖÒÓ UÜÙ', $font, $fontSize, $angle), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
 
 
             /* Position */
-            [++$number, new Text('Text', 'Arial', 20, 0), 200, 100, Align::LEFT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => 200,
-                'y' => 100,
+            [++$number, new Text($text = 'Text', $font, $fontSize, $angle), $positionX = 200, $positionY = 100, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text Text Text', 'Arial', 20, 0), 200, 100, Align::LEFT, Valign::BOTTOM, [
-                'width' => 280,
-                'height' => 20,
-                'x' => 200,
-                'y' => 100,
+            [++$number, new Text($text = 'Text Text Text', $font, $fontSize, $angle), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0), 200, 100, Align::LEFT, Valign::BOTTOM, [
-                'width' => 280,
-                'height' => 20,
-                'x' => 200,
-                'y' => 100,
+            [++$number, new Text($text = 'AÄÀÁÅ OÖÒÓ UÜÙ', $font, $fontSize, $angle), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
 
 
             /* Alignment */
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => 0,
-                'y' => 0,
+            [++$number, new Text($text = 'Text', $font, $fontSize, $angle), $positionX = 0, $positionY = 0, Align::LEFT, Valign::BOTTOM, [
+                'width' => mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::CENTER, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -40,
-                'y' => 0,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::CENTER, Valign::BOTTOM, [
+                'width' => $width = mb_strlen($text) * 20,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::RIGHT, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -80,
-                'y' => 0,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::RIGHT, Valign::BOTTOM, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - $width,
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
 
 
             /* Vertical alignment */
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::CENTER, Valign::BOTTOM, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -40,
-                'y' => 0,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::CENTER, Valign::BOTTOM, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::CENTER, Valign::MIDDLE, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -40,
-                'y' => 10,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::CENTER, Valign::MIDDLE, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY + (int) round($height / 2),
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::CENTER, Valign::TOP, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -40,
-                'y' => 20,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::CENTER, Valign::TOP, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY + $height,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
 
 
             /* Combination */
-            [++$number, new Text('Text', 'Arial', 20, 0), 0, 0, Align::CENTER, Valign::MIDDLE, [
-                'width' => 80,
-                'height' => 20,
-                'x' => -40,
-                'y' => 10,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX, $positionY, Align::CENTER, Valign::MIDDLE, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY + (int) round($height / 2),
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, new Text('Text', 'Arial', 20, 0), 200, 100, Align::CENTER, Valign::MIDDLE, [
-                'width' => 80,
-                'height' => 20,
-                'x' => 200 - 40,
-                'y' => 100 + 10,
+            [++$number, new Text($text, $font, $fontSize, $angle), $positionX = 200, $positionY = 100, Align::CENTER, Valign::MIDDLE, [
+                'width' => $width,
+                'height' => $height,
+                'x' => $positionX - (int) round($width / 2),
+                'y' => $positionY + (int) round($height / 2),
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
         ];
     }

@@ -40,10 +40,10 @@ readonly class Rows
      * @param int $positionY
      * @param int $align
      * @param int $valign
-     * @return array{width: int, height: int, rows: array<string, mixed>}
+     * @return array{width: int, height: int, rows: array<int, mixed>}
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    #[ArrayShape(['width' => "int", 'height' => "int", 'rows' => "array"])]
+    #[ArrayShape(['width' => "int", 'height' => "int", 'x' => 'int', 'y' => 'int', 'rows' => "array"])]
     public function getMetrics(int $positionX = 0, int $positionY = 0, int $align = Align::LEFT, int $valign = Valign::BOTTOM): array
     {
         $width = 0;
@@ -54,8 +54,12 @@ readonly class Rows
         foreach ($this->rows as $row) {
             $dimension = $row->getMetrics();
 
+            $row = $dimension;
+
             $width = max($width, $dimension['width']);
             $height += $dimension['height'];
+
+            $rows[] = $row;
         }
 
         if (count($this->rows) > 1) {
@@ -65,6 +69,8 @@ readonly class Rows
         return [
             'width' => $width,
             'height' => $height,
+            'x' => $positionX,
+            'y' => $positionY,
             'rows' => $rows,
         ];
     }

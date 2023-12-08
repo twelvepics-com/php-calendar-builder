@@ -36,7 +36,7 @@ class Metrics
      * @return array{width: int, height: int}
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    #[ArrayShape(['width' => "int", 'height' => "int"])]
+    #[ArrayShape(['width' => 'int', 'height' => 'int', 'text' =>'string', 'font' =>'string', 'font-size' => 'int', 'angle' => 'int'])]
     public function getMetrics(string $text, string $font, int $fontSize, int $angle = 0): array
     {
         $height = (int) round($fontSize);
@@ -45,6 +45,10 @@ class Metrics
         return [
             'width' => $width,
             'height' => $height,
+            'text' => $text,
+            'font' => $font,
+            'font-size' => $fontSize,
+            'angle' => $angle,
         ];
     }
 }

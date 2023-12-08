@@ -86,7 +86,7 @@ class Text
      * @param int $valign
      * @return array{width: int, height: int, x: int, y: int}
      */
-    #[ArrayShape(['width' => 'int', 'height' => 'int', 'x' => 'int', 'y' => 'int'])]
+    #[ArrayShape(['width' => 'int', 'height' => 'int', 'x' => 'int', 'y' => 'int', 'text' => 'string', 'font' =>'string', 'font-size' => 'int', 'angle' => 'int'])]
     public function getMetrics(int $positionX = 0, int $positionY = 0, int $align = Align::LEFT, int $valign = Valign::BOTTOM): array
     {
         ['width' => $width, 'height' => $height] = $this->metrics->getMetrics(
@@ -103,6 +103,10 @@ class Text
             'height' => $height,
             'x' => $position->getPositionX($width),
             'y' => $position->getPositionY($height),
+            'text' => $this->getText(),
+            'font' => $this->getFont(),
+            'font-size' => $this->getFontSize(),
+            'angle' => $this->getAngle(),
         ];
     }
 }

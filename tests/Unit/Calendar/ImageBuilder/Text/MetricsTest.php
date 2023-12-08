@@ -62,17 +62,29 @@ final class MetricsTest extends TestCase
         $number = 0;
 
         return [
-            [++$number, 'Text', 'Arial', 20, 0, [
+            [++$number, $text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0, [
                 'width' => 80,
                 'height' => 20,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, 'Text Text Text', 'Arial', 20, 0, [
+            [++$number, $text = 'Text Text Text', $font, $fontSize, $angle, [
                 'width' => 280,
                 'height' => 20,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
-            [++$number, 'AÄÀÁÅ OÖÒÓ UÜÙ', 'Arial', 20, 0, [
+            [++$number, $text = 'AÄÀÁÅ OÖÒÓ UÜÙ', $font, $fontSize, $angle, [
                 'width' => 280,
                 'height' => 20,
+                'text' => $text,
+                'font' => $font,
+                'font-size' => $fontSize,
+                'angle' => $angle,
             ]],
         ];
     }
