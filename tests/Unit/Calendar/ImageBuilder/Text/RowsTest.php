@@ -68,7 +68,7 @@ final class RowsTest extends TestCase
         $number = 0;
 
         return [
-            /* Single Text */
+            /* Single Text (left, bottom) */
             [++$number, new Rows([
                 new Row([
                     new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
@@ -77,6 +77,38 @@ final class RowsTest extends TestCase
                 'width' => $width = mb_strlen($text) * 20,
                 'height' => $height = $fontSize,
                 'x' => $positionX,
+                'y' => $positionY,
+                'rows' => [
+                    [
+                        'width' => $width,
+                        'height' => $height,
+                        'x' => $positionX,
+                        'y' => $positionY,
+                        'row' => [
+                            [
+                                'width' => $width,
+                                'height' => $height,
+                                'x' => $positionX,
+                                'y' => $positionY,
+                                'text' => $text,
+                                'font' => $font,
+                                'font-size' => $fontSize,
+                                'angle' => $angle,
+                            ]
+                        ]
+                    ]
+                ],
+            ]],
+
+            /* Single Text (right, bottom) */
+            [++$number, new Rows([
+                new Row([
+                    new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
+                ])
+            ], $distance = 0), $positionX = 1, $positionY = 10, Align::RIGHT, Valign::BOTTOM, [
+                'width' => $width = mb_strlen($text) * 20,
+                'height' => $height = $fontSize,
+                'x' => $positionX = $positionX - $width,
                 'y' => $positionY,
                 'rows' => [
                     [

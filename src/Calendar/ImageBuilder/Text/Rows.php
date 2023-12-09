@@ -66,6 +66,11 @@ readonly class Rows
             $height += (count($this->rows) - 1) * $this->rowDistance;
         }
 
+        foreach ($rows as $row) {
+            $positionX = min($positionX, $row['x']);
+            $positionY = min($positionY, $row['y']);
+        }
+
         return [
             'width' => $width,
             'height' => $height,
