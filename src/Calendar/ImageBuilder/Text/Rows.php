@@ -54,7 +54,7 @@ readonly class Rows
         $positionYOverall = $positionY;
         foreach ($this->rows as $row) {
             $dimension = $row->getMetrics($positionX, $positionYOverall, $align, $valign);
-            $positionYOverall += $dimension['height'];
+            $positionYOverall += $dimension['height'] + $this->rowDistance;
 
             $width = max($width, $dimension['width']);
             $height += $dimension['height'];
