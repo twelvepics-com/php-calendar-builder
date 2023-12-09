@@ -137,7 +137,7 @@ final class RowsTest extends TestCase
                 new Row([
                     new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
                 ])
-            ], $distance = 0), $positionX = 1, $positionY = 10, Align::CENTER, Valign::BOTTOM, [
+            ], $distance = 0), $positionX = 1, $positionY = 20, Align::CENTER, Valign::BOTTOM, [
                 'width' => $width = mb_strlen($text) * 20,
                 'height' => $height = $fontSize,
                 'x' => $positionX = $positionX - (int) round($width / 2),
