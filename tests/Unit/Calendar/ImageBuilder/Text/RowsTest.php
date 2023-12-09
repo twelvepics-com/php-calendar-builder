@@ -117,14 +117,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => $positionX,
-                        'y' => $positionY,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $fontSize1,
-                                'x' => $positionX,
-                                'y' => $positionY,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -357,6 +357,83 @@ final class RowsTest extends TestCase
                                 'font' => $font2,
                                 'font-size' => $fontSize2,
                                 'angle' => $angle2,
+                            ],
+                        ],
+                    ],
+                ],
+            ]],
+
+            /* Two lines text with more than one text */
+            [++$number, new Rows([
+                new Row([
+                    new Text($text11 = 'Text ', $font11 = 'Arial', $fontSize11 = 20, $angle11 = 0),
+                    new Text($text12 = 'Text', $font12 = 'Arial', $fontSize12 = 20, $angle12 = 0),
+                ]),
+                new Row([
+                    new Text($text21 = 'Text Text ', $font21 = 'Arial', $fontSize21 = 24, $angle21 = 0),
+                    new Text($text22 = 'Text Text', $font22 = 'Arial', $fontSize22 = 24, $angle22 = 0),
+                ]),
+            ], $distance = 10), $positionX = 0, $positionY = 0, Align::LEFT, Valign::BOTTOM, [
+                'width' => max(
+                    $width1 = ($width11 = mb_strlen($text11) * $fontSize11) + ($width12 = mb_strlen($text12) * $fontSize12),
+                    $width2 = ($width21 = mb_strlen($text21) * $fontSize21) + ($width22 = mb_strlen($text22) * $fontSize22)),
+                'height' => ($height1 = max($fontSize11, $fontSize12)) + $distance + ($height2 = max($fontSize21, $fontSize22)),
+                'x' => $positionX,
+                'y' => $positionY,
+                'rows' => [
+                    [
+                        'width' => $width1,
+                        'height' => $height1,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
+                        'row' => [
+                            [
+                                'width' => $width11,
+                                'height' => $height1,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
+                                'text' => $text11,
+                                'font' => $font11,
+                                'font-size' => $fontSize11,
+                                'angle' => $angle11,
+                            ],
+                            [
+                                'width' => $width12,
+                                'height' => $height1,
+                                'x' => $positionX1 + $width11,
+                                'y' => $positionY1,
+                                'text' => $text12,
+                                'font' => $font12,
+                                'font-size' => $fontSize12,
+                                'angle' => $angle12,
+                            ],
+                        ],
+                    ],
+                    [
+                        'width' => $width2,
+                        'height' => $height2,
+                        'x' => $positionX2 = $positionX,
+                        'y' => $positionY2 = $positionY + $height1 + $distance,
+                        'row' => [
+                            [
+                                'width' => $width21,
+                                'height' => $height2,
+                                'x' => $positionX2,
+                                'y' => $positionY2,
+                                'text' => $text21,
+                                'font' => $font21,
+                                'font-size' => $fontSize21,
+                                'angle' => $angle2,
+                            ],
+                            [
+                                'width' => $width22,
+                                'height' => $height2,
+                                'x' => $positionX2 + $width21,
+                                'y' => $positionY2,
+                                'text' => $text22,
+                                'font' => $font22,
+                                'font-size' => $fontSize22,
+                                'angle' => $angle22,
                             ],
                         ],
                     ],
