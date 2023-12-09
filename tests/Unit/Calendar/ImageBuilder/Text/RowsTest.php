@@ -159,7 +159,7 @@ final class RowsTest extends TestCase
                 new Row([
                     new Text($text2 = 'Text 123', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
-            ]), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+            ]), $positionX = 2, $positionY = 4, Align::LEFT, Valign::BOTTOM, [
                 'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $fontSize2 + $distance,
                 'x' => $positionX,
@@ -168,14 +168,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => $positionX,
-                        'y' => $positionY,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => $positionX,
-                                'y' => $positionY,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -212,7 +212,7 @@ final class RowsTest extends TestCase
                 new Row([
                     new Text($text2 = 'Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
-            ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+            ], $distance = 10), $positionX = 1, $positionY = 2, Align::LEFT, Valign::BOTTOM, [
                 'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $distance + $fontSize2,
                 'x' => $positionX,
@@ -221,14 +221,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => $positionX,
-                        'y' => $positionY,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => 0,
-                                'y' => 0,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -265,7 +265,7 @@ final class RowsTest extends TestCase
                 new Row([
                     new Text($text2 = 'Text Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
-            ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+            ], $distance = 10), $positionX = 200, $positionY = 300, Align::LEFT, Valign::BOTTOM, [
                 'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $distance + $fontSize2,
                 'x' => $positionX,
@@ -274,14 +274,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => $positionX,
-                        'y' => $positionY,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => $positionX,
-                                'y' => $positionY,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -327,14 +327,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => $positionX,
-                        'y' => $positionY,
+                        'x' => $positionX1 = $positionX,
+                        'y' => $positionY1 = $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => $positionX,
-                                'y' => $positionY,
+                                'x' => $positionX1,
+                                'y' => $positionY1,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -362,7 +362,6 @@ final class RowsTest extends TestCase
                     ],
                 ],
             ]],
-
         ];
     }
 }
