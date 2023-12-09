@@ -221,8 +221,8 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => 0,
-                        'y' => 0,
+                        'x' => $positionX,
+                        'y' => $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
@@ -274,14 +274,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => 0,
-                        'y' => 0,
+                        'x' => $positionX,
+                        'y' => $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => 0,
-                                'y' => 0,
+                                'x' => $positionX,
+                                'y' => $positionY,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
@@ -318,7 +318,7 @@ final class RowsTest extends TestCase
                 new Row([
                     new Text($text2 = 'Text Text', $font2 = 'Arial', $fontSize2 = 24, $angle2 = 0),
                 ]),
-            ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+            ], $distance = 10), $positionX = 10, $positionY = 20, Align::LEFT, Valign::BOTTOM, [
                 'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $distance + $fontSize2,
                 'x' => $positionX,
@@ -327,14 +327,14 @@ final class RowsTest extends TestCase
                     [
                         'width' => $width1,
                         'height' => $height1 = $fontSize1,
-                        'x' => 0,
-                        'y' => 0,
+                        'x' => $positionX,
+                        'y' => $positionY,
                         'row' => [
                             [
                                 'width' => $width1,
                                 'height' => $height1,
-                                'x' => 0,
-                                'y' => 0,
+                                'x' => $positionX,
+                                'y' => $positionY,
                                 'text' => $text1,
                                 'font' => $font1,
                                 'font-size' => $fontSize1,
