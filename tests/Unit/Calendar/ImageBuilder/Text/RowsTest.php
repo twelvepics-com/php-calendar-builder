@@ -160,7 +160,7 @@ final class RowsTest extends TestCase
                     new Text($text2 = 'Text 123', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
             ]), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
-                'width' => max($width1 = mb_strlen($text1) * 20,  $width2 = mb_strlen($text2) * 20),
+                'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $fontSize2 + $distance,
                 'x' => $positionX,
                 'y' => $positionY,
@@ -213,7 +213,7 @@ final class RowsTest extends TestCase
                     new Text($text2 = 'Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
                 ]),
             ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
-                'width' => max($width1 = mb_strlen($text1) * 20,  $width2 = mb_strlen($text2) * 20),
+                'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
                 'height' => $fontSize1 + $distance + $fontSize2,
                 'x' => $positionX,
                 'y' => $positionY,
@@ -257,21 +257,111 @@ final class RowsTest extends TestCase
                 ],
             ]],
 
-//            /* Two lines text with distance and different text lengths */
-//            [++$number, new Rows([
-//                new Row([
-//                    new Text('Text', 'Arial', 20, 0),
-//                ]),
-//                new Row([
-//                    new Text('Text Text', 'Arial', 20, 0),
-//                ]),
-//            ], 10), 0, 0, Align::LEFT, Valign::BOTTOM, [
-//                'width' => 180,
-//                'height' => 50,
-//                'x' => 0,
-//                'y' => 0,
-//                'rows' => [],
-//            ]],
+            /* Two lines text with distance and different text lengths */
+            [++$number, new Rows([
+                new Row([
+                    new Text($text1 = 'Text', $font1 = 'Arial', $fontSize1 = 20, $angle1 = 0),
+                ]),
+                new Row([
+                    new Text($text2 = 'Text Text', $font2 = 'Arial', $fontSize2 = 20, $angle2 = 0),
+                ]),
+            ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
+                'height' => $fontSize1 + $distance + $fontSize2,
+                'x' => $positionX,
+                'y' => $positionY,
+                'rows' => [
+                    [
+                        'width' => $width1,
+                        'height' => $height1 = $fontSize1,
+                        'x' => 0,
+                        'y' => 0,
+                        'row' => [
+                            [
+                                'width' => $width1,
+                                'height' => $height1,
+                                'x' => 0,
+                                'y' => 0,
+                                'text' => $text1,
+                                'font' => $font1,
+                                'font-size' => $fontSize1,
+                                'angle' => $angle1,
+                            ],
+                        ],
+                    ],
+                    [
+                        'width' => $width2,
+                        'height' => $height2 = $fontSize2,
+                        'x' => $positionX2 = $positionX,
+                        'y' => $positionY2 = $positionY + $height1 + $distance,
+                        'row' => [
+                            [
+                                'width' => $width2,
+                                'height' => $height2,
+                                'x' => $positionX2,
+                                'y' => $positionY2,
+                                'text' => $text2,
+                                'font' => $font2,
+                                'font-size' => $fontSize2,
+                                'angle' => $angle2,
+                            ],
+                        ],
+                    ],
+                ],
+            ]],
+
+            /* Two lines text with distance and different text length and text sizes */
+            [++$number, new Rows([
+                new Row([
+                    new Text($text1 = 'Text', $font1 = 'Arial', $fontSize1 = 20, $angle1 = 0),
+                ]),
+                new Row([
+                    new Text($text2 = 'Text Text', $font2 = 'Arial', $fontSize2 = 24, $angle2 = 0),
+                ]),
+            ], $distance = 10), $positionX, $positionY, Align::LEFT, Valign::BOTTOM, [
+                'width' => max($width1 = mb_strlen($text1) * $fontSize1,  $width2 = mb_strlen($text2) * $fontSize2),
+                'height' => $fontSize1 + $distance + $fontSize2,
+                'x' => $positionX,
+                'y' => $positionY,
+                'rows' => [
+                    [
+                        'width' => $width1,
+                        'height' => $height1 = $fontSize1,
+                        'x' => 0,
+                        'y' => 0,
+                        'row' => [
+                            [
+                                'width' => $width1,
+                                'height' => $height1,
+                                'x' => 0,
+                                'y' => 0,
+                                'text' => $text1,
+                                'font' => $font1,
+                                'font-size' => $fontSize1,
+                                'angle' => $angle1,
+                            ],
+                        ],
+                    ],
+                    [
+                        'width' => $width2,
+                        'height' => $height2 = $fontSize2,
+                        'x' => $positionX2 = $positionX,
+                        'y' => $positionY2 = $positionY + $height1 + $distance,
+                        'row' => [
+                            [
+                                'width' => $width2,
+                                'height' => $height2,
+                                'x' => $positionX2,
+                                'y' => $positionY2,
+                                'text' => $text2,
+                                'font' => $font2,
+                                'font-size' => $fontSize2,
+                                'angle' => $angle2,
+                            ],
+                        ],
+                    ],
+                ],
+            ]],
 
         ];
     }
