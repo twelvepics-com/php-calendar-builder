@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Calendar\Structure\CalendarStructure;
-use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Controller\Base\BaseImageController;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -25,6 +23,7 @@ use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -38,50 +37,43 @@ use Symfony\Component\Routing\Annotation\Route;
 class ImageController extends BaseImageController
 {
     /**
-     * @param CalendarStructure $calendarStructure
-     */
-    public function __construct(
-        private readonly CalendarStructure $calendarStructure
-    )
-    {
-    }
-
-    /**
-     * The controller to show the image.
+     * The controller to show the root page.
      *
+     * @param Request $request
      * @return Response
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
      */
-    #[Route('/v', name: 'app_get_calendars')]
-    public function showCalendars(): Response
+    #[Route('/', name: 'app_home')]
+    public function home(Request $request): Response
     {
-        return $this->render('calendars/show.html.twig', [
-            'calendars' => $this->calendarStructure->getCalendars()
+        $format = $this->getFormat($request);
+
+        return $this->forward('App\Controller\ImageController::showCalendars', [
+            'format' => $format
         ]);
     }
 
     /**
      * The controller to show the root page.
      *
+     * @param Request $request
+     * @param string|null $format
      * @return Response
      */
-    #[Route('/', name: 'app_root')]
-    public function index(): Response
+    #[Route('/index.{format}', name: 'app_index')]
+    public function index(Request $request, string|null $format = null): Response
     {
-        return $this->forward('App\Controller\ImageController::showCalendars');
+        $format = $this->getFormat($request, $format);
+
+        return $this->forward('App\Controller\ImageController::showCalendars', [
+            'format' => $format
+        ]);
     }
 
     /**
      * The controller to show the image.
      *
-     * @param string $identifier
-     * @param string $projectDir
+     * @param Request $request
+     * @param string|null $format
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -91,43 +83,75 @@ class ImageController extends BaseImageController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    #[Route('/v/{identifier}/all', name: 'app_get_images')]
+    #[Route('/v.{format}', name: 'app_get_calendars')]
+    public function showCalendars(Request $request, string|null $format = null): Response
+    {
+        $format = $this->getFormat($request, $format);
+
+        return match ($format) {
+            BaseImageController::FORMAT_HTML => $this->getCalendarsHtml(),
+            BaseImageController::FORMAT_JSON => $this->getCalendarsJson(),
+            default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
+        };
+    }
+
+    /**
+     * The controller to show the image.
+     *
+     * @param string $projectDir
+     * @param Request $request
+     * @param string $identifier
+     * @param string|null $format
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    #[Route('/v/{identifier}/all.{format}', name: 'app_get_images')]
     public function showImages(
-        string $identifier,
         #[Autowire('%kernel.project_dir%')]
-        string $projectDir
+        string $projectDir,
+        Request $request,
+        string $identifier,
+        string|null $format = null
     ): Response
     {
-        $config = $this->calendarStructure->getConfig($identifier);
+        $format = $this->getFormat($request, $format);
 
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
+        if ($format !== BaseImageController::FORMAT_HTML) {
+            throw new LogicException(sprintf('Format "%s" not supported yet.', $format));
         }
 
-        $configKeyPath = ['pages'];
+        return $this->getImagesHtml($identifier, $projectDir);
+    }
 
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse('Pages key do not exist.', $projectDir);
-        }
-
-        $pages = $config->getKeyArray($configKeyPath);
-
-        $images = [];
-        foreach ($pages as $number => $page) {
-            if (!is_int($number)) {
-                continue;
-            }
-
-            if (!is_array($page)) {
-                continue;
-            }
-
-            $images[] = $this->getImageArray($identifier, $number, $page, 1280);
-        }
-
-        return $this->render('images/show.html.twig', [
-            'images' => $images
-        ]);
+    /**
+     * The controller to show the image.
+     *
+     * @param int $number The number of the page (not month!)
+     * @param string|null $projectDir
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws JsonException
+     */
+    #[Route('/v/{identifier}/{number}.{format}', name: 'app_get_image')]
+    public function showImage(
+        string $identifier,
+        int $number,
+        string $format = 'jpg',
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir = null
+    ): Response
+    {
+        return $this->getImage($identifier, $number, null, $format, $projectDir);
     }
 
     /**
@@ -144,12 +168,12 @@ class ImageController extends BaseImageController
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws JsonException
      * @throws TypeInvalidException
+     * @throws JsonException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    #[Route('/v/{identifier}/{number}/{width?}.{_format?jpg}', name: 'app_get_image')]
-    public function showImage(
+    #[Route('/v/{identifier}/{number}/{width}.{format}', name: 'app_get_image_width')]
+    public function showImageWidth(
         string $identifier,
         int $number,
         int|null $width,
@@ -158,51 +182,6 @@ class ImageController extends BaseImageController
         string $projectDir = null
     ): Response
     {
-        if (is_null($projectDir)) {
-            throw new LogicException('Unable to get project dir.');
-        }
-
-        $config = $this->calendarStructure->getConfig($identifier);
-
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
-        }
-
-        $configKeyPath = ['pages', (string) $number, 'target'];
-
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse(sprintf('Page with number "%d" does not exist', $number), $projectDir);
-        }
-
-        $target = $config->getKeyString($configKeyPath);
-
-        $pathImage = sprintf(CalendarBuilderService::PATH_IMAGE_ABSOLUTE, $projectDir, $identifier, $target);
-
-        if (!file_exists($pathImage)) {
-            return $this->getErrorResponse(sprintf('Image path "%s" does not exist', $pathImage), $projectDir);
-        }
-
-        $imageString = file_get_contents($pathImage);
-
-        if (!is_string($imageString)) {
-            return $this->getErrorResponse(sprintf('Unable to get the content of image path "%s".', $pathImage), $projectDir);
-        }
-
-        $imageString = $this->getImageResized($imageString, $width);
-
-        $response = new Response();
-
-        /* Set headers */
-        $response->headers->set('Cache-Control', 'private');
-        $response->headers->set('Content-type', 'image/jpeg');
-        $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($pathImage)));
-        $response->headers->set('Content-length',  (string) strlen($imageString));
-
-        /* Send headers before outputting anything */
-        $response->sendHeaders();
-        $response->setContent($imageString);
-        $response->sendContent();
-
-        return $response;
+        return $this->getImage($identifier, $number, $width, $format, $projectDir);
     }
 }
