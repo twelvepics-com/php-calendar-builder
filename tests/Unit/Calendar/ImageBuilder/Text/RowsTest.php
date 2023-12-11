@@ -74,7 +74,7 @@ final class RowsTest extends TestCase
                     new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
                 ])
             ], $distance = 0), $positionX = 0, $positionY = 0, Align::LEFT, Valign::BOTTOM, [
-                'width' => $width = mb_strlen($text) * 20,
+                'width' => $width = mb_strlen($text) * $fontSize,
                 'height' => $height = $fontSize,
                 'x' => $positionX,
                 'y' => $positionY,
@@ -106,7 +106,7 @@ final class RowsTest extends TestCase
                     new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
                 ])
             ], $distance = 0), $positionX = 1, $positionY = 10, Align::RIGHT, Valign::BOTTOM, [
-                'width' => $width = mb_strlen($text) * 20,
+                'width' => $width = mb_strlen($text) * $fontSize,
                 'height' => $height = $fontSize,
                 'x' => $positionX = $positionX - $width,
                 'y' => $positionY,
@@ -138,7 +138,7 @@ final class RowsTest extends TestCase
                     new Text($text = 'Text', $font = 'Arial', $fontSize = 20, $angle = 0),
                 ])
             ], $distance = 0), $positionX = 1, $positionY = 20, Align::CENTER, Valign::BOTTOM, [
-                'width' => $width = mb_strlen($text) * 20,
+                'width' => $width = mb_strlen($text) * $fontSize,
                 'height' => $height = $fontSize,
                 'x' => $positionX = $positionX - (int) round($width / 2),
                 'y' => $positionY,
@@ -487,7 +487,7 @@ final class RowsTest extends TestCase
                                 'text' => $text21,
                                 'font' => $font21,
                                 'font-size' => $fontSize21,
-                                'angle' => $angle2,
+                                'angle' => $angle21,
                             ],
                             [
                                 'width' => $width22,
