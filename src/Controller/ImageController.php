@@ -132,6 +132,9 @@ class ImageController extends BaseImageController
     /**
      * The controller to show the image.
      *
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.jpg
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.png
+     *
      * @param int $number The number of the page (not month!)
      * @param string|null $projectDir
      * @throws ArrayKeyNotFoundException
@@ -151,11 +154,14 @@ class ImageController extends BaseImageController
         string $projectDir = null
     ): Response
     {
-        return $this->getImage($identifier, $number, null, $format, $projectDir);
+        return $this->doShowImage($identifier, $number, null, null, $format, $projectDir);
     }
 
     /**
-     * The controller to show the image.
+     * The controller to show the image (with given width).
+     *
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/500.jpg
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024.jpg
      *
      * @param string $identifier
      * @param int $number The number of the page (not month!)
@@ -182,6 +188,43 @@ class ImageController extends BaseImageController
         string $projectDir = null
     ): Response
     {
-        return $this->getImage($identifier, $number, $width, $format, $projectDir);
+        return $this->doShowImage($identifier, $number, $width, null, $format, $projectDir);
+    }
+
+    /**
+     * The controller to show the image (with given width and quality).
+     *
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/500/85.jpg
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024/50.jpg
+     * @example etc.
+     *
+     * @param string $identifier
+     * @param int $number The number of the page (not month!)
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @param string|null $projectDir
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    #[Route('/v/{identifier}/{number}/{width}/{quality}.{format}', name: 'app_get_image_width_quality')]
+    public function showImageWidthQuality(
+        string $identifier,
+        int $number,
+        int|null $width,
+        int|null $quality,
+        string $format = 'jpg',
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir = null
+    ): Response
+    {
+        return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
     }
 }

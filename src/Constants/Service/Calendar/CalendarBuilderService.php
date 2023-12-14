@@ -32,6 +32,8 @@ class CalendarBuilderService
 
     final public const PATH_IMAGE_ABSOLUTE = self::PATH_CALENDAR_ABSOLUTE.'/%s';
 
+    final public const PATH_IMAGE_RELATIVE = self::PATH_CALENDAR_RELATIVE.'/%s';
+
     final public const PATH_FONT_ABSOLUTE = '%s/data/font/%s';
 
     final public const PATH_EXAMPLE_RELATIVE = 'data/examples/%s';

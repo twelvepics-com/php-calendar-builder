@@ -17,6 +17,8 @@ use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
+use Ixnode\PhpContainer\File;
+use Ixnode\PhpContainer\Image;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
@@ -42,11 +44,13 @@ class BaseImageController extends AbstractController
 
     protected const FORMAT_JSON = 'json';
 
+    private string|null $projectDirectory = null;
+
     /**
      * @param CalendarStructure $calendarStructure
      */
     public function __construct(
-        protected readonly CalendarStructure $calendarStructure
+        protected readonly CalendarStructure $calendarStructure,
     )
     {
     }
@@ -182,54 +186,6 @@ class BaseImageController extends AbstractController
     }
 
     /**
-     * Returns the resized image string.
-     *
-     * @param string $imageString
-     * @param int|null $width
-     * @return string
-     */
-    protected function getImageResized(string $imageString, int|null $width): string
-    {
-        if (is_null($width)) {
-            return $imageString;
-        }
-
-        $imageCurrent = imagecreatefromstring($imageString);
-
-        if ($imageCurrent === false) {
-            throw new LogicException('Unable to create image from string.');
-        }
-
-        /* Get the current dimensions. */
-        $widthCurrent = imagesx($imageCurrent);
-        $heightCurrent = imagesy($imageCurrent);
-
-        /* Calculate the height according to the current aspect ratio */
-        $height = intval(round(($width / $widthCurrent) * $heightCurrent));
-
-        $image = imagecreatetruecolor($width, $height);
-
-        if (!$image instanceof GdImage) {
-            throw new LogicException('Unable to create image.');
-        }
-
-        imagecopyresampled($image, $imageCurrent, 0, 0, 0, 0, $width, $height, $widthCurrent, $heightCurrent);
-        imagedestroy($imageCurrent);
-
-        ob_start();
-        imagejpeg($image, null, 85);
-        $imageStringResized = ob_get_clean();
-
-        if ($imageStringResized === false) {
-            throw new LogicException('Unable to create image content.');
-        }
-
-        imagedestroy($image);
-
-        return $imageStringResized;
-    }
-
-    /**
      * Returns all calendars.
      *
      * @return Response
@@ -324,13 +280,103 @@ class BaseImageController extends AbstractController
     }
 
     /**
+     * Returns the image path.
+     *
+     * Description:
+     * ------------
+     * Return a Response object if an error occurred, otherwise returns the image path.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @return File|Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function getFile(
+        string $identifier,
+        int $number
+    ): File|Response
+    {
+        if (is_null($this->projectDirectory)) {
+            throw new LogicException('Unable to get project dir.');
+        }
+
+        $config = $this->calendarStructure->getConfig($identifier);
+
+        if ($config->hasKey('error')) {
+            return $this->getErrorResponse($config->getKeyString('error'), $this->projectDirectory);
+        }
+
+        $configKeyPath = ['pages', (string) $number, 'target'];
+
+        if (!$config->hasKey($configKeyPath)) {
+            return $this->getErrorResponse(sprintf('Page with number "%d" does not exist', $number), $this->projectDirectory);
+        }
+
+        $target = $config->getKeyString($configKeyPath);
+
+        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $identifier, $target);
+
+        $file = new File($imagePath, $this->projectDirectory);
+
+        if (!$file->exist()) {
+            return $this->getErrorResponse(sprintf('Image path "%s" does not exist.', $imagePath), $this->projectDirectory);
+        }
+
+        return $file;
+    }
+
+    /**
+     * Returns the image string.
+     *
+     * @param File $file
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @return string|Response
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    private function getImageString(
+        File $file,
+        int|null $width,
+        int|null $quality,
+        string $format = 'jpg',
+    ): string|Response
+    {
+        if (is_null($this->projectDirectory)) {
+            throw new LogicException('Unable to get project dir.');
+        }
+
+        $image = new Image($file);
+
+        if (!$image->isImage()) {
+            return $this->getErrorResponse(sprintf('The given image "%s" file is not an image.', $file->getPath()), $this->projectDirectory);
+        }
+
+        $imageString = $image->getImageString($width, $format, $quality);
+
+        if (is_null($imageString)) {
+            return $this->getErrorResponse('Unable to get image string.', $this->projectDirectory);
+        }
+
+        return $imageString;
+    }
+
+    /**
      * Returns the image.
      *
      * @param string $identifier
      * @param int $number
      * @param int|null $width
+     * @param int|null $quality
      * @param string $format
-     * @param string|null $projectDir
+     * @param string|null $projectDirectory
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -339,55 +385,37 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws JsonException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function getImage(
+    protected function doShowImage(
         string $identifier,
         int $number,
         int|null $width,
+        int|null $quality,
         string $format = 'jpg',
-        string $projectDir = null
+        string $projectDirectory = null
     ): Response
     {
-        if (is_null($projectDir)) {
-            throw new LogicException('Unable to get project dir.');
+        $this->projectDirectory = $projectDirectory;
+
+        $file = $this->getFile($identifier, $number);
+
+        if ($file instanceof Response) {
+            return $file;
         }
 
-        $config = $this->calendarStructure->getConfig($identifier);
+        $imageString = $this->getImageString($file, $width, $quality, $format);
 
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
+        if ($imageString instanceof Response) {
+            return $imageString;
         }
-
-        $configKeyPath = ['pages', (string) $number, 'target'];
-
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse(sprintf('Page with number "%d" does not exist', $number), $projectDir);
-        }
-
-        $target = $config->getKeyString($configKeyPath);
-
-        $pathImage = sprintf(CalendarBuilderService::PATH_IMAGE_ABSOLUTE, $projectDir, $identifier, $target);
-
-        if (!file_exists($pathImage)) {
-            return $this->getErrorResponse(sprintf('Image path "%s" does not exist', $pathImage), $projectDir);
-        }
-
-        $imageString = file_get_contents($pathImage);
-
-        if (!is_string($imageString)) {
-            return $this->getErrorResponse(sprintf('Unable to get the content of image path "%s".', $pathImage), $projectDir);
-        }
-
-        $imageString = $this->getImageResized($imageString, $width);
 
         $response = new Response();
 
         /* Set headers */
         $response->headers->set('Cache-Control', 'private');
         $response->headers->set('Content-type', 'image/jpeg');
-        $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($pathImage)));
+        $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($file->getPath())));
         $response->headers->set('Content-length',  (string) strlen($imageString));
 
         /* Send headers before outputting anything */

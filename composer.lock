@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8f465d1830afcd9f0744d3c59bd99a61",
+    "content-hash": "eefd72b4c6aff77f6ff502fe5cb3d65d",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2124,20 +2124,21 @@
         },
         {
             "name": "ixnode/php-container",
-            "version": "0.1.11",
+            "version": "0.1.18",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-container.git",
-                "reference": "bfff35cc12804ec25883fdb136b1fd917b172642"
+                "reference": "6cd846b9b1d46dc762e07aa21ff73f89ba93b53b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-container/zipball/bfff35cc12804ec25883fdb136b1fd917b172642",
-                "reference": "bfff35cc12804ec25883fdb136b1fd917b172642",
+                "url": "https://api.github.com/repos/ixnode/php-container/zipball/6cd846b9b1d46dc762e07aa21ff73f89ba93b53b",
+                "reference": "6cd846b9b1d46dc762e07aa21ff73f89ba93b53b",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
+                "ext-gd": "*",
                 "ixnode/php-checker": "^0.1.8",
                 "ixnode/php-exception": "^0.1.19",
                 "ixnode/php-size-byte": "^0.1.2",
@@ -2182,9 +2183,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-container/issues",
-                "source": "https://github.com/ixnode/php-container/tree/0.1.11"
+                "source": "https://github.com/ixnode/php-container/tree/0.1.18"
             },
-            "time": "2023-11-18T22:30:29+00:00"
+            "time": "2023-12-14T22:35:10+00:00"
         },
         {
             "name": "ixnode/php-coordinate",
