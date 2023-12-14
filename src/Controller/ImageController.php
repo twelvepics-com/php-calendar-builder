@@ -25,6 +25,7 @@ use LogicException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -134,6 +135,9 @@ class ImageController extends BaseImageController
      *
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.jpg
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.png
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.jpg?width=500&quality=50
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.png?width=500
+     * @example etc.
      *
      * @param int $number The number of the page (not month!)
      * @param string|null $projectDir
@@ -150,11 +154,12 @@ class ImageController extends BaseImageController
         string $identifier,
         int $number,
         string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')]
-        string $projectDir = null
+        #[Autowire('%kernel.project_dir%')] string $projectDir = null,
+        #[MapQueryParameter] int|null $width = null,
+        #[MapQueryParameter] int|null $quality = null,
     ): Response
     {
-        return $this->doShowImage($identifier, $number, null, null, $format, $projectDir);
+        return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
     }
 
     /**
@@ -162,6 +167,7 @@ class ImageController extends BaseImageController
      *
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/500.jpg
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024.jpg
+     * @example etc.
      *
      * @param string $identifier
      * @param int $number The number of the page (not month!)
