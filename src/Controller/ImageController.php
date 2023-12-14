@@ -190,8 +190,7 @@ class ImageController extends BaseImageController
         int $number,
         int|null $width,
         string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')]
-        string $projectDir = null
+        #[Autowire('%kernel.project_dir%')] string $projectDir = null
     ): Response
     {
         return $this->doShowImage($identifier, $number, $width, null, $format, $projectDir);
@@ -227,8 +226,7 @@ class ImageController extends BaseImageController
         int|null $width,
         int|null $quality,
         string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')]
-        string $projectDir = null
+        #[Autowire('%kernel.project_dir%')] string $projectDir = null
     ): Response
     {
         return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
