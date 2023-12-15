@@ -13,14 +13,12 @@ declare(strict_types=1);
 
 namespace App\Controller\Base;
 
-use App\Cache\RedisCache;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
 use Ixnode\PhpContainer\File;
-use Ixnode\PhpContainer\Image;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\File\FileNotFoundException;
@@ -33,7 +31,7 @@ use Psr\Cache\InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class BaseImageController
@@ -44,15 +42,13 @@ use Symfony\Contracts\Cache\ItemInterface;
  */
 class BaseImageController extends AbstractController
 {
-    private string|null $projectDirectory = null;
-
     /**
      * @param CalendarStructure $calendarStructure
-     * @param RedisCache $redisCache
+     * @param KernelInterface $appKernel
      */
     public function __construct(
         protected readonly CalendarStructure $calendarStructure,
-        protected readonly RedisCache $redisCache
+        protected KernelInterface $appKernel
     )
     {
     }
@@ -151,121 +147,6 @@ class BaseImageController extends AbstractController
         return $response;
     }
 
-    /**
-     * Returns the image path.
-     *
-     * Description:
-     * ------------
-     * Return a Response object if an error occurred, otherwise returns the image path.
-     *
-     * @param string $identifier
-     * @param int $number
-     * @return File|Response
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getFile(
-        string $identifier,
-        int $number
-    ): File|Response
-    {
-        if (is_null($this->projectDirectory)) {
-            throw new LogicException('Unable to get project dir.');
-        }
-
-        $config = $this->calendarStructure->getConfig($identifier);
-
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $this->projectDirectory);
-        }
-
-        $configKeyPath = ['pages', (string) $number, 'target'];
-
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse(sprintf('Page with number "%d" does not exist', $number), $this->projectDirectory);
-        }
-
-        $target = $config->getKeyString($configKeyPath);
-
-        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $identifier, $target);
-
-        $file = new File($imagePath, $this->projectDirectory);
-
-        if (!$file->exist()) {
-            return $this->getErrorResponse(sprintf('Image path "%s" does not exist.', $imagePath), $this->projectDirectory);
-        }
-
-        return $file;
-    }
-
-    /**
-     * Returns the image string callable for the cache.
-     *
-     * @param File $file
-     * @param int|null $width
-     * @param int|null $quality
-     * @param string $format
-     * @return callable
-     */
-    private function getImageStringCallable(
-        File $file,
-        int|null $width,
-        int|null $quality,
-        string $format = 'jpg'
-    ): callable
-    {
-        return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
-            $item->expiresAfter(3600);
-
-            $image = new Image($file);
-
-            if (!$image->isImage()) {
-                return null;
-            }
-
-            return $image->getImageString($width, $format, $quality);
-        };
-    }
-
-    /**
-     * Returns the image string.
-     *
-     * @param File $file
-     * @param int|null $width
-     * @param int|null $quality
-     * @param string $format
-     * @return string|Response
-     * @throws InvalidArgumentException
-     */
-    private function getImageString(
-        File $file,
-        int|null $width,
-        int|null $quality,
-        string $format = 'jpg'
-    ): string|Response
-    {
-        if (is_null($this->projectDirectory)) {
-            throw new LogicException('Unable to get project dir.');
-        }
-
-        /* Write or read the cached image string. */
-        $imageString = $this->redisCache->getStringOrNull(
-            $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
-            $this->getImageStringCallable($file, $width, $quality, $format)
-        );
-
-        if (is_null($imageString)) {
-            return $this->getErrorResponse(sprintf('The given image "%s" file is not an image or it is not possible to generate an image string.', $file->getPath()), $this->projectDirectory);
-        }
-
-        return $imageString;
-    }
-
 
 
     /**
@@ -341,7 +222,6 @@ class BaseImageController extends AbstractController
      * Returns the images as html response.
      *
      * @param string $identifier
-     * @param string $projectDir
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -352,14 +232,13 @@ class BaseImageController extends AbstractController
      * @throws TypeInvalidException
      */
     protected function doShowImagesHtml(
-        string $identifier,
-        string $projectDir,
+        string $identifier
     ): Response
     {
         $images = $this->calendarStructure->getImages($identifier);
 
         if (is_null($images)) {
-            return $this->getErrorResponse(sprintf('Unable to get images from given identifier "%s".', $identifier), $projectDir);
+            return $this->getErrorResponse(sprintf('Unable to get images from given identifier "%s".', $identifier), $this->appKernel->getProjectDir());
         }
 
         return $this->render('images/show.html.twig', [
@@ -375,7 +254,6 @@ class BaseImageController extends AbstractController
      * @param int|null $width
      * @param int|null $quality
      * @param string $format
-     * @param string|null $projectDirectory
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -392,22 +270,19 @@ class BaseImageController extends AbstractController
         int $number,
         int|null $width,
         int|null $quality,
-        string $format = 'jpg',
-        string $projectDirectory = null
+        string $format
     ): Response
     {
-        $this->projectDirectory = $projectDirectory;
+        $file = $this->calendarStructure->getImageFile($identifier, $number);
 
-        $file = $this->getFile($identifier, $number);
-
-        if ($file instanceof Response) {
-            return $file;
+        if (!$file instanceof File) {
+            return $this->getErrorResponse($file, $this->appKernel->getProjectDir());
         }
 
-        $imageString = $this->getImageString($file, $width, $quality, $format);
+        $imageString = $this->calendarStructure->getImageStringFromCache($file, $width, $quality, $format);
 
-        if ($imageString instanceof Response) {
-            return $imageString;
+        if (is_null($imageString)) {
+            return $this->getErrorResponse(sprintf('The given image file "%s" is not an image or it is not possible to create an image string.', $file->getPath()), $this->appKernel->getProjectDir());
         }
 
         $response = new Response();

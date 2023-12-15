@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Calendar\Structure;
 
+use App\Cache\RedisCache;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use Ixnode\PhpContainer\File;
@@ -26,8 +27,10 @@ use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Class CalendarStructure
@@ -48,8 +51,12 @@ class CalendarStructure
 
     /**
      * @param KernelInterface $appKernel
+     * @param RedisCache $redisCache
      */
-    public function __construct(protected KernelInterface $appKernel)
+    public function __construct(
+        protected KernelInterface $appKernel,
+        protected readonly RedisCache $redisCache
+    )
     {
         $this->calendarDirectory = sprintf(self::CALENDAR_DIRECTORY, $this->appKernel->getProjectDir());
     }
@@ -200,7 +207,12 @@ class CalendarStructure
      * @param string $format
      * @return array<string, mixed>
      */
-    protected function getImageArray(string $identifier, int $number, array $page, string $format = Image::FORMAT_JPG): array
+    protected function getImageArray(
+        string $identifier,
+        int $number,
+        array $page,
+        string $format = Image::FORMAT_JPG
+    ): array
     {
         $path = sprintf('/v/%s/%d.%s', $identifier, $number, $format);
 
@@ -219,5 +231,106 @@ class CalendarStructure
         }
 
         return $image;
+    }
+
+    /**
+     * Returns the image path.
+     *
+     * Description:
+     * ------------
+     * Return a Response object if an error occurred, otherwise returns the image path.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @return File|string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getImageFile(
+        string $identifier,
+        int $number
+    ): File|string
+    {
+        $config = $this->getConfig($identifier);
+
+        if ($config->hasKey('error')) {
+            return $config->getKeyString('error');
+        }
+
+        $configKeyPath = ['pages', (string) $number, 'target'];
+
+        if (!$config->hasKey($configKeyPath)) {
+            return sprintf('Page with number "%d" does not exist', $number);
+        }
+
+        $target = $config->getKeyString($configKeyPath);
+
+        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $identifier, $target);
+
+        $file = new File($imagePath, $this->appKernel->getProjectDir());
+
+        if (!$file->exist()) {
+            return sprintf('Image path "%s" does not exist.', $imagePath);
+        }
+
+        return $file;
+    }
+
+    /**
+     * Returns the image string callable for the cache.
+     *
+     * @param File $file
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @return callable
+     */
+    private function getImageStringCallable(
+        File $file,
+        int|null $width,
+        int|null $quality,
+        string $format = Image::FORMAT_JPG
+    ): callable
+    {
+        return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
+            $item->expiresAfter(3600);
+
+            $image = new Image($file);
+
+            if (!$image->isImage()) {
+                return null;
+            }
+
+            return $image->getImageString($width, $format, $quality);
+        };
+    }
+
+    /**
+     * Returns the image string from redis cache.
+     *
+     * @param File $file
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @return string|null
+     * @throws InvalidArgumentException
+     */
+    public function getImageStringFromCache(
+        File $file,
+        int|null $width,
+        int|null $quality,
+        string $format = Image::FORMAT_JPG
+    ): string|null
+    {
+        /* Write or read the cached image string. */
+        return $this->redisCache->getStringOrNull(
+            $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
+            $this->getImageStringCallable($file, $width, $quality, $format)
+        );
     }
 }
