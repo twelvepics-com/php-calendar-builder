@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.4] - 2023-12-15
+
+* Add new image renderer
+  * Redis caching
+  * Add quality to image endpoint and url
+  * Add query parameters to image endpoint and url
+* Add json endpoints
+  * Add json endpoint to show calendar overview
+  * Add json endpoint to show image overview
+* Add CalendarStructure object
+* Command line: Ask for calendar if not given
+* Output refactoring
+* Add Text dimension calculator and tests
+  * Add text, font, font-size, angle to Text, Metrics and Row output
+  * Add Rows tests
+* Add path and title to overview page
+* Add title from config to calendar overview
+* Add logo option
+* Add first version with emoji rendering
+* Add Input helper class
+* Fix autowire
+* Add title to examples
+* Add ImageBuilderFactory
+* Add parameter wrapper
+* Refactoring
+
 ### [0.1.3] - 2023-11-25
 
 * Add EXIF coordinate reader
