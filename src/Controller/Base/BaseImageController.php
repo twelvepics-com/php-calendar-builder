@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Base;
 
+use App\Cache\RedisCache;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Service\Calendar\CalendarBuilderService;
@@ -27,9 +28,11 @@ use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Class BaseImageController
@@ -44,19 +47,23 @@ class BaseImageController extends AbstractController
 
     protected const FORMAT_JSON = 'json';
 
+    protected const ALLOWED_IMAGE_FORMATS = [Image::FORMAT_JPG, Image::FORMAT_PNG];
+
     private string|null $projectDirectory = null;
 
     /**
      * @param CalendarStructure $calendarStructure
+     * @param RedisCache $redisCache
      */
     public function __construct(
         protected readonly CalendarStructure $calendarStructure,
+        protected readonly RedisCache $redisCache
     )
     {
     }
 
     /**
-     * Returns the format of the request.
+     * Returns the format from the request header.
      *
      * @param Request $request
      * @param string|null $format
@@ -186,100 +193,6 @@ class BaseImageController extends AbstractController
     }
 
     /**
-     * Returns all calendars.
-     *
-     * @return Response
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getCalendarsHtml(): Response
-    {
-        return $this->render('calendars/show.html.twig', [
-            'calendars' => $this->calendarStructure->getCalendars()
-        ]);
-    }
-
-    /**
-     * Returns all calendars.
-     *
-     * @return Response
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getCalendarsJson(): Response
-    {
-        $calendars = $this->calendarStructure->getCalendars();
-
-        foreach ($calendars as &$calendar) {
-            unset($calendar['path']);
-            unset($calendar['config']);
-        }
-
-        return $this->json($calendars);
-    }
-
-    /**
-     * Returns the images.
-     *
-     * @param string $identifier
-     * @param string $projectDir
-     * @return Response
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    protected function getImagesHtml(
-        string $identifier,
-        string $projectDir,
-    ): Response
-    {
-        $config = $this->calendarStructure->getConfig($identifier);
-
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
-        }
-
-        $configKeyPath = ['pages'];
-
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse('Pages key do not exist.', $projectDir);
-        }
-
-        $pages = $config->getKeyArray($configKeyPath);
-
-        $images = [];
-        foreach ($pages as $number => $page) {
-            if (!is_int($number)) {
-                continue;
-            }
-
-            if (!is_array($page)) {
-                continue;
-            }
-
-            $images[] = $this->getImageArray($identifier, $number, $page, 1280);
-        }
-
-        return $this->render('images/show.html.twig', [
-            'images' => $images
-        ]);
-    }
-
-    /**
      * Returns the image path.
      *
      * Description:
@@ -332,6 +245,35 @@ class BaseImageController extends AbstractController
     }
 
     /**
+     * Returns the image string callable for the cache.
+     *
+     * @param File $file
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @return callable
+     */
+    private function getImageStringCallable(
+        File $file,
+        int|null $width,
+        int|null $quality,
+        string $format = 'jpg'
+    ): callable
+    {
+        return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
+            $item->expiresAfter(3600);
+
+            $image = new Image($file);
+
+            if (!$image->isImage()) {
+                return null;
+            }
+
+            return $image->getImageString($width, $format, $quality);
+        };
+    }
+
+    /**
      * Returns the image string.
      *
      * @param File $file
@@ -339,37 +281,130 @@ class BaseImageController extends AbstractController
      * @param int|null $quality
      * @param string $format
      * @return string|Response
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
+     * @throws InvalidArgumentException
      */
     private function getImageString(
         File $file,
         int|null $width,
         int|null $quality,
-        string $format = 'jpg',
+        string $format = 'jpg'
     ): string|Response
     {
         if (is_null($this->projectDirectory)) {
             throw new LogicException('Unable to get project dir.');
         }
 
-        $image = new Image($file);
-
-        if (!$image->isImage()) {
-            return $this->getErrorResponse(sprintf('The given image "%s" file is not an image.', $file->getPath()), $this->projectDirectory);
-        }
-
-        $imageString = $image->getImageString($width, $format, $quality);
+        /* Write or read the cached image string. */
+        $imageString = $this->redisCache->getStringOrNull(
+            $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
+            $this->getImageStringCallable($file, $width, $quality, $format)
+        );
 
         if (is_null($imageString)) {
-            return $this->getErrorResponse('Unable to get image string.', $this->projectDirectory);
+            return $this->getErrorResponse(sprintf('The given image "%s" file is not an image or it is not possible to generate an image string.', $file->getPath()), $this->projectDirectory);
         }
 
         return $imageString;
     }
 
+
+
     /**
-     * Returns the image.
+     * Returns all calendars as json response.
+     *
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function doShowCalendarsJson(): Response
+    {
+        $calendars = $this->calendarStructure->getCalendars();
+
+        foreach ($calendars as &$calendar) {
+            unset($calendar['path']);
+            unset($calendar['config']);
+        }
+
+        return $this->json($calendars);
+    }
+
+    /**
+     * Returns all calendars as html response.
+     *
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function doShowCalendarsHtml(): Response
+    {
+        return $this->render('calendars/show.html.twig', [
+            'calendars' => $this->calendarStructure->getCalendars()
+        ]);
+    }
+
+    /**
+     * Returns the images as html response.
+     *
+     * @param string $identifier
+     * @param string $projectDir
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function doShowImagesHtml(
+        string $identifier,
+        string $projectDir,
+    ): Response
+    {
+        $config = $this->calendarStructure->getConfig($identifier);
+
+        if ($config->hasKey('error')) {
+            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
+        }
+
+        $configKeyPath = ['pages'];
+
+        if (!$config->hasKey($configKeyPath)) {
+            return $this->getErrorResponse('Pages key do not exist.', $projectDir);
+        }
+
+        $pages = $config->getKeyArray($configKeyPath);
+
+        $images = [];
+        foreach ($pages as $number => $page) {
+            if (!is_int($number)) {
+                continue;
+            }
+
+            if (!is_array($page)) {
+                continue;
+            }
+
+            $images[] = $this->getImageArray($identifier, $number, $page, $number === 0 ? 1280 : 640);
+        }
+
+        return $this->render('images/show.html.twig', [
+            'images' => $images
+        ]);
+    }
+
+    /**
+     * Returns the image as image response.
      *
      * @param string $identifier
      * @param int $number
@@ -385,6 +420,7 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws InvalidArgumentException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function doShowImage(
@@ -413,7 +449,7 @@ class BaseImageController extends AbstractController
         $response = new Response();
 
         /* Set headers */
-        $response->headers->set('Cache-Control', 'private');
+        $response->headers->set('Cache-Control', 'max-age=86400');
         $response->headers->set('Content-type', 'image/jpeg');
         $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($file->getPath())));
         $response->headers->set('Content-length',  (string) strlen($imageString));

@@ -18,6 +18,7 @@
         "ext-exif": "*",
         "ext-gd": "*",
         "ext-iconv": "*",
+        "ext-redis": "*",
         "chillerlan/php-qrcode": "^4.3",
         "ixnode/php-api-version-bundle": "^0.1.5",
         "ixnode/php-checker": "^0.1.8",
@@ -26,6 +27,7 @@
         "ixnode/php-coordinate": "*",
         "ixnode/php-exception": "^0.1.17",
         "ixnode/php-size-byte": "^0.1.2",
+        "symfony/cache": "6.3.*",
         "symfony/flex": "^2.4",
         "symfony/yaml": "6.3.*"
     },

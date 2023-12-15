@@ -59,6 +59,15 @@ version: "3.8"
 # Configures the services
 services:
 
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: "${NAMESPACE_DEVELOPMENT}.redis"
+    hostname: "${NAMESPACE_HOSTNAME_DEVELOPMENT}-redis"
+    networks:
+      - network-internal
+    command: [ redis-server, --maxmemory 128mb, --maxmemory-policy volatile-lru, --save "" ]
+
   # Nginx to serve the app.
   nginx:
     # @see: https://hub.docker.com/_/nginx

@@ -55,6 +55,7 @@ RUN    apt-get update \
         php${PHP_VERSION_MINOR}-mbstring \
         php${PHP_VERSION_MINOR}-mysql \
         php${PHP_VERSION_MINOR}-opcache \
+        php${PHP_VERSION_MINOR}-redis  \
         php${PHP_VERSION_MINOR}-soap  \
         php${PHP_VERSION_MINOR}-sqlite3  \
         php${PHP_VERSION_MINOR}-xdebug \

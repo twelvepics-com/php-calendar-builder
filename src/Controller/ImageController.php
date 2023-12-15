@@ -22,6 +22,7 @@ use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -90,8 +91,8 @@ class ImageController extends BaseImageController
         $format = $this->getFormat($request, $format);
 
         return match ($format) {
-            BaseImageController::FORMAT_HTML => $this->getCalendarsHtml(),
-            BaseImageController::FORMAT_JSON => $this->getCalendarsJson(),
+            BaseImageController::FORMAT_HTML => $this->doShowCalendarsHtml(),
+            BaseImageController::FORMAT_JSON => $this->doShowCalendarsJson(),
             default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
         };
     }
@@ -127,7 +128,7 @@ class ImageController extends BaseImageController
             throw new LogicException(sprintf('Format "%s" not supported yet.', $format));
         }
 
-        return $this->getImagesHtml($identifier, $projectDir);
+        return $this->doShowImagesHtml($identifier, $projectDir);
     }
 
     /**
@@ -139,26 +140,36 @@ class ImageController extends BaseImageController
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.png?width=500
      * @example etc.
      *
+     * @param string $projectDir
+     * @param string $identifier
      * @param int $number The number of the page (not month!)
-     * @param string|null $projectDir
+     * @param string $format
+     * @param int|null $width
+     * @param int|null $quality
+     * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
+     * @throws InvalidArgumentException
      * @throws JsonException
+     * @throws TypeInvalidException
      */
     #[Route('/v/{identifier}/{number}.{format}', name: 'app_get_image')]
     public function showImage(
+        #[Autowire('%kernel.project_dir%')] string $projectDir,
         string $identifier,
         int $number,
         string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')] string $projectDir = null,
         #[MapQueryParameter] int|null $width = null,
-        #[MapQueryParameter] int|null $quality = null,
+        #[MapQueryParameter] int|null $quality = null
     ): Response
     {
+        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
+        }
+
         return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
     }
 
@@ -167,33 +178,41 @@ class ImageController extends BaseImageController
      *
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/500.jpg
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024.jpg
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024.jpg?quality=85
      * @example etc.
      *
+     * @param string $projectDir
      * @param string $identifier
      * @param int $number The number of the page (not month!)
      * @param int|null $width
      * @param string $format
-     * @param string|null $projectDir
+     * @param int|null $quality
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
+     * @throws InvalidArgumentException
      * @throws JsonException
+     * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     #[Route('/v/{identifier}/{number}/{width}.{format}', name: 'app_get_image_width')]
     public function showImageWidth(
+        #[Autowire('%kernel.project_dir%')] string $projectDir,
         string $identifier,
         int $number,
         int|null $width,
         string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')] string $projectDir = null
+        #[MapQueryParameter] int|null $quality = null
     ): Response
     {
-        return $this->doShowImage($identifier, $number, $width, null, $format, $projectDir);
+        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
+        }
+
+        return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
     }
 
     /**
@@ -203,12 +222,12 @@ class ImageController extends BaseImageController
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0/1024/50.jpg
      * @example etc.
      *
+     * @param string $projectDir
      * @param string $identifier
      * @param int $number The number of the page (not month!)
      * @param int|null $width
      * @param int|null $quality
      * @param string $format
-     * @param string|null $projectDir
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -217,18 +236,23 @@ class ImageController extends BaseImageController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws InvalidArgumentException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     #[Route('/v/{identifier}/{number}/{width}/{quality}.{format}', name: 'app_get_image_width_quality')]
     public function showImageWidthQuality(
+        #[Autowire('%kernel.project_dir%')] string $projectDir,
         string $identifier,
         int $number,
         int|null $width,
         int|null $quality,
-        string $format = 'jpg',
-        #[Autowire('%kernel.project_dir%')] string $projectDir = null
+        string $format = 'jpg'
     ): Response
     {
+        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
+        }
+
         return $this->doShowImage($identifier, $number, $width, $quality, $format, $projectDir);
     }
 }
