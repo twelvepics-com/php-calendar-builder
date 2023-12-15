@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Constants\Format;
 use App\Controller\Base\BaseImageController;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -91,8 +92,8 @@ class ImageController extends BaseImageController
         $format = $this->getFormat($request, $format);
 
         return match ($format) {
-            BaseImageController::FORMAT_HTML => $this->doShowCalendarsHtml(),
-            BaseImageController::FORMAT_JSON => $this->doShowCalendarsJson(),
+            Format::HTML => $this->doShowCalendarsHtml(),
+            Format::JSON => $this->doShowCalendarsJson(),
             default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
         };
     }
@@ -124,11 +125,11 @@ class ImageController extends BaseImageController
     {
         $format = $this->getFormat($request, $format);
 
-        if ($format !== BaseImageController::FORMAT_HTML) {
-            throw new LogicException(sprintf('Format "%s" not supported yet.', $format));
-        }
-
-        return $this->doShowImagesHtml($identifier, $projectDir);
+        return match ($format) {
+            Format::HTML => $this->doShowImagesHtml($identifier, $projectDir),
+            Format::JSON => $this->doShowImagesJson($identifier),
+            default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
+        };
     }
 
     /**
@@ -166,7 +167,7 @@ class ImageController extends BaseImageController
         #[MapQueryParameter] int|null $quality = null
     ): Response
     {
-        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+        if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
         }
 
@@ -208,7 +209,7 @@ class ImageController extends BaseImageController
         #[MapQueryParameter] int|null $quality = null
     ): Response
     {
-        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+        if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
         }
 
@@ -249,7 +250,7 @@ class ImageController extends BaseImageController
         string $format = 'jpg'
     ): Response
     {
-        if (!in_array($format, BaseImageController::ALLOWED_IMAGE_FORMATS)) {
+        if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $projectDir);
         }
 

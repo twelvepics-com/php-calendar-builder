@@ -51,7 +51,10 @@
     <body>{% apply spaceless %}
         <div class="container-images">
             {% for image in images %}
-                <a class="container-image-link" href="{{ image.path_fullsize }}.jpg?width=2048&quality=85" title="{{ image.page_title }}"><div class="container-image" style="background-image:url({{ image.path }}.jpg?quality=85);"></div></a>
+
+                {% set width = loop.first ? 1280 : 640 %}
+
+                <a class="container-image-link" href="{{ image.path }}?width=2048&quality=85" title="{{ image.page_title }}"><div class="container-image" style="background-image:url({{ image.path }}?width={{ width }}&quality=85);"></div></a>
             {% endfor %}
         </div>
     {% endapply %}</body>

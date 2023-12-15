@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace App\Calendar\Structure;
 
+use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use Ixnode\PhpContainer\File;
+use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -53,6 +55,40 @@ class CalendarStructure
     }
 
     /**
+     * Returns the config for given identifier.
+     *
+     * @param string $identifier
+     * @return Json
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getConfig(string $identifier): Json
+    {
+        $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $this->appKernel->getProjectDir(), $identifier);
+
+        if (!is_dir($pathCalendarAbsolute)) {
+            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
+        }
+
+        $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $this->appKernel->getProjectDir());
+
+        if (!$configFileRelative->exist()) {
+            return new Json(['error' => sprintf('Config path "%s" does not exist', $configFileRelative->getPath())]);
+        }
+
+        $configArray = Yaml::parse($configFileRelative->getContentAsText());
+
+        if (!is_array($configArray)) {
+            return new Json(['error' => sprintf('Config file "%s" is not an array', $configFileRelative->getPath())]);
+        }
+
+        return new Json($configArray);
+    }
+
+    /**
      * Returns all calendar paths, id's and names.
      *
      * @return array<int, array{identifier: string, path: string, config: string, url: string, name: string}>
@@ -64,7 +100,7 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @throws JsonException
      */
-    public function getCalendars(): array
+    public function getCalendars(string $format = Format::HTML): array
     {
         $calendars = [];
 
@@ -101,7 +137,7 @@ class CalendarStructure
                 'identifier' => $identifier,
                 'path' => sprintf(self::PROJECT_DIRECTORY, $this->appKernel->getProjectDir(), $identifier),
                 'config' => sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier),
-                'url' => sprintf('/v/%s/all', $identifier),
+                'url' => sprintf('/v/%s/all.%s', $identifier, $format),
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
             ];
         }
@@ -110,36 +146,78 @@ class CalendarStructure
     }
 
     /**
-     * Returns the config for given identifier.
+     * Returns the images from given identifier.
      *
      * @param string $identifier
-     * @return Json
+     * @param string $format
+     * @return array<int, array<string, mixed>>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getConfig(string $identifier): Json
+    public function getImages(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $this->appKernel->getProjectDir(), $identifier);
+        $config = $this->getConfig($identifier);
 
-        if (!is_dir($pathCalendarAbsolute)) {
-            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
+        if ($config->hasKey('error')) {
+            return null;
         }
 
-        $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $this->appKernel->getProjectDir());
+        $configKeyPath = ['pages'];
 
-        if (!$configFileRelative->exist()) {
-            return new Json(['error' => sprintf('Config path "%s" does not exist', $configFileRelative->getPath())]);
+        if (!$config->hasKey($configKeyPath)) {
+            return null;
         }
 
-        $configArray = Yaml::parse($configFileRelative->getContentAsText());
+        $pages = $config->getKeyArray($configKeyPath);
 
-        if (!is_array($configArray)) {
-            return new Json(['error' => sprintf('Config file "%s" is not an array', $configFileRelative->getPath())]);
+        $images = [];
+        foreach ($pages as $number => $page) {
+            if (!is_int($number)) {
+                continue;
+            }
+
+            if (!is_array($page)) {
+                continue;
+            }
+
+            $images[] = $this->getImageArray($identifier, $number, $page, $format);
         }
 
-        return new Json($configArray);
+        return $images;
+    }
+
+    /**
+     * Returns the image from given path.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @param array<string, mixed> $page
+     * @param string $format
+     * @return array<string, mixed>
+     */
+    protected function getImageArray(string $identifier, int $number, array $page, string $format = Image::FORMAT_JPG): array
+    {
+        $path = sprintf('/v/%s/%d.%s', $identifier, $number, $format);
+
+        $image = [
+            'path' => $path,
+            ...$page
+        ];
+
+        if (array_key_exists('page-title', $image)) {
+            $image['page_title'] = $image['page-title'];
+            unset($image['page-title']);
+        }
+
+        if (array_key_exists('design', $image)) {
+            unset($image['design']);
+        }
+
+        return $image;
     }
 }

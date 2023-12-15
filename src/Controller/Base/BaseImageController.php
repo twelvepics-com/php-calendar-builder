@@ -16,6 +16,7 @@ namespace App\Controller\Base;
 use App\Cache\RedisCache;
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Calendar\Structure\CalendarStructure;
+use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
 use Ixnode\PhpContainer\File;
@@ -43,12 +44,6 @@ use Symfony\Contracts\Cache\ItemInterface;
  */
 class BaseImageController extends AbstractController
 {
-    protected const FORMAT_HTML = 'html';
-
-    protected const FORMAT_JSON = 'json';
-
-    protected const ALLOWED_IMAGE_FORMATS = [Image::FORMAT_JPG, Image::FORMAT_PNG];
-
     private string|null $projectDirectory = null;
 
     /**
@@ -81,7 +76,7 @@ class BaseImageController extends AbstractController
             return $format;
         }
 
-        return self::FORMAT_HTML;
+        return Format::HTML;
     }
 
     /**
@@ -154,42 +149,6 @@ class BaseImageController extends AbstractController
         $response->setContent($content);
 
         return $response;
-    }
-
-    /**
-     * Returns the image from given path.
-     *
-     * @param string $identifier
-     * @param int $number
-     * @param array<string, mixed> $page
-     * @param int|null $width
-     * @return array<string, mixed>
-     */
-    protected function getImageArray(string $identifier, int $number, array $page, int|null $width = null): array
-    {
-        $pathFullSize = sprintf('/v/%s/%d', $identifier, $number);
-
-        $path = match (true) {
-            is_null($width) => $pathFullSize,
-            default => sprintf('/v/%s/%d/%d', $identifier, $number, $width)
-        };
-
-        $image = [
-            'path' => $path,
-            'path_fullsize' => $pathFullSize,
-            ...$page
-        ];
-
-        if (array_key_exists('page-title', $image)) {
-            $image['page_title'] = $image['page-title'];
-            unset($image['page-title']);
-        }
-
-        if (array_key_exists('design', $image)) {
-            unset($image['design']);
-        }
-
-        return $image;
     }
 
     /**
@@ -323,7 +282,7 @@ class BaseImageController extends AbstractController
      */
     protected function doShowCalendarsJson(): Response
     {
-        $calendars = $this->calendarStructure->getCalendars();
+        $calendars = $this->calendarStructure->getCalendars(Format::JSON);
 
         foreach ($calendars as &$calendar) {
             unset($calendar['path']);
@@ -353,6 +312,32 @@ class BaseImageController extends AbstractController
     }
 
     /**
+     * Returns the images as json response.
+     *
+     * @param string $identifier
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function doShowImagesJson(
+        string $identifier
+    ): Response
+    {
+        $images = $this->calendarStructure->getImages($identifier);
+
+        if (is_null($images)) {
+            return $this->json(['error' => sprintf('Unable to get images from given identifier "%s".', $identifier)]);
+        }
+
+        return $this->json($images);
+    }
+
+    /**
      * Returns the images as html response.
      *
      * @param string $identifier
@@ -371,31 +356,10 @@ class BaseImageController extends AbstractController
         string $projectDir,
     ): Response
     {
-        $config = $this->calendarStructure->getConfig($identifier);
+        $images = $this->calendarStructure->getImages($identifier);
 
-        if ($config->hasKey('error')) {
-            return $this->getErrorResponse($config->getKeyString('error'), $projectDir);
-        }
-
-        $configKeyPath = ['pages'];
-
-        if (!$config->hasKey($configKeyPath)) {
-            return $this->getErrorResponse('Pages key do not exist.', $projectDir);
-        }
-
-        $pages = $config->getKeyArray($configKeyPath);
-
-        $images = [];
-        foreach ($pages as $number => $page) {
-            if (!is_int($number)) {
-                continue;
-            }
-
-            if (!is_array($page)) {
-                continue;
-            }
-
-            $images[] = $this->getImageArray($identifier, $number, $page, $number === 0 ? 1280 : 640);
+        if (is_null($images)) {
+            return $this->getErrorResponse(sprintf('Unable to get images from given identifier "%s".', $identifier), $projectDir);
         }
 
         return $this->render('images/show.html.twig', [
