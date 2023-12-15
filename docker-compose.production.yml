@@ -52,6 +52,11 @@ version: "3.8"
 # Configures the services
 services:
 
+  # Redis
+  redis:
+    networks:
+      - network-internal
+
   # Nginx service: https://builder.twelvepics.com/
   nginx:
     networks:
