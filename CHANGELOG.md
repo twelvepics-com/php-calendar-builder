@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.6] - 2023-12-16
+
+* Add title-image to calendar overview
+* Add title and subtitle to calendar overview
+* Add strip_tags to subtitle (calendar overview)
+* Add title image, title and subtitle to calendar output, Add calendars to calendars key
+
 ### [0.1.5] - 2023-12-16
 
 * Add production docker compose setup
