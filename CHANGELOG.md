@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.5] - 2023-12-16
+
+* Add production docker compose setup
+* Add type query parameter to show image controller (to be able to show target and source image)
+
 ### [0.1.4] - 2023-12-15
 
 * Add new image renderer
