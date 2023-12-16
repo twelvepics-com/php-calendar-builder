@@ -150,6 +150,7 @@ class CalendarStructure
                 'config' => sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier),
                 'url' => sprintf('/v/%s/all.%s', $identifier, $format),
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
+                'title-image' => sprintf('/v/%s/%s.%s', $identifier, '00', Image::FORMAT_JPG),
             ];
         }
 
