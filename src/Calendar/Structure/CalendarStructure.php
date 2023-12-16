@@ -150,9 +150,9 @@ class CalendarStructure
                 'config' => sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier),
                 'url' => sprintf('/v/%s/all.%s', $identifier, $format),
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
-                'title-image' => sprintf('/v/%s/%s.%s', $identifier, '00', Image::FORMAT_JPG),
-                'title' => $json->getKeyString(['pages', '0', 'title']),
-                'subtitle' => strip_tags($json->getKeyString(['pages', '0','subtitle'])),
+                'title_image' => $this->getTitleImage($identifier),
+                'title' => $this->getTitle($json),
+                'subtitle' => $this->getSubtitle($json),
             ];
         }
 
@@ -235,6 +235,17 @@ class CalendarStructure
 
         if (array_key_exists('design', $image)) {
             unset($image['design']);
+        }
+
+        /* Strip some fields */
+        foreach (['title', 'subtitle'] as $key) {
+            if (array_key_exists($key, $image)) {
+                if (!is_string($image[$key])) {
+                    throw new LogicException(sprintf('String expected for key "%s".', $key));
+                }
+
+                $image[$key] = $this->stripString($image[$key]);
+            }
         }
 
         return $image;
@@ -341,5 +352,114 @@ class CalendarStructure
             $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
             $this->getImageStringCallable($file, $width, $quality, $format)
         );
+    }
+
+    /**
+     * Returns the title image for given identifier (calendar).
+     *
+     * @param string $identifier
+     * @return string
+     */
+    public function getTitleImage(string $identifier): string
+    {
+        return sprintf('/v/%s/%d.%s', $identifier, 0, Image::FORMAT_JPG);
+    }
+
+    /**
+     * Returns the title of the calendar.
+     *
+     * @param Json|string $configOrIdentifier
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getTitle(Json|string $configOrIdentifier): string|null
+    {
+        $config = $this->getConfigFromIdentifierOrConfig($configOrIdentifier);
+
+        $path = ['pages', '0', 'title'];
+
+        if (!$config->hasKey($path)) {
+            return null;
+        }
+
+        return $this->stripString($config->getKeyString($path));
+    }
+
+    /**
+     * Returns the subtitle of the calendar.
+     *
+     * @param Json|string $configOrIdentifier
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getSubtitle(Json|string $configOrIdentifier): string|null
+    {
+        $config = $this->getConfigFromIdentifierOrConfig($configOrIdentifier);
+
+        $path = ['pages', '0','subtitle'];
+
+        if (!$config->hasKey($path)) {
+            return null;
+        }
+
+        return $this->stripString($config->getKeyString($path));
+    }
+
+    /**
+     * Returns the config from given identifier or config.
+     *
+     * @param Json|string $configOrIdentifier
+     * @return Json
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    private function getConfigFromIdentifierOrConfig(Json|string $configOrIdentifier): Json
+    {
+        if ($configOrIdentifier instanceof Json) {
+            return $configOrIdentifier;
+        }
+
+        $config = $this->getConfig($configOrIdentifier);
+
+        if (!$config->hasKey('error')) {
+            return $config;
+        }
+
+        throw new LogicException(sprintf('Unable to get config from given identifier %s.', $configOrIdentifier));
+    }
+
+    /**
+     * Strip the given string.
+     *
+     * @param string $string
+     * @return string
+     */
+    private function stripString(string $string): string
+    {
+        $string = strip_tags($string);
+
+        $string = preg_replace('~[ ]+~', ' ', $string);
+
+        if (!is_string($string)) {
+            throw new LogicException('Unable to replace subtitle string.');
+        }
+
+        return $string;
     }
 }

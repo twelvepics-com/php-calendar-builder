@@ -215,7 +215,13 @@ class BaseImageController extends AbstractController
             return $this->json(['error' => sprintf('Unable to get images from given identifier "%s".', $identifier)]);
         }
 
-        return $this->json($images);
+        return $this->json([
+            'identifier' => $identifier,
+            'title_image' => $this->calendarStructure->getTitleImage($identifier),
+            'title' => $this->calendarStructure->getTitle($identifier),
+            'subtitle' => $this->calendarStructure->getSubtitle($identifier),
+            'calendars' => $images,
+        ]);
     }
 
     /**
