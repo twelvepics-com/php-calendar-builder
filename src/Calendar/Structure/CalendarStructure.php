@@ -152,7 +152,7 @@ class CalendarStructure
                 'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
                 'title-image' => sprintf('/v/%s/%s.%s', $identifier, '00', Image::FORMAT_JPG),
                 'title' => $json->getKeyString(['pages', '0', 'title']),
-                'subtitle' => $json->getKeyString(['pages', '0','subtitle']),
+                'subtitle' => strip_tags($json->getKeyString(['pages', '0','subtitle'])),
             ];
         }
 
