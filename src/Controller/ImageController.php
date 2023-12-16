@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Format;
+use App\Constants\ImageType;
 use App\Controller\Base\BaseImageController;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -151,6 +153,7 @@ class ImageController extends BaseImageController
      * @param string $format
      * @param int|null $width
      * @param int|null $quality
+     * @param string $type
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -167,14 +170,19 @@ class ImageController extends BaseImageController
         int $number,
         string $format = Image::FORMAT_JPG,
         #[MapQueryParameter] int|null $width = null,
-        #[MapQueryParameter] int|null $quality = null
+        #[MapQueryParameter] int|null $quality = null,
+        #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
         if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImage($identifier, $number, $width, $quality, $format);
+        if (!in_array($type, ImageType::ALLOWED_IMAGE_TYPES)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
+        }
+
+        return $this->doShowImage($identifier, $number, $width, $quality, $format, $type);
     }
 
     /**
@@ -190,6 +198,7 @@ class ImageController extends BaseImageController
      * @param int|null $width
      * @param string $format
      * @param int|null $quality
+     * @param string $type
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -207,11 +216,16 @@ class ImageController extends BaseImageController
         int $number,
         int|null $width,
         string $format = Image::FORMAT_JPG,
-        #[MapQueryParameter] int|null $quality = null
+        #[MapQueryParameter] int|null $quality = null,
+        #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
         if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $this->appKernel->getProjectDir());
+        }
+
+        if (!in_array($type, ImageType::ALLOWED_IMAGE_TYPES)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
         return $this->doShowImage($identifier, $number, $width, $quality, $format);
@@ -229,15 +243,16 @@ class ImageController extends BaseImageController
      * @param int|null $width
      * @param int|null $quality
      * @param string $format
+     * @param string $type
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws InvalidArgumentException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws InvalidArgumentException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     #[Route('/v/{identifier}/{number}/{width}/{quality}.{format}', name: 'app_get_image_width_quality')]
@@ -246,11 +261,16 @@ class ImageController extends BaseImageController
         int $number,
         int|null $width,
         int|null $quality,
-        string $format = Image::FORMAT_JPG
+        string $format = Image::FORMAT_JPG,
+        #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
         if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $this->appKernel->getProjectDir());
+        }
+
+        if (!in_array($type, ImageType::ALLOWED_IMAGE_TYPES)) {
+            return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
         return $this->doShowImage($identifier, $number, $width, $quality, $format);

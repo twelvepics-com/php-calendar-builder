@@ -254,26 +254,27 @@ class BaseImageController extends AbstractController
      * @param int|null $width
      * @param int|null $quality
      * @param string $format
+     * @param string $imageType
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws InvalidArgumentException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws InvalidArgumentException
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function doShowImage(
         string $identifier,
         int $number,
         int|null $width,
         int|null $quality,
-        string $format
+        string $format,
+        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
-        $file = $this->calendarStructure->getImageFile($identifier, $number);
+        $file = $this->calendarStructure->getImageFile($identifier, $number, $imageType);
 
         if (!$file instanceof File) {
             return $this->getErrorResponse($file, $this->appKernel->getProjectDir());

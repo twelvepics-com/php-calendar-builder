@@ -41,6 +41,10 @@ use Symfony\Contracts\Cache\ItemInterface;
  */
 class CalendarStructure
 {
+    final public const IMAGE_TYPE_TARGET = 'target';
+
+    final public const IMAGE_TYPE_SOURCE = 'source';
+
     private const CALENDAR_DIRECTORY = '%s/data/calendar';
 
     private const PROJECT_DIRECTORY = '%s/data/calendar/%s';
@@ -242,6 +246,7 @@ class CalendarStructure
      *
      * @param string $identifier
      * @param int $number
+     * @param string $imageType
      * @return File|string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -253,7 +258,8 @@ class CalendarStructure
      */
     public function getImageFile(
         string $identifier,
-        int $number
+        int $number,
+        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
     ): File|string
     {
         $config = $this->getConfig($identifier);
@@ -262,7 +268,7 @@ class CalendarStructure
             return $config->getKeyString('error');
         }
 
-        $configKeyPath = ['pages', (string) $number, 'target'];
+        $configKeyPath = ['pages', (string) $number, $imageType];
 
         if (!$config->hasKey($configKeyPath)) {
             return sprintf('Page with number "%d" does not exist', $number);
