@@ -161,7 +161,7 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowCalendarsJson(): Response
+    protected function doShowCalendarsAsJson(): Response
     {
         $calendars = $this->calendarStructure->getCalendars(Format::JSON);
 
@@ -185,7 +185,7 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowCalendarsHtml(): Response
+    protected function doShowCalendarsAsHtml(): Response
     {
         return $this->render('calendars/show.html.twig', [
             'calendars' => $this->calendarStructure->getCalendars()
@@ -205,7 +205,7 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowImagesJson(
+    protected function doShowImagesAsJson(
         string $identifier
     ): Response
     {
@@ -237,7 +237,7 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowImagesHtml(
+    protected function doShowImagesAsHtml(
         string $identifier
     ): Response
     {
@@ -250,6 +250,28 @@ class BaseImageController extends AbstractController
         return $this->render('images/show.html.twig', [
             'images' => $images
         ]);
+    }
+
+    /**
+     * Returns the image as json response.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @return Response
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    protected function doShowImageAsJson(
+        string $identifier,
+        int $number,
+    ): Response
+    {
+        return $this->json($this->calendarStructure->getImage($identifier, $number));
     }
 
     /**
@@ -271,7 +293,7 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowImage(
+    protected function doShowImageAsImage(
         string $identifier,
         int $number,
         int|null $width,

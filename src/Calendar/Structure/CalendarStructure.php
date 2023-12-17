@@ -206,6 +206,62 @@ class CalendarStructure
     }
 
     /**
+     * Returns the image from given identifier and number.
+     *
+     * @param string $identifier
+     * @param int $number
+     * @param string $format
+     * @return array<string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
+    {
+        $config = $this->getConfig($identifier);
+
+        if ($config->hasKey('error')) {
+            return null;
+        }
+
+        $configKeyPath = ['pages'];
+
+        if (!$config->hasKey($configKeyPath)) {
+            return null;
+        }
+
+        $pages = $config->getKeyArray($configKeyPath);
+
+        if (!array_key_exists($number, $pages)) {
+            return null;
+        }
+
+        $page = $pages[$number];
+
+        if (!is_array($page)) {
+            return null;
+        }
+
+        $image = $this->getImageArray($identifier, $number, $page, $format);
+
+        $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
+
+        if ($firstPage->hasKey('title')) {
+            $image['title'] = $firstPage->getKeyString('title');
+        }
+
+        if ($firstPage->hasKey('subtitle')) {
+            $image['subtitle'] = $firstPage->getKeyString('subtitle');
+        }
+
+        return $image;
+    }
+
+    /**
      * Returns the image from given path.
      *
      * @param string $identifier

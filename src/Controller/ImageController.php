@@ -102,8 +102,8 @@ class ImageController extends BaseImageController
         $format = $this->getFormat($request, $format);
 
         return match ($format) {
-            Format::HTML => $this->doShowCalendarsHtml(),
-            Format::JSON => $this->doShowCalendarsJson(),
+            Format::HTML => $this->doShowCalendarsAsHtml(),
+            Format::JSON => $this->doShowCalendarsAsJson(),
             default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
         };
     }
@@ -133,14 +133,16 @@ class ImageController extends BaseImageController
         $format = $this->getFormat($request, $format);
 
         return match ($format) {
-            Format::HTML => $this->doShowImagesHtml($identifier),
-            Format::JSON => $this->doShowImagesJson($identifier),
+            Format::HTML => $this->doShowImagesAsHtml($identifier),
+            Format::JSON => $this->doShowImagesAsJson($identifier),
             default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
         };
     }
 
     /**
-     * The controller to show the image.
+     * The controller to show the image or show the json data from the image.
+     *
+     * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.json
      *
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.jpg
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.png
@@ -174,6 +176,10 @@ class ImageController extends BaseImageController
         #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
+        if ($format === Format::JSON) {
+            return $this->doShowImageAsJson($identifier, $number);
+        }
+
         if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $format), $this->appKernel->getProjectDir());
         }
@@ -182,7 +188,7 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImage($identifier, $number, $width, $quality, $format, $type);
+        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format, $type);
     }
 
     /**
@@ -228,7 +234,7 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImage($identifier, $number, $width, $quality, $format);
+        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format);
     }
 
     /**
@@ -273,6 +279,6 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImage($identifier, $number, $width, $quality, $format);
+        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format);
     }
 }
