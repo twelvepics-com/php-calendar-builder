@@ -13,6 +13,8 @@
     <rule ref="rulesets/cleancode.xml/StaticAccess">
         <properties>
             <property name="exceptions" description="Comma-separated class name list of exceptions" value="
+                \App\Objects\Color\ColorConverter,
+                \App\Objects\Color\Palette,
                 \DateTimeImmutable,
                 \Symfony\Component\Cache\Adapter\RedisAdapter,
                 \Symfony\Component\Yaml\Yaml

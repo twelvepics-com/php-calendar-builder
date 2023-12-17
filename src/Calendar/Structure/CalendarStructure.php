@@ -16,6 +16,7 @@ namespace App\Calendar\Structure;
 use App\Cache\RedisCache;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
+use App\Objects\Color\Color;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
@@ -38,6 +39,7 @@ use Symfony\Contracts\Cache\ItemInterface;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-12-07)
  * @since 0.1.0 (2023-12-07) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class CalendarStructure
 {
@@ -248,8 +250,23 @@ class CalendarStructure
 
         $image = $this->getImageArray($identifier, $number, $page, $format);
 
+        $source = match (true) {
+            array_key_exists('source', $image) && is_string($image['source']) => $image['source'],
+            default => null,
+        };
+
+        if (is_null($source)) {
+            throw new LogicException('Unable to determine the source of the image.');
+        }
+
+        $imagePath = sprintf('%s/%s/%s', $this->calendarDirectory, $identifier, $source);
+
+        $colors = (new Color($imagePath))->getMainColors();
+
         $image['month'] = $number;
         $image['identifier'] = $identifier;
+        $image['colors'] = $colors;
+        $image['color'] = $colors[0];
 
         $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
 
