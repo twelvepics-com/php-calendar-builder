@@ -30,5 +30,10 @@ services:
         arguments:
             - '@kernel'
 
+    # Adds CorsListener to dependency injection
+    App\EventListener\CorsListener:
+        tags:
+            - { name: kernel.event_subscriber }
+
     # Adds App\Cache\RedisCache to dependency injection
     App\Cache\RedisCache: ~
