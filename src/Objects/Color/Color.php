@@ -52,13 +52,62 @@ class Color
     }
 
     /**
-     * Initializes the properties.
+     * Returns the color config path.
      *
+     * @return string
+     */
+    private function getColorsConfigPath(): string
+    {
+        return sprintf('%s/%s.%s', dirname($this->path), pathinfo($this->path, PATHINFO_FILENAME), 'cnf');
+    }
+
+    /**
+     * Read the main colors from config file.
+     *
+     * @param string $configPath
+     * @return array<int, string>|null
+     */
+    private function readColorConfig(string $configPath): array|null
+    {
+        if (!file_exists($configPath) || (filemtime($this->path) > filemtime($configPath))) {
+            return null;
+        }
+
+        $serializedData = file_get_contents($configPath);
+
+        if ($serializedData === false) {
+            throw new LogicException('Unable to read colors config file.');
+        }
+
+        $data = unserialize($serializedData);
+
+        if (!is_array($data)) {
+            return null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Writes the main colors to config file.
+     *
+     * @param string $configPath
+     * @param array<int, string> $mainColors
      * @return void
+     */
+    private function writeColorConfig(string $configPath, array $mainColors): void
+    {
+        file_put_contents($configPath, serialize($mainColors));
+    }
+
+    /**
+     * Extracts the main colors from the image.
+     *
+     * @return array<int, string>
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      */
-    private function init(): void
+    private function extractMainColorsFromImage(): array
     {
         $image = new Image(new File($this->path));
 
@@ -80,9 +129,37 @@ class Color
 
         $colors = $colorDetector->extract(self::COLOR_COUNT);
 
-        $this->mainColors = [];
+        $mainColors = [];
         foreach ($colors as $color) {
-            $this->mainColors[] = ColorConverter::convertIntToHex($color);
+            $mainColors[] = ColorConverter::convertIntToHex($color);
         }
+
+        return $mainColors;
+    }
+
+    /**
+     * Initializes the properties.
+     *
+     * @return void
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     */
+    private function init(): void
+    {
+        $configPath = $this->getColorsConfigPath();
+
+        $mainColors = $this->readColorConfig($configPath);
+
+        /* Read the main colors from config file. */
+        if (!is_null($mainColors)) {
+            $this->mainColors = $mainColors;
+            return;
+        }
+
+        $mainColors = $this->extractMainColorsFromImage();
+
+        $this->writeColorConfig($configPath, $mainColors);
+
+        $this->mainColors = $mainColors;
     }
 }

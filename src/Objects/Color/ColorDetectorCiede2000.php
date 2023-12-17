@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace App\Objects\Color;
 
-use Exception;
 use LogicException;
 use SplFixedArray;
 use SplPriorityQueue;
@@ -54,7 +53,6 @@ class ColorDetectorCiede2000
      *
      * @param int $colorCount
      * @return array<int>
-     * @throws Exception
      */
     public function extract(int $colorCount = 1): array
     {
@@ -63,7 +61,7 @@ class ColorDetectorCiede2000
         }
 
         if ($this->sortedColors === null) {
-            throw new Exception(sprintf('Got uninitialized color container (%s:%d).', __FILE__, __LINE__));
+            throw new LogicException(sprintf('Got uninitialized color container (%s:%d).', __FILE__, __LINE__));
         }
 
         return self::mergeColors($this->sortedColors, $colorCount, 100 / $colorCount);
