@@ -361,11 +361,11 @@ class CalendarStructure
         $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
 
         if ($firstPage->hasKey('title')) {
-            $image['title'] = $firstPage->getKeyString('title');
+            $image['title'] = $this->stripString($firstPage->getKeyString('title'));
         }
 
         if ($firstPage->hasKey('subtitle')) {
-            $image['subtitle'] = $firstPage->getKeyString('subtitle');
+            $image['subtitle'] = $this->stripString($firstPage->getKeyString('subtitle'));
         }
 
         if (array_key_exists('url', $image)) {
