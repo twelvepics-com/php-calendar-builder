@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.11] - 2023-12-17
+
+* Add CorsListener and config 
+* Add strip_tags to subtitle and title (image view)
+
 ### [0.1.10] - 2023-12-17
 
 * Translate auto coordinate
