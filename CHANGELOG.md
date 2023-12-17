@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.9] - 2023-12-17
+
+* Add the most used colors to image endpoint
+* Increase the speed when reading in the main colors
+
 ### [0.1.8] - 2023-12-17
 
 * Add month and identifier to image json endpoint
