@@ -17,14 +17,18 @@ use App\Cache\RedisCache;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Color\Color;
+use App\Objects\Exif\ExifCoordinate;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
+use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -208,6 +212,84 @@ class CalendarStructure
     }
 
     /**
+     * Returns the google maps link from given image.
+     *
+     * @param string $imagePath
+     * @param array<string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getTranslatedCoordinate(string $imagePath, array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (is_string($coordinate) && $coordinate !== 'auto') {
+            return $coordinate;
+        }
+
+        $coordinate = (new ExifCoordinate($imagePath))->getCoordinate();
+
+        if (is_null($coordinate)) {
+            return null;
+        }
+
+        return sprintf('%s, %s', $coordinate->getLatitude(), $coordinate->getLongitude());
+    }
+
+    /**
+     * Returns coordinate dms string.
+     *
+     * @param array<string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getCoordinateDms(array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (!is_string($coordinate) || $coordinate === 'auto') {
+            return null;
+        }
+
+        $coordinate = (new Coordinate($coordinate));
+
+        return sprintf('%s, %s', $coordinate->getLatitudeDMS(), $coordinate->getLongitudeDMS());
+    }
+
+    /**
+     * Returns the google maps link from given image.
+     *
+     * @param array<string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getGoogleMapsLink(array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (is_string($coordinate) && $coordinate !== 'auto') {
+            return (new Coordinate($coordinate))->getLinkGoogle();
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the image from given identifier and number.
      *
      * @param string $identifier
@@ -221,6 +303,10 @@ class CalendarStructure
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
     {
@@ -252,6 +338,7 @@ class CalendarStructure
 
         $source = match (true) {
             array_key_exists('source', $image) && is_string($image['source']) => $image['source'],
+            array_key_exists('target', $image) && is_string($image['target']) => $image['target'],
             default => null,
         };
 
@@ -267,6 +354,9 @@ class CalendarStructure
         $image['identifier'] = $identifier;
         $image['colors'] = $colors;
         $image['color'] = $colors[0];
+        $image['coordinate'] = $this->getTranslatedCoordinate($imagePath, $image);
+        $image['coordinate_dms'] = $this->getCoordinateDms($image);
+        $image['google_maps'] = $this->getGoogleMapsLink($image);
 
         $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
 
@@ -276,6 +366,10 @@ class CalendarStructure
 
         if ($firstPage->hasKey('subtitle')) {
             $image['subtitle'] = $firstPage->getKeyString('subtitle');
+        }
+
+        if (array_key_exists('url', $image)) {
+            unset($image['url']);
         }
 
         return $image;
@@ -364,7 +458,21 @@ class CalendarStructure
             return sprintf('Page with number "%d" does not exist', $number);
         }
 
-        $target = $config->getKeyString($configKeyPath);
+        $target = $config->getKey($configKeyPath);
+
+        if (is_array($target)) {
+            $configKeyPath = ['pages', (string) $number, CalendarStructure::IMAGE_TYPE_TARGET];
+
+            if (!$config->hasKey($configKeyPath)) {
+                return sprintf('Page with number "%d" does not exist', $number);
+            }
+
+            $target = $config->getKey($configKeyPath);
+        }
+
+        if (!is_string($target)) {
+            return 'Returned value is not a string.';
+        }
 
         $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $identifier, $target);
 
