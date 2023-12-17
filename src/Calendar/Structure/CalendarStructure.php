@@ -248,6 +248,9 @@ class CalendarStructure
 
         $image = $this->getImageArray($identifier, $number, $page, $format);
 
+        $image['month'] = $number;
+        $image['identifier'] = $identifier;
+
         $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
 
         if ($firstPage->hasKey('title')) {
@@ -374,7 +377,7 @@ class CalendarStructure
     ): callable
     {
         return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
-            $item->expiresAfter(3600);
+            $item->expiresAfter(86400);
 
             $image = new Image($file);
 
