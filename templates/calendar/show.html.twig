@@ -2,13 +2,21 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Show calendar images</title>
+        <title>Show calendar images - {{ calendar.title }}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
         <style>
 
             html, body {
                 height: 100%;
                 margin: 0;
+            }
+
+            body .header {
+                padding: 10px 20px;
+            }
+
+            .container-images {
+                padding: 10px 20px 20px 10px;
             }
 
             .container-image-link .container-image {
@@ -49,12 +57,17 @@
         </style>
     </head>
     <body>{% apply spaceless %}
+        <div class="header">
+            <h1>{{ calendar.title }}</h1>
+            <p>{{ calendar.subtitle }}</p>
+        </div>
+
         <div class="container-images">
-            {% for image in images %}
+            {% for page in calendar.pages %}
 
                 {% set width = loop.first ? 1280 : 640 %}
 
-                <a class="container-image-link" href="{{ image.path }}?width=2048&quality=85" title="{{ image.page_title }}"><div class="container-image" style="background-image:url({{ image.path }}?width={{ width }}&quality=85);"></div></a>
+                <a class="container-image-link" href="{{ page.path }}?width=2048&quality=85" title="{{ page.page_title }}"><div class="container-image" style="background-image:url({{ page.path }}?width={{ width }}&quality=85);"></div></a>
             {% endfor %}
         </div>
     {% endapply %}</body>

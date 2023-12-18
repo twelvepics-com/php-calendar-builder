@@ -159,6 +159,7 @@ class CalendarStructure
                 'title_image' => $this->getTitleImage($identifier),
                 'title' => $this->getTitle($json),
                 'subtitle' => $this->getSubtitle($json),
+                'public' => $json->hasKey(['settings', 'public']) && $json->getKeyBoolean(['settings', 'public']),
             ];
         }
 
@@ -166,7 +167,45 @@ class CalendarStructure
     }
 
     /**
-     * Returns the images from given identifier.
+     * Returns the calendar from given identifier.
+     *
+     * @param string $identifier
+     * @param string $format
+     * @return array<string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getCalendar(string $identifier, string $format = Image::FORMAT_JPG): array|null
+    {
+        $config = $this->getConfig($identifier);
+
+        if ($config->hasKey('error')) {
+            return null;
+        }
+
+        $pages = $this->getPages($identifier, $format);
+
+        if (is_null($pages)) {
+            return null;
+        }
+
+        return [
+            'identifier' => $identifier,
+            'title_image' => $this->getTitleImage($identifier),
+            'title' => $this->getTitle($identifier),
+            'subtitle' => $this->getSubtitle($identifier),
+            'public' => $config->hasKey(['settings', 'public']) && $config->getKeyBoolean(['settings', 'public']),
+            'pages' => $pages,
+        ];
+    }
+
+    /**
+     * Returns the pages from given identifier (calendar).
      *
      * @param string $identifier
      * @param string $format
@@ -179,7 +218,7 @@ class CalendarStructure
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    public function getImages(string $identifier, string $format = Image::FORMAT_JPG): array|null
+    public function getPages(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
         $config = $this->getConfig($identifier);
 

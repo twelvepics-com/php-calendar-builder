@@ -20,9 +20,11 @@ use App\Controller\Base\BaseImageController;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -109,7 +111,7 @@ class ImageController extends BaseImageController
     }
 
     /**
-     * The controller to show the image.
+     * The controller to show the calendar.
      *
      * @param Request $request
      * @param string $identifier
@@ -123,8 +125,8 @@ class ImageController extends BaseImageController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    #[Route('/v/{identifier}/all.{format}', name: 'app_get_images')]
-    public function showImages(
+    #[Route('/v/{identifier}/all.{format}', name: 'app_get_calendar')]
+    public function showCalendar(
         Request $request,
         string $identifier,
         string|null $format = null
@@ -133,8 +135,8 @@ class ImageController extends BaseImageController
         $format = $this->getFormat($request, $format);
 
         return match ($format) {
-            Format::HTML => $this->doShowImagesAsHtml($identifier),
-            Format::JSON => $this->doShowImagesAsJson($identifier),
+            Format::HTML => $this->doShowCalendarAsHtml($identifier),
+            Format::JSON => $this->doShowCalendarAsJson($identifier),
             default => throw new LogicException(sprintf('Format "%s" not supported yet.', $format)),
         };
     }
@@ -165,6 +167,8 @@ class ImageController extends BaseImageController
      * @throws InvalidArgumentException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws CaseUnsupportedException
+     * @throws ParserException
      */
     #[Route('/v/{identifier}/{number}.{format}', name: 'app_get_image')]
     public function showImage(

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a6f22efb65da6e766f7cc898f3c32a87",
+    "content-hash": "42de75b87100e346f20b6f52daa08f75",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2136,16 +2136,16 @@
         },
         {
             "name": "ixnode/php-container",
-            "version": "0.1.18",
+            "version": "0.1.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-container.git",
-                "reference": "6cd846b9b1d46dc762e07aa21ff73f89ba93b53b"
+                "reference": "7a77acb88f0d718c1d9f2a8152cba1afb7ef28c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-container/zipball/6cd846b9b1d46dc762e07aa21ff73f89ba93b53b",
-                "reference": "6cd846b9b1d46dc762e07aa21ff73f89ba93b53b",
+                "url": "https://api.github.com/repos/ixnode/php-container/zipball/7a77acb88f0d718c1d9f2a8152cba1afb7ef28c5",
+                "reference": "7a77acb88f0d718c1d9f2a8152cba1afb7ef28c5",
                 "shasum": ""
             },
             "require": {
@@ -2195,9 +2195,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-container/issues",
-                "source": "https://github.com/ixnode/php-container/tree/0.1.18"
+                "source": "https://github.com/ixnode/php-container/tree/0.1.19"
             },
-            "time": "2023-12-14T22:35:10+00:00"
+            "time": "2023-12-18T10:06:14+00:00"
         },
         {
             "name": "ixnode/php-coordinate",
@@ -11084,7 +11084,8 @@
         "ext-ctype": "*",
         "ext-exif": "*",
         "ext-gd": "*",
-        "ext-iconv": "*"
+        "ext-iconv": "*",
+        "ext-redis": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.3.0"

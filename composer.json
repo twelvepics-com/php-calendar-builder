@@ -23,7 +23,7 @@
         "ixnode/php-api-version-bundle": "^0.1.5",
         "ixnode/php-checker": "^0.1.8",
         "ixnode/php-cli-image": "*",
-        "ixnode/php-container": "^0.1.18",
+        "ixnode/php-container": "^0.1.19",
         "ixnode/php-coordinate": "*",
         "ixnode/php-exception": "^0.1.17",
         "ixnode/php-size-byte": "^0.1.2",

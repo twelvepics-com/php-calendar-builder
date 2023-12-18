@@ -21,9 +21,11 @@ use GdImage;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -193,7 +195,7 @@ class BaseImageController extends AbstractController
     }
 
     /**
-     * Returns the images as json response.
+     * Returns the calendar as json response.
      *
      * @param string $identifier
      * @return Response
@@ -205,27 +207,21 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowImagesAsJson(
+    protected function doShowCalendarAsJson(
         string $identifier
     ): Response
     {
-        $images = $this->calendarStructure->getImages($identifier);
+        $calendar = $this->calendarStructure->getCalendar($identifier);
 
-        if (is_null($images)) {
-            return $this->json(['error' => sprintf('Unable to get images from given identifier "%s".', $identifier)]);
+        if (is_null($calendar)) {
+            return $this->json(['error' => sprintf('Unable to get calendar from given identifier "%s".', $identifier)]);
         }
 
-        return $this->json([
-            'identifier' => $identifier,
-            'title_image' => $this->calendarStructure->getTitleImage($identifier),
-            'title' => $this->calendarStructure->getTitle($identifier),
-            'subtitle' => $this->calendarStructure->getSubtitle($identifier),
-            'calendars' => $images,
-        ]);
+        return $this->json($calendar);
     }
 
     /**
-     * Returns the images as html response.
+     * Returns the calendar as html response.
      *
      * @param string $identifier
      * @return Response
@@ -237,18 +233,18 @@ class BaseImageController extends AbstractController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    protected function doShowImagesAsHtml(
+    protected function doShowCalendarAsHtml(
         string $identifier
     ): Response
     {
-        $images = $this->calendarStructure->getImages($identifier);
+        $calendar = $this->calendarStructure->getCalendar($identifier);
 
-        if (is_null($images)) {
+        if (is_null($calendar)) {
             return $this->getErrorResponse(sprintf('Unable to get images from given identifier "%s".', $identifier), $this->appKernel->getProjectDir());
         }
 
-        return $this->render('images/show.html.twig', [
-            'images' => $images
+        return $this->render('calendar/show.html.twig', [
+            'calendar' => $calendar
         ]);
     }
 
@@ -265,6 +261,8 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws CaseUnsupportedException
+     * @throws ParserException
      */
     protected function doShowImageAsJson(
         string $identifier,
