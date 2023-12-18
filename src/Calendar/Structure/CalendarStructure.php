@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Calendar\Structure;
 
 use App\Cache\RedisCache;
+use App\Calendar\Config\Config;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Color\Color;
@@ -52,10 +53,6 @@ class CalendarStructure
     final public const IMAGE_TYPE_SOURCE = 'source';
 
     private const CALENDAR_DIRECTORY = '%s/data/calendar';
-
-    private const PROJECT_DIRECTORY = '%s/data/calendar/%s';
-
-    private const CONFIG_FILE = '%s/data/calendar/%s/config.yml';
 
     private readonly string $calendarDirectory;
 
@@ -108,7 +105,7 @@ class CalendarStructure
     /**
      * Returns all calendar paths, id's and names.
      *
-     * @return array<int, array{identifier: string, path: string, config: string, url: string, name: string}>
+     * @return array<int, array{identifier: string, url: string, name: string, title: string|null, subtitle: string|null, image: string, public: bool}>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -116,51 +113,39 @@ class CalendarStructure
      * @throws FunctionJsonEncodeException
      * @throws TypeInvalidException
      * @throws JsonException
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function getCalendars(string $format = Format::HTML): array
+    public function getCalendars(string $format = Format::HTML, bool $withPaths = false): array
     {
         $calendars = [];
 
-        if (!is_dir($this->calendarDirectory)) {
-            return $calendars;
-        }
+        foreach ($this->getIdentifiers() as $identifier) {
+            $config = new Config($identifier, $this->appKernel->getProjectDir());
 
-        $scanned = scandir($this->calendarDirectory);
-
-        if ($scanned === false) {
-            return $calendars;
-        }
-
-        $identifiers = array_filter($scanned, fn($element) => is_dir(sprintf('%s/%s', $this->calendarDirectory, $element)) && !in_array($element, ['.', '..']));
-
-        foreach ($identifiers as $identifier) {
-            $configPath = sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier);
-
-            $config = new File($configPath);
-
-            if (!$config->exist()) {
-                throw new LogicException(sprintf('Config file "%s" does not exist.', $configPath));
+            if ($config->hasError()) {
+                throw new LogicException((string) $config->getError());
             }
 
-            $parsedConfig = Yaml::parse($config->getContentAsText());
-
-            if (!is_array($parsedConfig)) {
-                throw new LogicException(sprintf('Config file "%s" is not a valid YAML file.', $configPath));
-            }
-
-            $json = new Json($parsedConfig);
-
-            $calendars[] = [
-                'identifier' => $identifier,
-                'path' => sprintf(self::PROJECT_DIRECTORY, $this->appKernel->getProjectDir(), $identifier),
-                'config' => sprintf(self::CONFIG_FILE, $this->appKernel->getProjectDir(), $identifier),
-                'url' => sprintf('/v/%s/all.%s', $identifier, $format),
-                'name' => $json->hasKey('title') ? $json->getKeyString('title') : $identifier,
-                'title_image' => $this->getTitleImage($identifier),
-                'title' => $this->getTitle($json),
-                'subtitle' => $this->getSubtitle($json),
-                'public' => $json->hasKey(['settings', 'public']) && $json->getKeyBoolean(['settings', 'public']),
+            $calendar = [
+                'identifier' => $config->getIdentifier(),
+                'url' => $config->getCalendarEndpoint($format),
+                'name' => $config->getCalendarName(),
+                'title' => $config->getCalendarTitle(),
+                'subtitle' => $config->getCalendarSubtitle(),
+                'image' => $config->getCalendarImageEndpoint(),
+                'public' => $config->isPublic(),
             ];
+
+            /* Add config paths if needed. */
+            if ($withPaths) {
+                $calendar = [
+                    ...$calendar,
+                    'path' => $config->getCalendarPathRelative(),
+                    'config' => $config->getCalendarConfigRelative(),
+                ];
+            }
+
+            $calendars[] = $calendar;
         }
 
         return $calendars;
@@ -182,9 +167,9 @@ class CalendarStructure
      */
     public function getCalendar(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = $this->getConfig($identifier);
+        $config = new Config($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasKey('error')) {
+        if ($config->hasError()) {
             return null;
         }
 
@@ -196,10 +181,10 @@ class CalendarStructure
 
         return [
             'identifier' => $identifier,
-            'title_image' => $this->getTitleImage($identifier),
-            'title' => $this->getTitle($identifier),
-            'subtitle' => $this->getSubtitle($identifier),
-            'public' => $config->hasKey(['settings', 'public']) && $config->getKeyBoolean(['settings', 'public']),
+            'image' => $config->getCalendarImageEndpoint(),
+            'title' => $config->getCalendarTitle(),
+            'subtitle' => $config->getCalendarSubtitle(),
+            'public' => $config->isPublic(),
             'pages' => $pages,
         ];
     }
@@ -578,93 +563,23 @@ class CalendarStructure
     }
 
     /**
-     * Returns the title image for given identifier (calendar).
+     * Returns all available identifiers.
      *
-     * @param string $identifier
-     * @return string
+     * @return array<int, string>
      */
-    public function getTitleImage(string $identifier): string
+    private function getIdentifiers(): array
     {
-        return sprintf('/v/%s/%d.%s', $identifier, 0, Image::FORMAT_JPG);
-    }
-
-    /**
-     * Returns the title of the calendar.
-     *
-     * @param Json|string $configOrIdentifier
-     * @return string|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getTitle(Json|string $configOrIdentifier): string|null
-    {
-        $config = $this->getConfigFromIdentifierOrConfig($configOrIdentifier);
-
-        $path = ['pages', '0', 'title'];
-
-        if (!$config->hasKey($path)) {
-            return null;
+        if (!is_dir($this->calendarDirectory)) {
+            return [];
         }
 
-        return $this->stripString($config->getKeyString($path));
-    }
+        $scanned = scandir($this->calendarDirectory);
 
-    /**
-     * Returns the subtitle of the calendar.
-     *
-     * @param Json|string $configOrIdentifier
-     * @return string|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getSubtitle(Json|string $configOrIdentifier): string|null
-    {
-        $config = $this->getConfigFromIdentifierOrConfig($configOrIdentifier);
-
-        $path = ['pages', '0','subtitle'];
-
-        if (!$config->hasKey($path)) {
-            return null;
+        if ($scanned === false) {
+            return [];
         }
 
-        return $this->stripString($config->getKeyString($path));
-    }
-
-    /**
-     * Returns the config from given identifier or config.
-     *
-     * @param Json|string $configOrIdentifier
-     * @return Json
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    private function getConfigFromIdentifierOrConfig(Json|string $configOrIdentifier): Json
-    {
-        if ($configOrIdentifier instanceof Json) {
-            return $configOrIdentifier;
-        }
-
-        $config = $this->getConfig($configOrIdentifier);
-
-        if (!$config->hasKey('error')) {
-            return $config;
-        }
-
-        throw new LogicException(sprintf('Unable to get config from given identifier %s.', $configOrIdentifier));
+        return array_filter($scanned, fn($element) => is_dir(sprintf('%s/%s', $this->calendarDirectory, $element)) && !in_array($element, ['.', '..']));
     }
 
     /**
@@ -677,7 +592,7 @@ class CalendarStructure
     {
         $string = strip_tags($string);
 
-        $string = preg_replace('~[ ]+~', ' ', $string);
+        $string = preg_replace('~ +~', ' ', $string);
 
         if (!is_string($string)) {
             throw new LogicException('Unable to replace subtitle string.');

@@ -1,9 +1,9 @@
-title: 2024, Simple photo configuration
+name: 2024, Simple photo configuration
 settings:
     output:
         quality: 100
         format: jpg
-        width: 6000
+        width: 5656
         height: 4000
     defaults:
         year: 2024

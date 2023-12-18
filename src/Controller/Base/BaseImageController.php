@@ -167,11 +167,6 @@ class BaseImageController extends AbstractController
     {
         $calendars = $this->calendarStructure->getCalendars(Format::JSON);
 
-        foreach ($calendars as &$calendar) {
-            unset($calendar['path']);
-            unset($calendar['config']);
-        }
-
         return $this->json($calendars);
     }
 

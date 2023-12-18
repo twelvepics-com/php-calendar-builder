@@ -125,7 +125,7 @@ class ImageController extends BaseImageController
      * @throws JsonException
      * @throws TypeInvalidException
      */
-    #[Route('/v/{identifier}/all.{format}', name: 'app_get_calendar')]
+    #[Route('/v/{identifier}.{format}', name: 'app_get_calendar')]
     public function showCalendar(
         Request $request,
         string $identifier,
