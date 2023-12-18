@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.12] - 2023-12-18
+
+* Refactoring
+* Rename calendars to pages (calendar endpoint)
+
 ### [0.1.11] - 2023-12-17
 
 * Add CorsListener and config 
