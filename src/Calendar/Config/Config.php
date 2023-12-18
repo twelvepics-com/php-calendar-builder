@@ -64,6 +64,8 @@ class Config extends Json
 
     final public const ENDPOINT_CALENDAR = '/v/%s.%s';
 
+    final public const ENDPOINT_IMAGE = '/v/%s/%s.%s';
+
     private string|null $error = null;
 
     /**
@@ -530,7 +532,7 @@ class Config extends Json
 
         $pageArray = [
             ...$pageArray,
-            'image' => $this->getCalendarImageEndpoint($format),
+            'path' => sprintf(self::ENDPOINT_IMAGE, $this->identifier, $pageArray['month'], $format),
         ];
 
         return new Json($pageArray);
