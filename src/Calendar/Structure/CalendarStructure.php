@@ -17,12 +17,9 @@ use App\Cache\RedisCache;
 use App\Calendar\Config\Config;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
-use App\Objects\Color\Color;
-use App\Objects\Exif\ExifCoordinate;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
-use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -194,7 +191,7 @@ class CalendarStructure
      *
      * @param string $identifier
      * @param string $format
-     * @return array<int, array<string, mixed>>|null
+     * @return array<int, array<string|int, mixed>>|null
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -205,112 +202,19 @@ class CalendarStructure
      */
     public function getPages(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = $this->getConfig($identifier);
+        $config = new Config($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasKey('error')) {
+        if ($config->hasError()) {
             return null;
         }
 
-        $configKeyPath = ['pages'];
+        $pages = $config->getPagesForApi($format);
 
-        if (!$config->hasKey($configKeyPath)) {
+        if (is_null($pages)) {
             return null;
         }
 
-        $pages = $config->getKeyArray($configKeyPath);
-
-        $images = [];
-        foreach ($pages as $number => $page) {
-            if (!is_int($number)) {
-                continue;
-            }
-
-            if (!is_array($page)) {
-                continue;
-            }
-
-            $images[] = $this->getImageArray($identifier, $number, $page, $format);
-        }
-
-        return $images;
-    }
-
-    /**
-     * Returns the google maps link from given image.
-     *
-     * @param string $imagePath
-     * @param array<string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getTranslatedCoordinate(string $imagePath, array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (is_string($coordinate) && $coordinate !== 'auto') {
-            return $coordinate;
-        }
-
-        $coordinate = (new ExifCoordinate($imagePath))->getCoordinate();
-
-        if (is_null($coordinate)) {
-            return null;
-        }
-
-        return sprintf('%s, %s', $coordinate->getLatitude(), $coordinate->getLongitude());
-    }
-
-    /**
-     * Returns coordinate dms string.
-     *
-     * @param array<string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getCoordinateDms(array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (!is_string($coordinate) || $coordinate === 'auto') {
-            return null;
-        }
-
-        $coordinate = (new Coordinate($coordinate));
-
-        return sprintf('%s, %s', $coordinate->getLatitudeDMS(), $coordinate->getLongitudeDMS());
-    }
-
-    /**
-     * Returns the google maps link from given image.
-     *
-     * @param array<string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getGoogleMapsLink(array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (is_string($coordinate) && $coordinate !== 'auto') {
-            return (new Coordinate($coordinate))->getLinkGoogle();
-        }
-
-        return null;
+        return array_map(fn(Json $page): array => $page->getArray(), $pages);
     }
 
     /**
@@ -319,130 +223,32 @@ class CalendarStructure
      * @param string $identifier
      * @param int $number
      * @param string $format
-     * @return array<string, mixed>|null
+     * @return array<string|int, mixed>|null
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws CaseUnsupportedException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws CaseUnsupportedException
      * @throws ParserException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @throws TypeInvalidException
      */
     public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = $this->getConfig($identifier);
+        $config = new Config($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasKey('error')) {
+        if ($config->hasError()) {
             return null;
         }
 
-        $configKeyPath = ['pages'];
+        $image = $config->getImageForApi($number, $format);
 
-        if (!$config->hasKey($configKeyPath)) {
+        if (is_null($image)) {
             return null;
         }
 
-        $pages = $config->getKeyArray($configKeyPath);
-
-        if (!array_key_exists($number, $pages)) {
-            return null;
-        }
-
-        $page = $pages[$number];
-
-        if (!is_array($page)) {
-            return null;
-        }
-
-        $image = $this->getImageArray($identifier, $number, $page, $format);
-
-        $source = match (true) {
-            array_key_exists('source', $image) && is_string($image['source']) => $image['source'],
-            array_key_exists('target', $image) && is_string($image['target']) => $image['target'],
-            default => null,
-        };
-
-        if (is_null($source)) {
-            throw new LogicException('Unable to determine the source of the image.');
-        }
-
-        $imagePath = sprintf('%s/%s/%s', $this->calendarDirectory, $identifier, $source);
-
-        $colors = (new Color($imagePath))->getMainColors();
-
-        $image['month'] = $number;
-        $image['identifier'] = $identifier;
-        $image['colors'] = $colors;
-        $image['color'] = $colors[0];
-        $image['coordinate'] = $this->getTranslatedCoordinate($imagePath, $image);
-        $image['coordinate_dms'] = $this->getCoordinateDms($image);
-        $image['google_maps'] = $this->getGoogleMapsLink($image);
-
-        $firstPage = $config->getKeyJson([...$configKeyPath, '0']);
-
-        if ($firstPage->hasKey('title')) {
-            $image['title'] = $this->stripString($firstPage->getKeyString('title'));
-        }
-
-        if ($firstPage->hasKey('subtitle')) {
-            $image['subtitle'] = $this->stripString($firstPage->getKeyString('subtitle'));
-        }
-
-        if (array_key_exists('url', $image)) {
-            unset($image['url']);
-        }
-
-        return $image;
-    }
-
-    /**
-     * Returns the image from given path.
-     *
-     * @param string $identifier
-     * @param int $number
-     * @param array<string, mixed> $page
-     * @param string $format
-     * @return array<string, mixed>
-     */
-    protected function getImageArray(
-        string $identifier,
-        int $number,
-        array $page,
-        string $format = Image::FORMAT_JPG
-    ): array
-    {
-        $path = sprintf('/v/%s/%d.%s', $identifier, $number, $format);
-
-        $image = [
-            'path' => $path,
-            ...$page
-        ];
-
-        if (array_key_exists('page-title', $image)) {
-            $image['page_title'] = $image['page-title'];
-            unset($image['page-title']);
-        }
-
-        if (array_key_exists('design', $image)) {
-            unset($image['design']);
-        }
-
-        /* Strip some fields */
-        foreach (['title', 'subtitle'] as $key) {
-            if (array_key_exists($key, $image)) {
-                if (!is_string($image[$key])) {
-                    throw new LogicException(sprintf('String expected for key "%s".', $key));
-                }
-
-                $image[$key] = $this->stripString($image[$key]);
-            }
-        }
-
-        return $image;
+        return $image->getArray();
     }
 
     /**
@@ -470,43 +276,44 @@ class CalendarStructure
         string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
     ): File|string
     {
-        $config = $this->getConfig($identifier);
+        $config = new Config($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasKey('error')) {
-            return $config->getKeyString('error');
+        if ($config->hasError()) {
+            return (string) $config->getError();
         }
 
-        $configKeyPath = ['pages', (string) $number, $imageType];
+        $imageFile = $config->getImageFile($number, $imageType);
 
-        if (!$config->hasKey($configKeyPath)) {
-            return sprintf('Page with number "%d" does not exist', $number);
+        /* String means an error occurred. */
+        if (is_string($imageFile)) {
+            return $imageFile;
         }
 
-        $target = $config->getKey($configKeyPath);
+        return $imageFile;
+    }
 
-        if (is_array($target)) {
-            $configKeyPath = ['pages', (string) $number, CalendarStructure::IMAGE_TYPE_TARGET];
-
-            if (!$config->hasKey($configKeyPath)) {
-                return sprintf('Page with number "%d" does not exist', $number);
-            }
-
-            $target = $config->getKey($configKeyPath);
-        }
-
-        if (!is_string($target)) {
-            return 'Returned value is not a string.';
-        }
-
-        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $identifier, $target);
-
-        $file = new File($imagePath, $this->appKernel->getProjectDir());
-
-        if (!$file->exist()) {
-            return sprintf('Image path "%s" does not exist.', $imagePath);
-        }
-
-        return $file;
+    /**
+     * Returns the image string from redis cache.
+     *
+     * @param File $file
+     * @param int|null $width
+     * @param int|null $quality
+     * @param string $format
+     * @return string|null
+     * @throws InvalidArgumentException
+     */
+    public function getImageStringFromCache(
+        File $file,
+        int|null $width,
+        int|null $quality,
+        string $format = Image::FORMAT_JPG
+    ): string|null
+    {
+        /* Write or read the cached image string. */
+        return $this->redisCache->getStringOrNull(
+            $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
+            $this->getImageStringCallable($file, $width, $quality, $format)
+        );
     }
 
     /**
@@ -539,30 +346,6 @@ class CalendarStructure
     }
 
     /**
-     * Returns the image string from redis cache.
-     *
-     * @param File $file
-     * @param int|null $width
-     * @param int|null $quality
-     * @param string $format
-     * @return string|null
-     * @throws InvalidArgumentException
-     */
-    public function getImageStringFromCache(
-        File $file,
-        int|null $width,
-        int|null $quality,
-        string $format = Image::FORMAT_JPG
-    ): string|null
-    {
-        /* Write or read the cached image string. */
-        return $this->redisCache->getStringOrNull(
-            $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),
-            $this->getImageStringCallable($file, $width, $quality, $format)
-        );
-    }
-
-    /**
      * Returns all available identifiers.
      *
      * @return array<int, string>
@@ -580,24 +363,5 @@ class CalendarStructure
         }
 
         return array_filter($scanned, fn($element) => is_dir(sprintf('%s/%s', $this->calendarDirectory, $element)) && !in_array($element, ['.', '..']));
-    }
-
-    /**
-     * Strip the given string.
-     *
-     * @param string $string
-     * @return string
-     */
-    private function stripString(string $string): string
-    {
-        $string = strip_tags($string);
-
-        $string = preg_replace('~ +~', ' ', $string);
-
-        if (!is_string($string)) {
-            throw new LogicException('Unable to replace subtitle string.');
-        }
-
-        return $string;
     }
 }

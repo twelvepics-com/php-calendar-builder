@@ -13,15 +13,22 @@ declare(strict_types=1);
 
 namespace App\Calendar\Config;
 
+use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Format;
+use App\Constants\Service\Calendar\CalendarBuilderService;
+use App\Objects\Color\Color;
+use App\Objects\Exif\ExifCoordinate;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
+use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use JsonException;
 use LogicException;
@@ -35,6 +42,7 @@ use Symfony\Component\Yaml\Yaml;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-12-18)
  * @since 0.1.0 (2023-12-18) First version.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class Config extends Json
 {
@@ -47,6 +55,10 @@ class Config extends Json
     final public const PATH_CONFIG_ABSOLUTE = '%s/data/calendar/%s/'.self::CONFIG_FILENAME;
 
     final public const PATH_CONFIG_RELATIVE = 'data/calendar/%s/'.self::CONFIG_FILENAME;
+
+    final public const PATH_IMAGE_ABSOLUTE = '%s/data/calendar/%s/%s';
+
+    final public const PATH_IMAGE_RELATIVE = 'data/calendar/%s/%s';
 
     final public const ENDPOINT_CALENDAR_IMAGE = '/v/%s/0.%s';
 
@@ -256,6 +268,350 @@ class Config extends Json
     public function getIdentifier(): string
     {
         return $this->identifier;
+    }
+
+    /**
+     * Returns the pages configs.
+     *
+     * @return Json[]|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getPages(): array|null
+    {
+        $path = ['pages'];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        return $this->getKeyArrayJson($path);
+    }
+
+    /**
+     * Returns the page config of given number.
+     *
+     * @param int $number
+     * @return Json|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getPage(int $number): Json|null
+    {
+        $path = ['pages', (string) $number];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        return $this->getKeyJson($path);
+    }
+
+    /**
+     * Returns the pages configs.
+     *
+     * @return Json[]|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getPagesForApi(string $format = Image::FORMAT_JPG): array|null
+    {
+        $path = ['pages'];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        $pages = [];
+
+        foreach ($this->getKeyArrayJson($path) as $page) {
+            $pages[] = new Json($this->transformPageForApi($page, $format));
+        }
+
+        return $pages;
+    }
+
+    /**
+     * Returns the page config of given number. Convert the properties for api response before.
+     *
+     * @param int $number
+     * @param string $format
+     * @return Json|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getPageForApi(int $number, string $format = Image::FORMAT_JPG): Json|null
+    {
+        $path = ['pages', (string) $number];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        $page = $this->getKeyJson($path);
+
+        return $this->transformPageForApi($page, $format);
+    }
+
+    /**
+     * Returns the image config of given number. Convert the properties for api response before.
+     *
+     * @param int $number
+     * @param string $format
+     * @return Json|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws CaseUnsupportedException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws ParserException
+     * @throws TypeInvalidException
+     */
+    public function getImageForApi(int $number, string $format = Image::FORMAT_JPG): Json|null
+    {
+        $page = $this->getPageForApi($number, $format);
+
+        if (is_null($page)) {
+            return null;
+        }
+
+        $image = $page->getArray();
+
+        $source = match (true) {
+            array_key_exists('source', $image) && is_string($image['source']) => $image['source'],
+            array_key_exists('target', $image) && is_string($image['target']) => $image['target'],
+            default => null,
+        };
+
+        if (is_null($source)) {
+            throw new LogicException('Unable to determine the source of the image.');
+        }
+
+        $imagePath = sprintf(self::PATH_IMAGE_ABSOLUTE, $this->projectDir, $this->identifier, $source);
+
+        $colors = (new Color($imagePath))->getMainColors();
+
+        $image['month'] = $number;
+        $image['identifier'] = $this->identifier;
+        $image['colors'] = $colors;
+        $image['color'] = $colors[0];
+        $image['coordinate'] = $this->getTranslatedCoordinate($imagePath, $image);
+        $image['coordinate_dms'] = $this->getCoordinateDms($image);
+        $image['google_maps'] = $this->getGoogleMapsLink($image);
+
+        if (array_key_exists('url', $image)) {
+            unset($image['url']);
+        }
+
+        $firstPage = $this->getPage(0);
+
+        if (!is_null($firstPage)) {
+            if ($firstPage->hasKey('title')) {
+                $image['title'] = $this->stripString($firstPage->getKeyString('title'));
+            }
+
+            if ($firstPage->hasKey('subtitle')) {
+                $image['subtitle'] = $this->stripString($firstPage->getKeyString('subtitle'));
+            }
+        }
+
+        return new Json($image);
+    }
+
+    /**
+     * Returns the image file for given number. If the source image does not exist, use the target image.
+     *
+     * @param int $number
+     * @param string $imageType
+     * @return File|string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getImageFile(int $number, string $imageType = CalendarStructure::IMAGE_TYPE_TARGET): File|string
+    {
+        $configKeyPath = ['pages', (string) $number, $imageType];
+
+        if (!$this->hasKey($configKeyPath)) {
+            return sprintf('Page with number "%d" does not exist', $number);
+        }
+
+        $target = $this->getKey($configKeyPath);
+
+        if (is_array($target)) {
+            $configKeyPath = ['pages', (string) $number, CalendarStructure::IMAGE_TYPE_TARGET];
+
+            if (!$this->hasKey($configKeyPath)) {
+                return sprintf('Page with number "%d" does not exist', $number);
+            }
+
+            $target = $this->getKey($configKeyPath);
+        }
+
+        if (!is_string($target)) {
+            return 'Returned value is not a string.';
+        }
+
+        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $this->identifier, $target);
+
+        $file = new File($imagePath, $this->projectDir);
+
+        if (!$file->exist()) {
+            return sprintf('Image path "%s" does not exist.', $imagePath);
+        }
+
+        return $file;
+    }
+
+    /**
+     * Transform the given page container for api response.
+     *
+     * @param Json $page
+     * @param string $format
+     * @return Json
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    private function transformPageForApi(Json $page, string $format = Image::FORMAT_JPG): Json
+    {
+        $pageArray = $page->getArray();
+
+        if (array_key_exists('page-title', $pageArray)) {
+            $pageArray['page_title'] = $pageArray['page-title'];
+            unset($pageArray['page-title']);
+        }
+
+        if (array_key_exists('design', $pageArray)) {
+            unset($pageArray['design']);
+        }
+
+        if (array_key_exists('source', $pageArray) && is_array($pageArray['source'])) {
+            unset($pageArray['source']);
+        }
+
+        foreach (['title', 'subtitle'] as $key) {
+            if (array_key_exists($key, $pageArray)) {
+                if (!is_string($pageArray[$key])) {
+                    throw new LogicException(sprintf('String expected for key "%s".', $key));
+                }
+
+                $pageArray[$key] = $this->stripString($pageArray[$key]);
+            }
+        }
+
+        $pageArray = [
+            ...$pageArray,
+            'image' => $this->getCalendarImageEndpoint($format),
+        ];
+
+        return new Json($pageArray);
+    }
+
+    /**
+     * Returns the google maps link from given image.
+     *
+     * @param string $imagePath
+     * @param array<int|string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getTranslatedCoordinate(string $imagePath, array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (is_string($coordinate) && $coordinate !== 'auto') {
+            return $coordinate;
+        }
+
+        $coordinate = (new ExifCoordinate($imagePath))->getCoordinate();
+
+        if (is_null($coordinate)) {
+            return null;
+        }
+
+        return sprintf('%s, %s', $coordinate->getLatitude(), $coordinate->getLongitude());
+    }
+
+    /**
+     * Returns coordinate dms string.
+     *
+     * @param array<int|string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getCoordinateDms(array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (!is_string($coordinate) || $coordinate === 'auto') {
+            return null;
+        }
+
+        $coordinate = (new Coordinate($coordinate));
+
+        return sprintf('%s, %s', $coordinate->getLatitudeDMS(), $coordinate->getLongitudeDMS());
+    }
+
+    /**
+     * Returns the google maps link from given image.
+     *
+     * @param array<int|string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getGoogleMapsLink(array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (is_string($coordinate) && $coordinate !== 'auto') {
+            return (new Coordinate($coordinate))->getLinkGoogle();
+        }
+
+        return null;
     }
 
     /**
