@@ -102,8 +102,6 @@ class RedisCache
      */
     public function getStringOrNull(string $key, callable $callable): string|null
     {
-        $this->getRedisAdapter()->delete($key);
-
         $value = $this->getRedisAdapter()->get($key, $callable);
 
         return match (true) {
