@@ -192,9 +192,9 @@ class Source extends BaseParameter
 
             foreach ($birthdays as $date => $title) {
 
-                if (is_array($title) && array_key_exists('date', $title) && array_key_exists('title', $title)) {
+                if (is_array($title) && array_key_exists('date', $title) && array_key_exists('name', $title)) {
                     $date = $title['date'];
-                    $title = $title['title'];
+                    $title = $title['name'];
                 }
 
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string) $date);

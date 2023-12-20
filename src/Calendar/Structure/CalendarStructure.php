@@ -102,7 +102,19 @@ class CalendarStructure
     /**
      * Returns all calendar paths, id's and names.
      *
-     * @return array<int, array{identifier: string, url: string, name: string, title: string|null, subtitle: string|null, image: string, public: bool}>
+     * @return array<int, array{
+     *     identifier: string,
+     *     url: string,
+     *     name: string,
+     *     title: string|null,
+     *     subtitle: string|null,
+     *     image: string,
+     *     public: bool,
+     *     url_json?: string,
+     *     url_raw?: string,
+     *     path?: string,
+     *     config?: string
+     * }>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -133,13 +145,15 @@ class CalendarStructure
                 'public' => $config->isPublic(),
             ];
 
+            if ($format === Format::HTML) {
+                $calendar['url_json'] = $config->getCalendarEndpoint(Format::JSON);
+                $calendar['url_raw'] = $config->getCalendarEndpointRaw();
+            }
+
             /* Add config paths if needed. */
             if ($withPaths) {
-                $calendar = [
-                    ...$calendar,
-                    'path' => $config->getCalendarPathRelative(),
-                    'config' => $config->getCalendarConfigRelative(),
-                ];
+                $calendar['path'] = $config->getCalendarPathRelative();
+                $calendar['config'] = $config->getCalendarConfigRelative();
             }
 
             $calendars[] = $calendar;
@@ -183,6 +197,8 @@ class CalendarStructure
             'subtitle' => $config->getCalendarSubtitle(),
             'public' => $config->isPublic(),
             'pages' => $pages,
+            'holidays' => $config->getHolidays(),
+            'birthdays' => $config->getBirthdaysFromPages($pages),
         ];
     }
 
@@ -242,7 +258,7 @@ class CalendarStructure
             return null;
         }
 
-        $image = $config->getImageForApi($number, $format);
+        $image = $config->getImageArray($number, $format);
 
         if (is_null($image)) {
             return null;

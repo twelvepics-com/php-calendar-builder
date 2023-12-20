@@ -153,7 +153,7 @@ class ImageController extends BaseImageController
      * @example etc.
      *
      * @param string $identifier
-     * @param int $number The number of the page (not month!)
+     * @param int|string $number The number of the page (not month!)
      * @param string $format
      * @param int|null $width
      * @param int|null $quality
@@ -173,13 +173,19 @@ class ImageController extends BaseImageController
     #[Route('/v/{identifier}/{number}.{format}', name: 'app_get_image')]
     public function showImage(
         string $identifier,
-        int $number,
+        int|string $number,
         string $format = Image::FORMAT_JPG,
         #[MapQueryParameter] int|null $width = null,
         #[MapQueryParameter] int|null $quality = null,
         #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
+        if (!is_numeric($number)) {
+            return $this->getErrorResponse(sprintf('The given number "%s" is not a number.', $number), $this->appKernel->getProjectDir());
+        }
+
+        $number = (int) $number;
+
         if ($format === Format::JSON) {
             return $this->doShowImageAsJson($identifier, $number);
         }

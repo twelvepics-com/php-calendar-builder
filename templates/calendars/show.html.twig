@@ -8,7 +8,19 @@
     <body>{% apply spaceless %}
         <ul>
             {% for calendar in calendars %}
-                <li>{{ calendar.identifier }}: <a href="{{ calendar.url }}">{{ calendar.name }}</a></li>
+                <li>
+                    <h2><a href="{{ calendar.url }}">{{ calendar.name }}</a></h2>
+                    <ul>
+                        <li>
+                            <a href="{{ calendar.url_json }}">Calendar (JSON)</a>
+                        </li>
+                        {% for page in 0..12 %}
+                            <li>
+                                <a href="{{ calendar.url_raw }}/{{ page }}.json">Calendar page {{ page }} (JSON)</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
             {% endfor %}
         </ul>
     {% endapply %}</body>
