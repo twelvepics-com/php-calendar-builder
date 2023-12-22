@@ -273,14 +273,42 @@ class Config extends Json
             }
 
             $name = match (true) {
-                $dateYear === self::WITHOUT_YEAR => $birthday,
-                default => sprintf('%s (%d)', $birthday, $year - $dateYear),
+                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($birthday),
+                default => sprintf('%s (%d)', $this->getObfuscatedName($birthday), $year - $dateYear),
             };
 
             $data[$dateYearMonthDay][] = $name;
         }
 
         return $data;
+    }
+
+    /**
+     * Returns an obfuscated name.
+     *
+     * @param string $name
+     * @return string
+     */
+    private function getObfuscatedName(string $name): string
+    {
+        $name = str_replace('† ', '†', $name);
+
+        $parts = explode(' ', $name);
+
+        /* If the name consists of only one word, return it unchanged */
+        if (count($parts) == 1) {
+            return str_replace('†', '† ', $name);
+        }
+
+        $forename = array_shift($parts);
+
+        foreach ($parts as &$part) {
+            $part = $part[0].'.';
+        }
+
+        $obfuscatedName = implode(' ', [$forename, ...$parts]);
+
+        return str_replace('†', '† ', $obfuscatedName);
     }
 
     /**
