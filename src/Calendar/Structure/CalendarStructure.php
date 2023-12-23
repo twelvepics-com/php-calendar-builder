@@ -142,6 +142,7 @@ class CalendarStructure
                 'title' => $config->getCalendarTitle(),
                 'subtitle' => $config->getCalendarSubtitle(),
                 'image' => $config->getCalendarImageEndpoint(),
+                'date' => $config->getCalendarDate(),
                 'public' => $config->isPublic(),
             ];
 
@@ -158,6 +159,8 @@ class CalendarStructure
 
             $calendars[] = $calendar;
         }
+
+        usort($calendars, fn($item1, $item2) => $item2['date'] <=> $item1['date']);
 
         return $calendars;
     }

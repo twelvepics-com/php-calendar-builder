@@ -18,6 +18,7 @@ use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Color\Color;
 use App\Objects\Exif\ExifCoordinate;
+use DateTimeImmutable;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
@@ -113,7 +114,7 @@ class Config extends Json
     }
 
     /**
-     * Returns the title of the calendar. This is the title of the first page from the calendar.
+     * Returns the name of the calendar. This is the title of the first page from the calendar.
      *
      * @return string
      * @throws ArrayKeyNotFoundException
@@ -130,6 +131,29 @@ class Config extends Json
 
         if (!$this->hasKey($path)) {
             return $this->identifier;
+        }
+
+        return $this->getKeyString($path);
+    }
+
+    /**
+     * Returns the date of the calendar. This is the title of the first page from the calendar.
+     *
+     * @return string
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getCalendarDate(): string
+    {
+        $path = ['date'];
+
+        if (!$this->hasKey($path)) {
+            return (new DateTimeImmutable())->format('Y-m-d H:i');
         }
 
         return $this->getKeyString($path);
