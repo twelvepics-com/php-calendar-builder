@@ -581,15 +581,16 @@ class Config extends Json
 
         $colors = (new Color($imagePathAbsolute))->getMainColors();
 
+        $image['coordinate'] = $this->getTranslatedCoordinate($imagePathAbsolute, $image);
+        $image['coordinate_dms'] = $this->getCoordinateDms($image);
+        $image['google_maps'] = $this->getGoogleMapsLink($image);
+
         $image = [
             ...$this->getTitleAndSubtitleFromFirstPage(),
             ...$image,
             'identifier' => $this->identifier,
             'colors' => $colors,
             'color' => $colors[0],
-            'coordinate' => $this->getTranslatedCoordinate($imagePathAbsolute, $image),
-            'coordinate_dms' => $this->getCoordinateDms($image),
-            'google_maps' => $this->getGoogleMapsLink($image),
             'holidays' => $this->getHolidays($year, $month),
             'birthdays' => $this->getBirthdays($year, $month),
         ];
