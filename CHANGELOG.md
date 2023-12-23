@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.17] - 2023-12-23
+
+* Add google links to images with auto coordinate detection
+* Add date to each calendar
+
 ### [0.1.16] - 2023-12-23
 
 * Add name obfuscator
