@@ -310,7 +310,7 @@ class BaseImageController extends AbstractController
         $response = new Response();
 
         /* Set headers */
-        $response->headers->set('Cache-Control', 'max-age=86400');
+        $response->headers->set('Cache-Control', 'max-age=2592000');
         $response->headers->set('Content-type', 'image/jpeg');
         $response->headers->set('Content-Disposition', sprintf('inline; filename="%s";', basename($file->getPath())));
         $response->headers->set('Content-length',  (string) strlen($imageString));

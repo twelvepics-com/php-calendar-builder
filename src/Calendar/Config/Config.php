@@ -250,7 +250,9 @@ class Config extends Json
 
         $dateMonth = sprintf('%02d', $month);
 
-        foreach ($this->getKeyArray($path) as $key => $birthday) {
+        $birthdays = $this->getKeyArray($path);
+
+        foreach ($birthdays as $key => $birthday) {
             if (is_array($birthday) && array_key_exists('date', $birthday) && array_key_exists('name', $birthday)) {
                 $key = $birthday['date'];
                 $birthday = $birthday['name'];
@@ -279,6 +281,8 @@ class Config extends Json
 
             $data[$dateYearMonthDay][] = $name;
         }
+
+        ksort($data);
 
         return $data;
     }

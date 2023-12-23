@@ -15,6 +15,7 @@ namespace App\Cache;
 
 use LogicException;
 use Psr\Cache\InvalidArgumentException;
+use Redis;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -28,6 +29,16 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 class RedisCache
 {
     private const PARAMETER_REDIS_DNS = 'redis.dns';
+
+    private const OPTION_REDIS_CLASS = Redis::class;
+
+    private const OPTION_TIMEOUT_SECONDS = 10;
+
+    private const REDIS_NAMESPACE = '';
+
+    private const REDIS_DEFAULT_LIFETIME = 0;
+
+    final public const REDIS_ITEM_DEFAULT_LIFETIME = 30 * 86400;
 
     private RedisAdapter $redisAdapter;
 
@@ -54,9 +65,28 @@ class RedisCache
             throw new LogicException('Unexpected redis format retrieved.');
         }
 
-        $redisClient = RedisAdapter::createConnection($redisDns);
+        /* Options see: https://symfony.com/doc/current/components/cache/adapters/redis_adapter.html#available-options */
+        $redisClient = RedisAdapter::createConnection($redisDns, [
+            'class' => self::OPTION_REDIS_CLASS,
+            'persistent' => 0,
+            'persistent_id' => null,
+            'timeout' => self::OPTION_TIMEOUT_SECONDS,
+            'read_timeout' => 0,
+            'retry_interval' => 0,
+            'tcp_keepalive' => 0,
+            'lazy' => null,
+            'redis_cluster' => false,
+            'redis_sentinel' => null,
+            'dbindex' => 0,
+            'failover' => 'none',
+            'ssl' => null,
+        ]);
 
-        $this->redisAdapter = new RedisAdapter($redisClient, '', 0);
+        $this->redisAdapter = new RedisAdapter(
+            $redisClient,
+            self::REDIS_NAMESPACE,
+            self::REDIS_DEFAULT_LIFETIME
+        );
     }
 
     /**

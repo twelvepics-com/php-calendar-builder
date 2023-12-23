@@ -349,7 +349,7 @@ class CalendarStructure
     ): callable
     {
         return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
-            $item->expiresAfter(86400);
+            $item->expiresAfter(RedisCache::REDIS_ITEM_DEFAULT_LIFETIME);
 
             $image = new Image($file);
 
