@@ -31,6 +31,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Yaml\Yaml;
@@ -210,7 +211,7 @@ class Config extends Json
      *
      * @param int|null $year
      * @param int|null $month
-     * @return array<string, string>
+     * @return array<string, array<int|string, mixed>>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -218,6 +219,8 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     public function getHolidays(int $year = null, int $month = null): array
     {
@@ -241,10 +244,27 @@ class Config extends Json
 
             $date = date('Y-m-d', (int) $key);
 
-            $holidays[$date] = match (true) {
-                is_string($holiday) => $holiday,
-                default => throw new LogicException('Holiday is not a string.'),
-            };
+            if (is_string($holiday)) {
+                $holiday = [
+                    'name' => $holiday,
+                ];
+            }
+
+            if (!is_array($holiday)) {
+                throw new LogicException('Unable to get holiday.');
+            }
+
+            $jsonHoliday = (new Json($holiday))->setKeyMode(Json::KEY_MODE_UNDERLINE);
+
+            if (!$jsonHoliday->hasKey('name_short')) {
+                $jsonHoliday->addValue('name_short', $jsonHoliday->getKeyString('name'));
+            }
+
+            if (!$jsonHoliday->hasKey('date')) {
+                $jsonHoliday->addValue('date', $date);
+            }
+
+            $holidays[$date] = $jsonHoliday->getArray();
         }
 
         return $holidays;

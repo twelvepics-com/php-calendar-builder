@@ -27,6 +27,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
@@ -144,6 +145,7 @@ class Source extends BaseParameter
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     private function readHolidays(): void
     {
@@ -151,20 +153,32 @@ class Source extends BaseParameter
         if ($this->getConfig()->hasKey('holidays')) {
             $holidays = $this->getConfig()->getKeyArray('holidays');
 
-            foreach ($holidays as $date => $title) {
+            foreach ($holidays as $date => $holiday) {
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string)$date);
 
                 if (!$dateImmutable instanceof DateTimeImmutable) {
                     throw new LogicException(sprintf('Invalid date "%s".', $date));
                 }
 
-                if (!is_string($title)) {
-                    throw new LogicException('Invalid title');
+                if (is_string($holiday)) {
+                    $holiday = [
+                        'name' => $holiday,
+                    ];
+                }
+
+                if (!is_array($holiday)) {
+                    throw new LogicException('Unable to get holiday.');
+                }
+
+                $jsonHoliday = (new Json($holiday))->setKeyMode(Json::KEY_MODE_UNDERLINE);
+
+                if (!$jsonHoliday->hasKey('name_short')) {
+                    $jsonHoliday->addValue('name_short', $jsonHoliday->getKeyString('name'));
                 }
 
                 $this->holidays[] = [
                     'date' => $dateImmutable,
-                    'title' => $title,
+                    'title' => $jsonHoliday->getKeyString('name_short'),
                 ];
             }
         }
