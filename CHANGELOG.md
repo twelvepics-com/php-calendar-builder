@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.20] - 2023-12-29
+
+* Add coordinate_decimal to page endpoint
+
 ### [0.1.19] - 2023-12-29
 
 * Restructure API response
