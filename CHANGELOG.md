@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.19] - 2023-12-29
+
+* Restructure API response
+* Add version, valid, date, time-taken and memory-taken to endpoints
+
 ### [0.1.18] - 2023-12-29
 
 * Add name short to birthdays
