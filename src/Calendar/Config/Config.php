@@ -607,6 +607,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getPageForApi(int $number, string $format = Image::FORMAT_JPG): Json|null
     {
@@ -636,6 +637,7 @@ class Config extends Json
      * @throws JsonException
      * @throws ParserException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getImageArray(int $number, string $format = Image::FORMAT_JPG): Json|null
     {
@@ -655,6 +657,7 @@ class Config extends Json
 
         $image['coordinate'] = $this->getTranslatedCoordinate($imagePathAbsolute, $image);
         $image['coordinate_dms'] = $this->getCoordinateDms($image);
+        $image['coordinate_decimal'] = $this->getCoordinateDecimal($image);
         $image['google_maps'] = $this->getGoogleMapsLink($image);
 
         $image = [
@@ -687,6 +690,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getImageFile(int $number, string $imageType = CalendarStructure::IMAGE_TYPE_TARGET): File|string
     {
@@ -734,6 +738,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     private function transformPageForApi(Json $page, string $format = Image::FORMAT_JPG): Json
     {
@@ -825,6 +830,31 @@ class Config extends Json
         $coordinate = (new Coordinate($coordinate));
 
         return sprintf('%s, %s', $coordinate->getLatitudeDMS(), $coordinate->getLongitudeDMS());
+    }
+
+    /**
+     * Returns coordinate decimal string.
+     *
+     * @param array<int|string, mixed> $image
+     * @return string|null
+     * @throws CaseUnsupportedException
+     * @throws ParserException
+     */
+    private function getCoordinateDecimal(array $image): string|null
+    {
+        if (!array_key_exists('coordinate', $image)) {
+            return null;
+        }
+
+        $coordinate = $image['coordinate'];
+
+        if (!is_string($coordinate) || $coordinate === 'auto') {
+            return null;
+        }
+
+        $coordinate = (new Coordinate($coordinate));
+
+        return sprintf('%s, %s', $coordinate->getLatitudeDecimal(), $coordinate->getLongitudeDecimal());
     }
 
     /**
