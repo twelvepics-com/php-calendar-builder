@@ -337,9 +337,8 @@ class Config extends Json
                 $jsonBirthday->addValue('name_short', $jsonBirthday->getKeyString('name'));
             }
 
-            if (!$jsonBirthday->hasKey('date')) {
-                $jsonBirthday->addValue('date', $dateYearMonthDay);
-            }
+            $jsonBirthday->addValue('date', $dateYearMonthDay);
+
 
             $jsonBirthday->addValue('name', match (true) {
                 $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($jsonBirthday->getKeyString('name')),

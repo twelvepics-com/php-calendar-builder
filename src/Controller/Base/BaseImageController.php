@@ -15,9 +15,12 @@ namespace App\Controller\Base;
 
 use App\Calendar\ImageBuilder\Base\BaseImageBuilder;
 use App\Calendar\Structure\CalendarStructure;
+use App\Constants\Conversion;
+use App\Constants\Event;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use GdImage;
+use Ixnode\PhpApiVersionBundle\Utils\Version\Version;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -27,6 +30,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Psr\Cache\InvalidArgumentException;
@@ -34,6 +38,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Stopwatch\Stopwatch;
 
 /**
  * Class BaseImageController
@@ -47,12 +52,15 @@ class BaseImageController extends AbstractController
     /**
      * @param CalendarStructure $calendarStructure
      * @param KernelInterface $appKernel
+     * @param Stopwatch $stopwatch
      */
     public function __construct(
         protected readonly CalendarStructure $calendarStructure,
-        protected KernelInterface $appKernel
+        protected KernelInterface $appKernel,
+        protected Stopwatch $stopwatch
     )
     {
+        $stopwatch->start(Event::IMAGE_CONTROLLER);
     }
 
     /**
@@ -150,7 +158,6 @@ class BaseImageController extends AbstractController
     }
 
 
-
     /**
      * Returns all calendars as json response.
      *
@@ -162,12 +169,23 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     protected function doShowCalendarsAsJson(): Response
     {
         $calendars = $this->calendarStructure->getCalendars(Format::JSON);
 
-        return $this->json($calendars);
+        return $this->json(
+            $this->getApiResponseSuccess(
+                [
+                    'calendars' => $calendars,
+                ],
+                [],
+                [
+                    'calendars' => $this->countRecursive($calendars),
+                ],
+            )
+        );
     }
 
     /**
@@ -181,6 +199,7 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     protected function doShowCalendarsAsHtml(): Response
     {
@@ -201,18 +220,55 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     protected function doShowCalendarAsJson(
         string $identifier
     ): Response
     {
+        $given = [
+            'identifier' => $identifier,
+        ];
+
         $calendar = $this->calendarStructure->getCalendar($identifier);
 
         if (is_null($calendar)) {
-            return $this->json(['error' => sprintf('Unable to get calendar from given identifier "%s".', $identifier)]);
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get calendar from given identifier "%s".', $identifier),
+                $given
+            ), Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json($calendar);
+        if (!array_key_exists('pages', $calendar) || !is_array($calendar['pages'])) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get calendar from given identifier "%s".', $identifier),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        if (!array_key_exists('holidays', $calendar) || !is_array($calendar['holidays'])) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get holidays from given identifier "%s".', $identifier),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        if (!array_key_exists('birthdays', $calendar) || !is_array($calendar['birthdays'])) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get birthdays from given identifier "%s".', $identifier),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json($this->getApiResponseSuccess(
+            $calendar,
+            $given,
+            [
+                'pages' => $this->countRecursive($calendar['pages']),
+                'holidays' => $this->countRecursive($calendar['holidays']),
+                'birthdays' => $this->countRecursive($calendar['birthdays']),
+            ]
+        ));
     }
 
     /**
@@ -227,6 +283,7 @@ class BaseImageController extends AbstractController
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     protected function doShowCalendarAsHtml(
         string $identifier
@@ -244,7 +301,7 @@ class BaseImageController extends AbstractController
     }
 
     /**
-     * Returns the image as json response.
+     * Returns the page/image as json response.
      *
      * @param string $identifier
      * @param int $number
@@ -258,17 +315,56 @@ class BaseImageController extends AbstractController
      * @throws TypeInvalidException
      * @throws CaseUnsupportedException
      * @throws ParserException
+     * @throws FunctionReplaceException
      */
-    protected function doShowImageAsJson(
+    protected function doShowPageAsJson(
         string $identifier,
         int $number,
     ): Response
     {
-        return $this->json($this->calendarStructure->getImage($identifier, $number));
+        $given = [
+            'identifier' => $identifier,
+            'number' => $number,
+        ];
+
+        $image = $this->calendarStructure->getImage($identifier, $number);
+
+        if (is_null($image)) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get image from given identifier "%s" and number "%d".', $identifier, $number),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        if (!array_key_exists('holidays', $image) || !is_array($image['holidays'])) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get holidays from given identifier "%s" and number "%d".', $identifier, $number),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        if (!array_key_exists('birthdays', $image) || !is_array($image['birthdays'])) {
+            return $this->json($this->getApiResponseError(
+                sprintf('Unable to get birthdays from given identifier "%s" and number "%d".', $identifier, $number),
+                $given
+            ), Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json(
+            $this->getApiResponseSuccess(
+                $image,
+                $given,
+                [
+                    'holidays' => $this->countRecursive($image['holidays']),
+                    'birthdays' => $this->countRecursive($image['birthdays']),
+                ]
+            ),
+            Response::HTTP_OK
+        );
     }
 
     /**
-     * Returns the image as image response.
+     * Returns the page/image as image response.
      *
      * @param string $identifier
      * @param int $number
@@ -285,8 +381,9 @@ class BaseImageController extends AbstractController
      * @throws InvalidArgumentException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    protected function doShowImageAsImage(
+    protected function doShowPageAsImage(
         string $identifier,
         int $number,
         int|null $width,
@@ -321,5 +418,84 @@ class BaseImageController extends AbstractController
         $response->sendContent();
 
         return $response;
+    }
+
+    /**
+     * Returns the api response including the version, date, etc.
+     *
+     * @param array<int|string, mixed> $data
+     * @param array<string, int|string> $given
+     * @param array<string, int>|null $count
+     * @return array<string, mixed>
+     */
+    private function getApiResponseSuccess(array $data, array $given = [], array $count = null): array
+    {
+        $event = $this->stopwatch->stop(Event::IMAGE_CONTROLLER);
+
+        $timeTaken = sprintf('%.3f s', $event->getDuration() / Conversion::MILLISECONDS_TO_SECONDS);
+        $memoryTaken = sprintf('%.3f MB', $event->getMemory() / Conversion::BYTES_TO_MEGABYTES);
+
+        return [
+            'data' => $data,
+            ...(is_null($count) ? [] : ['count' => $count]),
+            'given' => $given,
+            'valid' => true,
+            'date' => date('c'),
+            'time-taken' => $timeTaken,
+            'memory-taken' => $memoryTaken,
+            'version' => (new Version())->getVersion(),
+        ];
+    }
+
+    /**
+     * Returns an error response including the version, date, etc.
+     *
+     * @param string $error
+     * @param array<string, int|string> $given
+     * @return array<string, mixed>
+     */
+    private function getApiResponseError(string $error, array $given = []): array
+    {
+        $event = $this->stopwatch->stop(Event::IMAGE_CONTROLLER);
+
+        $timeTaken = sprintf('%.3f s', $event->getDuration() / Conversion::MILLISECONDS_TO_SECONDS);
+        $memoryTaken = sprintf('%.3f MB', $event->getMemory() / Conversion::BYTES_TO_MEGABYTES);
+
+        return [
+            'error' => $error,
+            'given' => $given,
+            'valid' => false,
+            'date' => date('c'),
+            'time-taken' => $timeTaken,
+            'memory-taken' => $memoryTaken,
+            'version' => (new Version())->getVersion(),
+        ];
+    }
+
+    /**
+     * Counts the given array recursively.
+     *
+     * @param array<int|string, mixed> $array
+     * @return int
+     */
+    private function countRecursive(array $array): int
+    {
+        $count = 0;
+
+        foreach ($array as $element) {
+            if (!is_array($element)) {
+                $count++;
+                continue;
+            }
+
+            if (!array_is_list($element)) {
+                $count++;
+                continue;
+            }
+
+            $count += $this->countRecursive($element);
+        }
+
+        return $count;
     }
 }

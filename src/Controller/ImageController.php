@@ -26,6 +26,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Psr\Cache\InvalidArgumentException;
@@ -142,7 +143,7 @@ class ImageController extends BaseImageController
     }
 
     /**
-     * The controller to show the image or show the json data from the image.
+     * The controller to show the image/page or show the json data from the page.
      *
      * @example https://www.calendar-builder.localhost/v/9cbdf13be284/0.json
      *
@@ -169,9 +170,10 @@ class ImageController extends BaseImageController
      * @throws TypeInvalidException
      * @throws CaseUnsupportedException
      * @throws ParserException
+     * @throws FunctionReplaceException
      */
     #[Route('/v/{identifier}/{number}.{format}', name: 'app_get_image')]
-    public function showImage(
+    public function showPage(
         string $identifier,
         int|string $number,
         string $format = Image::FORMAT_JPG,
@@ -187,7 +189,7 @@ class ImageController extends BaseImageController
         $number = (int) $number;
 
         if ($format === Format::JSON) {
-            return $this->doShowImageAsJson($identifier, $number);
+            return $this->doShowPageAsJson($identifier, $number);
         }
 
         if (!in_array($format, Format::ALLOWED_IMAGE_FORMATS)) {
@@ -198,7 +200,7 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format, $type);
+        return $this->doShowPageAsImage($identifier, $number, $width, $quality, $format, $type);
     }
 
     /**
@@ -244,7 +246,7 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format);
+        return $this->doShowPageAsImage($identifier, $number, $width, $quality, $format);
     }
 
     /**
@@ -289,6 +291,6 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowImageAsImage($identifier, $number, $width, $quality, $format);
+        return $this->doShowPageAsImage($identifier, $number, $width, $quality, $format);
     }
 }

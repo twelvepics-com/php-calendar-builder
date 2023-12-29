@@ -76,6 +76,7 @@ class CalendarStructure
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getConfig(string $identifier): Json
     {
@@ -103,6 +104,8 @@ class CalendarStructure
     /**
      * Returns all calendar paths, id's and names.
      *
+     * @param string $format
+     * @param bool $withPaths
      * @return array<int, array{
      *     identifier: string,
      *     url: string,
@@ -121,8 +124,9 @@ class CalendarStructure
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      * @throws JsonException
+     * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function getCalendars(string $format = Format::HTML, bool $withPaths = false): array
@@ -220,6 +224,7 @@ class CalendarStructure
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getPages(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
@@ -254,6 +259,7 @@ class CalendarStructure
      * @throws JsonException
      * @throws ParserException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
     {
@@ -290,6 +296,7 @@ class CalendarStructure
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getImageFile(
         string $identifier,
