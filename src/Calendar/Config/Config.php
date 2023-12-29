@@ -84,6 +84,7 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws FunctionReplaceException
      */
     public function __construct(private readonly string $identifier, private readonly string $projectDir)
     {
@@ -125,6 +126,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getCalendarName(): string
     {
@@ -148,6 +150,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getCalendarDate(): string
     {
@@ -171,6 +174,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getCalendarTitle(): string|null
     {
@@ -194,6 +198,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getCalendarSubtitle(): string|null
     {
@@ -273,7 +278,7 @@ class Config extends Json
     /**
      * Returns the holidays of the calendar.
      *
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, array<int|string, mixed>>>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -281,6 +286,9 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function getBirthdays(int $year, int $month): array
     {
@@ -297,9 +305,8 @@ class Config extends Json
         $birthdays = $this->getKeyArray($path);
 
         foreach ($birthdays as $key => $birthday) {
-            if (is_array($birthday) && array_key_exists('date', $birthday) && array_key_exists('name', $birthday)) {
+            if (is_array($birthday) && array_key_exists('date', $birthday)) {
                 $key = $birthday['date'];
-                $birthday = $birthday['name'];
             }
 
             if ($dateMonth !== date('m', (int) $key)) {
@@ -314,16 +321,37 @@ class Config extends Json
 
             $dateYear = (int) date('Y', (int) $key);
 
-            if (!is_string($birthday)) {
-                throw new LogicException('Birthday is not a string.');
+            if (is_string($birthday)) {
+                $birthday = [
+                    'name' => $birthday,
+                ];
             }
 
-            $name = match (true) {
-                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($birthday),
-                default => sprintf('%s (%d)', $this->getObfuscatedName($birthday), $year - $dateYear),
-            };
+            if (!is_array($birthday)) {
+                throw new LogicException('Unable to get birthday.');
+            }
 
-            $data[$dateYearMonthDay][] = $name;
+            $jsonBirthday = (new Json($birthday))->setKeyMode(Json::KEY_MODE_UNDERLINE);
+
+            if (!$jsonBirthday->hasKey('name_short')) {
+                $jsonBirthday->addValue('name_short', $jsonBirthday->getKeyString('name'));
+            }
+
+            if (!$jsonBirthday->hasKey('date')) {
+                $jsonBirthday->addValue('date', $dateYearMonthDay);
+            }
+
+            $jsonBirthday->addValue('name', match (true) {
+                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($jsonBirthday->getKeyString('name')),
+                default => sprintf('%s (%d)', $this->getObfuscatedName($jsonBirthday->getKeyString('name')), $year - $dateYear),
+            });
+
+            $jsonBirthday->addValue('name_short', match (true) {
+                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($jsonBirthday->getKeyString('name_short')),
+                default => sprintf('%s (%d)', $this->getObfuscatedName($jsonBirthday->getKeyString('name_short')), $year - $dateYear),
+            });
+
+            $data[$dateYearMonthDay][] = $jsonBirthday->getArray();
         }
 
         ksort($data);
@@ -363,7 +391,7 @@ class Config extends Json
      * Returns the birthdays of the calendar from given pages.
      *
      * @param array<int, array<string|int, mixed>> $pages
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, array<int|string, mixed>>>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -371,6 +399,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getBirthdaysFromPages(array $pages): array
     {

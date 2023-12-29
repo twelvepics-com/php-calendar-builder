@@ -185,7 +185,6 @@ class Source extends BaseParameter
     }
 
 
-
     /**
      * Reads all birthdays.
      *
@@ -197,6 +196,9 @@ class Source extends BaseParameter
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function readBirthdays(): void
     {
@@ -205,10 +207,26 @@ class Source extends BaseParameter
             $birthdays = $this->getConfig()->getKeyArray('birthdays');
 
             foreach ($birthdays as $date => $title) {
+                $titleShort = null;
 
-                if (is_array($title) && array_key_exists('date', $title) && array_key_exists('name', $title)) {
+                if (is_array($title) && array_key_exists('date', $title)) {
                     $date = $title['date'];
+                }
+
+                if (is_array($title) && array_key_exists('name-short', $title)) {
+                    $titleShort = $title['name-short'];
+                }
+
+                if (is_array($title) && array_key_exists('name', $title)) {
                     $title = $title['name'];
+                }
+
+                if (!is_string($title)) {
+                    throw new LogicException('Unable to read name of birthday.');
+                }
+
+                if (is_null($titleShort)) {
+                    $titleShort = $title;
                 }
 
                 $dateImmutable = DateTimeImmutable::createFromFormat('U', (string) $date);
@@ -217,13 +235,13 @@ class Source extends BaseParameter
                     throw new LogicException(sprintf('Invalid date "%s".', $date));
                 }
 
-                if (!is_string($title)) {
+                if (!is_string($titleShort)) {
                     throw new LogicException('Invalid title');
                 }
 
                 $this->birthdays[] = [
                     'date' => $dateImmutable,
-                    'title' => $title,
+                    'title' => $titleShort,
                 ];
             }
         }
