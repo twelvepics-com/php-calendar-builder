@@ -173,7 +173,10 @@ class BaseImageController extends AbstractController
      */
     protected function doShowCalendarsAsJson(): Response
     {
-        $calendars = $this->calendarStructure->getCalendars(Format::JSON);
+        $calendars = $this->calendarStructure->getCalendars(
+            format: Format::JSON,
+            onlyPublic: true
+        );
 
         return $this->json(
             $this->getApiResponseSuccess(

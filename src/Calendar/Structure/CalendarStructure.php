@@ -106,6 +106,7 @@ class CalendarStructure
      *
      * @param string $format
      * @param bool $withPaths
+     * @param bool $onlyPublic
      * @return array<int, array{
      *     identifier: string,
      *     url: string,
@@ -129,7 +130,11 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function getCalendars(string $format = Format::HTML, bool $withPaths = false): array
+    public function getCalendars(
+        string $format = Format::HTML,
+        bool $withPaths = false,
+        bool $onlyPublic = false
+    ): array
     {
         $calendars = [];
 
@@ -138,6 +143,10 @@ class CalendarStructure
 
             if ($config->hasError()) {
                 throw new LogicException((string) $config->getError());
+            }
+
+            if ($onlyPublic && !$config->isPublic()) {
+                continue;
             }
 
             $calendar = [
