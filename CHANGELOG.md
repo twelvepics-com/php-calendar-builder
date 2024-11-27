@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.22] - 2024-03-10
+
+* Disable redis cache for cli commands
+
 ### [0.1.21] - 2024-03-10
 
 * Only show public calendars on json endpoint
