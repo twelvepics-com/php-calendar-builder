@@ -32,6 +32,7 @@ use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Psr\Cache\InvalidArgumentException;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -52,17 +53,24 @@ class CalendarStructure
 
     private const CALENDAR_DIRECTORY = '%s/data/calendar';
 
+    protected readonly RedisCache|null $redisCache;
+
     private readonly string $calendarDirectory;
 
     /**
      * @param KernelInterface $appKernel
-     * @param RedisCache $redisCache
+     * @param ParameterBagInterface $parameterBag
+     * @param bool $disableCache
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function __construct(
-        protected KernelInterface $appKernel,
-        protected readonly RedisCache $redisCache
+        protected readonly KernelInterface $appKernel,
+        private readonly ParameterBagInterface $parameterBag,
+        bool $disableCache = false,
     )
     {
+        $this->redisCache = $disableCache ? null : new RedisCache(parameterBag: $this->parameterBag);
+
         $this->calendarDirectory = sprintf(self::CALENDAR_DIRECTORY, $this->appKernel->getProjectDir());
     }
 
@@ -337,6 +345,8 @@ class CalendarStructure
      * @param int|null $quality
      * @param string $format
      * @return string|null
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
      * @throws InvalidArgumentException
      */
     public function getImageStringFromCache(
@@ -346,6 +356,13 @@ class CalendarStructure
         string $format = Image::FORMAT_JPG
     ): string|null
     {
+        /* Disabled cache. */
+        if (is_null($this->redisCache)) {
+            $image = new Image($file);
+
+            return $image->getImageString($width, $format, $quality);
+        }
+
         /* Write or read the cached image string. */
         return $this->redisCache->getStringOrNull(
             $this->redisCache->getCacheKey($file->getPath(), $width, $quality, $format),

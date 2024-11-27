@@ -101,10 +101,11 @@ class ExifCoordinate
      * @return void
      * @throws CaseUnsupportedException
      * @throws ParserException
+     * @SuppressWarnings(PHPMD.ErrorControlOperator)
      */
     private function init(): void
     {
-        $dataExif = exif_read_data($this->path, 'EXIF');
+        $dataExif = @exif_read_data($this->path, 'EXIF');
 
         if ($dataExif === false) {
             return;

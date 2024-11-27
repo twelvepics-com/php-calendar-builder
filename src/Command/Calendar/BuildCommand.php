@@ -24,6 +24,7 @@ use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -34,6 +35,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -55,17 +57,25 @@ class BuildCommand extends Command
 
     final public const COMMAND_DESCRIPTION = 'Builds all calendar pages';
 
+    private readonly CalendarStructure $calendarStructure;
+
     /**
-     * @param CalendarStructure $calendarStructure
      * @param KernelInterface $appKernel
+     * @param ParameterBagInterface $parameterBag
      * @param string|null $name
      */
     public function __construct(
-        private readonly CalendarStructure $calendarStructure,
         protected KernelInterface $appKernel,
+        private readonly ParameterBagInterface $parameterBag,
         string $name = null
     )
     {
+        $this->calendarStructure = new CalendarStructure(
+            appKernel: $this->appKernel,
+            parameterBag: $this->parameterBag,
+            disableCache: true
+        );
+
         parent::__construct($name);
     }
 
@@ -96,8 +106,9 @@ EOT
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
-     * @throws TypeInvalidException
      * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     private function getConfigFile(InputInterface $input, OutputInterface $output): string
     {
