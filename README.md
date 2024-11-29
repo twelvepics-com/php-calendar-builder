@@ -103,6 +103,10 @@ You can use a calendar UI to display the built calendars or have access to the a
 docker compose up -d
 ```
 
+```bash
+docker compose exec php composer install
+```
+
 Open the project in your browser:
 
 * https://localhost:5443 (List available calendars)

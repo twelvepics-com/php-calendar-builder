@@ -30,6 +30,11 @@ services:
         arguments:
             - '@kernel'
 
+    # Adds PhotoStructure to dependency injection
+    App\Calendar\Structure\PhotoStructure:
+        arguments:
+            - '@kernel'
+
     # Adds CorsListener to dependency injection
     App\EventListener\CorsListener:
         tags:

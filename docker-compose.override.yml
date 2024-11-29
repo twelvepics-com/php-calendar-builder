@@ -54,8 +54,6 @@
 #
 # ===========================================
 
-version: "3.8"
-
 # Configures the services
 services:
 

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Show photo set links</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+    </head>
+    <body>{% apply spaceless %}
+        <ul>
+            {% for photoSet in photoSets %}
+                <li>
+                    <h2><a href="{{ photoSet.url }}">{{ photoSet.name }}</a></h2>
+                    <ul>
+                        <li>
+                            <a href="{{ photoSet.url_json }}">Photo Set (JSON)</a>
+                        </li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endapply %}</body>
+</html>

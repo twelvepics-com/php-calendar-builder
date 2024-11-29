@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Show photos - {{ photoSet.title }}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+        <style>
+
+            html, body {
+                height: 100%;
+                margin: 0;
+            }
+
+            body .header {
+                padding: 10px 20px;
+            }
+
+            .container-images {
+                padding: 10px 20px 20px 10px;
+            }
+
+            .container-image-link .container-image {
+                height: 37.5vw;
+                width: 50%;
+                background-size: 100% 100%;
+                float: left;
+            }
+
+            .container-image-link:nth-child(n+2) .container-image {
+                height: 18.75vw;
+                width: 25%;
+            }
+
+            @media (max-width: 1024px) {
+                .container-image-link .container-image {
+                    height: 75vw;
+                    width: 100%;
+                }
+
+                .container-image-link:nth-child(n+2) .container-image {
+                    height: 37.5vw;
+                    width: 50%;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .container-image-link .container-image {
+                    height: 75vw;
+                    width: 100%;
+                }
+
+                .container-image-link:nth-child(n+2) .container-image {
+                    height: 75vw;
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>{% apply spaceless %}
+        <div class="header">
+            <h1>{{ photoSet.title }}</h1>
+            <p>{{ photoSet.subtitle }}</p>
+        </div>
+
+        <div class="container-images">
+            {% for photo in photoSet.photos %}
+                <a class="container-image-link" href="{{ photo.path }}?width=2048&quality=85" title="{{ photo.title }}"><div class="container-image" style="background-image:url({{ photo.path }}?quality=85);"></div></a>
+            {% endfor %}
+        </div>
+    {% endapply %}</body>
+</html>

@@ -14,9 +14,9 @@ declare(strict_types=1);
 namespace App\Calendar\Structure;
 
 use App\Cache\RedisCache;
-use App\Calendar\Config\Config;
+use App\Calendar\Config\PhotoConfig;
 use App\Constants\Format;
-use App\Constants\Service\Calendar\CalendarBuilderService;
+use App\Constants\Service\Photo\PhotoBuilderService;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
@@ -38,18 +38,18 @@ use Symfony\Component\Yaml\Yaml;
 use Symfony\Contracts\Cache\ItemInterface;
 
 /**
- * Class CalendarStructure
+ * Class PhotoStructure
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-12-07)
- * @since 0.1.0 (2023-12-07) First version.
+ * @version 0.1.0 (2024-11-28)
+ * @since 0.1.0 (2024-11-28) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class CalendarStructure
+class PhotoStructure
 {
     final public const IMAGE_TYPE_TARGET = 'target';
 
-    private const CALENDAR_DIRECTORY = '%s/data/calendar';
+    private const PHOTO_DIRECTORY = '%s/data/photo';
 
     protected readonly RedisCache|null $redisCache;
 
@@ -69,7 +69,7 @@ class CalendarStructure
     {
         $this->redisCache = $disableCache ? null : new RedisCache(parameterBag: $this->parameterBag);
 
-        $this->calendarDirectory = sprintf(self::CALENDAR_DIRECTORY, $this->appKernel->getProjectDir());
+        $this->calendarDirectory = sprintf(self::PHOTO_DIRECTORY, $this->appKernel->getProjectDir());
     }
 
     /**
@@ -86,13 +86,13 @@ class CalendarStructure
      */
     public function getConfig(string $identifier): Json
     {
-        $pathCalendarAbsolute = sprintf(CalendarBuilderService::PATH_CALENDAR_ABSOLUTE, $this->appKernel->getProjectDir(), $identifier);
+        $pathPhotoSetAbsolute = sprintf(PhotoBuilderService::PATH_PHOTO_ABSOLUTE, $this->appKernel->getProjectDir(), $identifier);
 
-        if (!is_dir($pathCalendarAbsolute)) {
-            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
+        if (!is_dir($pathPhotoSetAbsolute)) {
+            return new Json(['error' => sprintf('Photo path "%s" does not exist', $pathPhotoSetAbsolute)]);
         }
 
-        $configFileRelative = new File(sprintf(CalendarBuilderService::PATH_CONFIG_RELATIVE, $identifier), $this->appKernel->getProjectDir());
+        $configFileRelative = new File(sprintf(PhotoBuilderService::PATH_CONFIG_RELATIVE, $identifier), $this->appKernel->getProjectDir());
 
         if (!$configFileRelative->exist()) {
             return new Json(['error' => sprintf('Config path "%s" does not exist', $configFileRelative->getPath())]);
@@ -108,7 +108,7 @@ class CalendarStructure
     }
 
     /**
-     * Returns all calendar paths, id's and names.
+     * Returns all photo sets paths, id's and names.
      *
      * @param string $format
      * @param bool $withPaths
@@ -119,12 +119,8 @@ class CalendarStructure
      *     name: string,
      *     title: string|null,
      *     subtitle: string|null,
-     *     image: string,
-     *     public: bool,
-     *     url_json?: string,
-     *     url_raw?: string,
-     *     path?: string,
-     *     config?: string
+     *     date: string,
+     *     public: bool
      * }>
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
@@ -136,53 +132,52 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function getCalendars(
+    public function getPhotoSets(
         string $format = Format::HTML,
         bool $withPaths = false,
         bool $onlyPublic = false
     ): array
     {
-        $calendars = [];
+        $photoSets = [];
 
         foreach ($this->getIdentifiers() as $identifier) {
-            $config = new Config($identifier, $this->appKernel->getProjectDir());
+            $photoConfig = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
 
-            if ($config->hasError()) {
-                throw new LogicException((string) $config->getError());
+            if ($photoConfig->hasError()) {
+                throw new LogicException((string) $photoConfig->getError());
             }
 
-            if ($onlyPublic && !$config->isPublic()) {
+            if ($onlyPublic && !$photoConfig->isPublic()) {
                 continue;
             }
 
-            $calendar = [
-                'identifier' => $config->getIdentifier(),
-                'url' => $config->getCalendarEndpoint($format),
-                'name' => $config->getCalendarName(),
-                'title' => $config->getCalendarTitle(),
-                'subtitle' => $config->getCalendarSubtitle(),
-                'image' => $config->getCalendarImageEndpoint(),
-                'date' => $config->getCalendarDate(),
-                'public' => $config->isPublic(),
+            $photoSet = [
+                'identifier' => $photoConfig->getIdentifier(),
+                'url' => $photoConfig->getPhotoSetEndpoint($format),
+                'name' => $photoConfig->getPhotoSetName(),
+                'title' => $photoConfig->getPhotoSetTitle(),
+                'subtitle' => $photoConfig->getPhotoSetSubtitle(),
+                'date' => $photoConfig->getPhotoSetDate(),
+                'public' => $photoConfig->isPublic(),
             ];
 
             if ($format === Format::HTML) {
-                $calendar['url_json'] = $config->getCalendarEndpoint(Format::JSON);
-                $calendar['url_raw'] = $config->getCalendarEndpointRaw();
+                $photoSet['url_json'] = $photoConfig->getPhotoSetEndpoint(Format::JSON);
+                $photoSet['url_raw'] = $photoConfig->getPhotoSetEndpointRaw();
             }
 
             /* Add config paths if needed. */
             if ($withPaths) {
-                $calendar['path'] = $config->getCalendarPathRelative();
-                $calendar['config'] = $config->getCalendarConfigRelative();
+                $photoSet['path'] = $photoConfig->getPhotoSetPathRelative();
+                $photoSet['config'] = $photoConfig->getPhotoSetConfigRelative();
             }
 
-            $calendars[] = $calendar;
+            $photoSets[] = $photoSet;
         }
 
-        usort($calendars, fn($item1, $item2) => $item2['date'] <=> $item1['date']);
+        usort($photoSets, fn($item1, $item2) => $item2['date'] <=> $item1['date']);
 
-        return $calendars;
+        return $photoSets;
     }
 
     /**
@@ -200,29 +195,27 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendar(string $identifier, string $format = Image::FORMAT_JPG): array|null
+    public function getPhotoSet(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $photoConfig = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasError()) {
+        if ($photoConfig->hasError()) {
             return null;
         }
 
-        $pages = $this->getPages($identifier, $format);
+        $photos = $this->getPhotos($identifier, $format);
 
-        if (is_null($pages)) {
+        if (is_null($photos)) {
             return null;
         }
 
         return [
-            'identifier' => $identifier,
-            'image' => $config->getCalendarImageEndpoint(),
-            'title' => $config->getCalendarTitle(),
-            'subtitle' => $config->getCalendarSubtitle(),
-            'public' => $config->isPublic(),
-            'pages' => $pages,
-            'holidays' => $config->getHolidays(),
-            'birthdays' => $config->getBirthdaysFromPages($pages),
+            'identifier' => $photoConfig->getIdentifier(),
+            'photo_set' => $photoConfig->getPhotoSetEndpoint(),
+            'title' => $photoConfig->getPhotoSetTitle(),
+            'subtitle' => $photoConfig->getPhotoSetSubtitle(),
+            'public' => $photoConfig->isPublic(),
+            'photos' => $photos,
         ];
     }
 
@@ -241,28 +234,28 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getPages(string $identifier, string $format = Image::FORMAT_JPG): array|null
+    public function getPhotos(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return null;
         }
 
-        $pages = $config->getPagesForApi($format);
+        $photos = $config->getPhotosForApi($format);
 
-        if (is_null($pages)) {
+        if (is_null($photos)) {
             return null;
         }
 
-        return array_map(fn(Json $page): array => $page->getArray(), $pages);
+        return array_map(fn(Json $photo): array => $photo->getArray(), $photos);
     }
 
     /**
      * Returns the image from given identifier and number.
      *
      * @param string $identifier
-     * @param int $number
+     * @param string $name
      * @param string $format
      * @return array<string|int, mixed>|null
      * @throws ArrayKeyNotFoundException
@@ -276,15 +269,15 @@ class CalendarStructure
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
+    public function getImage(string $identifier, string $name, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return null;
         }
 
-        $image = $config->getImageArray($number, $format);
+        $image = $config->getImageArray($name, $format);
 
         if (is_null($image)) {
             return null;
@@ -301,7 +294,7 @@ class CalendarStructure
      * Return a Response object if an error occurred, otherwise returns the image path.
      *
      * @param string $identifier
-     * @param int $number
+     * @param string $name
      * @param string $imageType
      * @return File|string
      * @throws ArrayKeyNotFoundException
@@ -315,17 +308,17 @@ class CalendarStructure
      */
     public function getImageFile(
         string $identifier,
-        int $number,
-        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
+        string $name,
+        string $imageType = PhotoStructure::IMAGE_TYPE_TARGET
     ): File|string
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $photoConfig = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
 
-        if ($config->hasError()) {
-            return (string) $config->getError();
+        if ($photoConfig->hasError()) {
+            return (string) $photoConfig->getError();
         }
 
-        $imageFile = $config->getImageFile($number, $imageType);
+        $imageFile = $photoConfig->getImageFile($name, $imageType);
 
         /* String means an error occurred. */
         if (is_string($imageFile)) {

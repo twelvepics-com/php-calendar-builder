@@ -15,7 +15,7 @@ namespace App\Calendar\Config;
 
 use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Format;
-use App\Constants\Service\Calendar\CalendarBuilderService;
+use App\Constants\Service\Photo\PhotoBuilderService;
 use App\Objects\Color\Color;
 use App\Objects\Exif\ExifCoordinate;
 use DateTimeImmutable;
@@ -37,40 +37,34 @@ use LogicException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Class Config
+ * Class PhotoConfig
  *
- * The class for calendar configuration
+ * The class for photo configuration
  *
  * @author Björn Hempel <bjoern@hempel.li>
- * @version 0.1.0 (2023-12-18)
- * @since 0.1.0 (2023-12-18) First version.
+ * @version 0.1.0 (2024-11-28)
+ * @since 0.1.0 (2024-11-28) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class Config extends Json
+class PhotoConfig extends Json
 {
     final public const CONFIG_FILENAME = 'config.yml';
 
-    final public const PATH_CALENDAR_ABSOLUTE = '%s/data/calendar/%s';
+    final public const PATH_PHOTO_ABSOLUTE = '%s/data/photo/%s';
 
-    final public const PATH_CALENDAR_RELATIVE = 'data/calendar/%s';
+    final public const PATH_PHOTO_SET_RELATIVE = 'data/photo/%s';
 
-    final public const PATH_CONFIG_ABSOLUTE = '%s/data/calendar/%s/'.self::CONFIG_FILENAME;
+    final public const PATH_CONFIG_ABSOLUTE = '%s/data/photo/%s/'.self::CONFIG_FILENAME;
 
-    final public const PATH_CONFIG_RELATIVE = 'data/calendar/%s/'.self::CONFIG_FILENAME;
+    final public const PATH_CONFIG_RELATIVE = 'data/photo/%s/'.self::CONFIG_FILENAME;
 
-    final public const PATH_IMAGE_ABSOLUTE = '%s/data/calendar/%s/%s';
+    final public const PATH_IMAGE_ABSOLUTE = '%s/data/photo/%s/%s';
 
-    final public const PATH_IMAGE_RELATIVE = 'data/calendar/%s/%s';
+    final public const ENDPOINT_PHOTO_SET = '/pv/%s.%s';
 
-    final public const ENDPOINT_CALENDAR_IMAGE = '/v/%s/0.%s';
+    final public const ENDPOINT_PHOTO_SET_RAW = '/pv/%s';
 
-    final public const ENDPOINT_CALENDAR = '/v/%s.%s';
-
-    final public const ENDPOINT_CALENDAR_RAW = '/v/%s';
-
-    final public const ENDPOINT_IMAGE = '/v/%s/%s.%s';
-
-    private const WITHOUT_YEAR = 2100;
+    final public const ENDPOINT_PHOTO = '/pv/%s/%s';
 
     private string|null $error = null;
 
@@ -116,7 +110,7 @@ class Config extends Json
     }
 
     /**
-     * Returns the name of the calendar. This is the title of the first page from the calendar.
+     * Returns the name of the photo set.
      *
      * @return string
      * @throws ArrayKeyNotFoundException
@@ -128,7 +122,7 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarName(): string
+    public function getPhotoSetName(): string
     {
         $path = ['name'];
 
@@ -140,7 +134,7 @@ class Config extends Json
     }
 
     /**
-     * Returns the date of the calendar. This is the title of the first page from the calendar.
+     * Returns the date of the photo set.
      *
      * @return string
      * @throws ArrayKeyNotFoundException
@@ -152,7 +146,7 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarDate(): string
+    public function getPhotoSetDate(): string
     {
         $path = ['date'];
 
@@ -164,7 +158,7 @@ class Config extends Json
     }
 
     /**
-     * Returns the title of the calendar. This is the title of the first page from the calendar.
+     * Returns the title of the photo set.
      *
      * @return string|null
      * @throws ArrayKeyNotFoundException
@@ -176,19 +170,19 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarTitle(): string|null
+    public function getPhotoSetTitle(): string|null
     {
-        $path = ['pages', '0', 'title'];
+        $path = ['title'];
 
         if (!$this->hasKey($path)) {
-            return null;
+            return $this->identifier;
         }
 
-        return $this->stripString($this->getKeyString($path));
+        return $this->getKeyString($path);
     }
 
     /**
-     * Returns the subtitle of the calendar. This is the subtitle of the first page from the calendar.
+     * Returns the subtitle of the photo set.
      *
      * @return string|null
      * @throws ArrayKeyNotFoundException
@@ -200,287 +194,74 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarSubtitle(): string|null
+    public function getPhotoSetSubtitle(): string|null
     {
-        $path = ['pages', '0','subtitle'];
+        $path = ['subtitle'];
 
         if (!$this->hasKey($path)) {
-            return null;
+            return $this->identifier;
         }
 
-        return $this->stripString($this->getKeyString($path));
+        return $this->getKeyString($path);
     }
 
     /**
-     * Returns the holidays of the calendar.
-     *
-     * @param int|null $year
-     * @param int|null $month
-     * @return array<string, array<int|string, mixed>>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws FunctionReplaceException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    public function getHolidays(int $year = null, int $month = null): array
-    {
-        $path = ['holidays'];
-
-        if (!$this->hasKey($path)) {
-            return [];
-        }
-
-        $holidays = [];
-
-        $dateYearMonth = match (true) {
-            !is_null($year) && !is_null($month) => sprintf('%4d-%02d', $year, $month),
-            default => null,
-        };
-
-        foreach ($this->getKeyArray($path) as $key => $holiday) {
-            if (!is_null($dateYearMonth) && $dateYearMonth !== date('Y-m', (int) $key)) {
-                continue;
-            }
-
-            $date = date('Y-m-d', (int) $key);
-
-            if (is_string($holiday)) {
-                $holiday = [
-                    'name' => $holiday,
-                ];
-            }
-
-            if (!is_array($holiday)) {
-                throw new LogicException('Unable to get holiday.');
-            }
-
-            $jsonHoliday = (new Json($holiday))->setKeyMode(Json::KEY_MODE_UNDERLINE);
-
-            if (!$jsonHoliday->hasKey('name_short')) {
-                $jsonHoliday->addValue('name_short', $jsonHoliday->getKeyString('name'));
-            }
-
-            if (!$jsonHoliday->hasKey('date')) {
-                $jsonHoliday->addValue('date', $date);
-            }
-
-            $holidays[$date] = $jsonHoliday->getArray();
-        }
-
-        return $holidays;
-    }
-
-    /**
-     * Returns the holidays of the calendar.
-     *
-     * @return array<string, array<int, array<int|string, mixed>>>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws FunctionReplaceException
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     */
-    public function getBirthdays(int $year, int $month): array
-    {
-        $path = ['birthdays'];
-
-        if (!$this->hasKey($path)) {
-            return [];
-        }
-
-        $data = [];
-
-        $dateMonth = sprintf('%02d', $month);
-
-        $birthdays = $this->getKeyArray($path);
-
-        foreach ($birthdays as $key => $birthday) {
-            if (is_array($birthday) && array_key_exists('date', $birthday)) {
-                $key = $birthday['date'];
-            }
-
-            if ($dateMonth !== date('m', (int) $key)) {
-                continue;
-            }
-
-            $dateYearMonthDay = sprintf('%d-', $year).date('m-d', (int) $key);
-
-            if (!array_key_exists($dateYearMonthDay, $data)) {
-                $data[$dateYearMonthDay] = [];
-            }
-
-            $dateYear = (int) date('Y', (int) $key);
-
-            if (is_string($birthday)) {
-                $birthday = [
-                    'name' => $birthday,
-                ];
-            }
-
-            if (!is_array($birthday)) {
-                throw new LogicException('Unable to get birthday.');
-            }
-
-            $jsonBirthday = (new Json($birthday))->setKeyMode(Json::KEY_MODE_UNDERLINE);
-
-            if (!$jsonBirthday->hasKey('name_short')) {
-                $jsonBirthday->addValue('name_short', $jsonBirthday->getKeyString('name'));
-            }
-
-            $jsonBirthday->addValue('date', $dateYearMonthDay);
-
-
-            $jsonBirthday->addValue('name', match (true) {
-                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($jsonBirthday->getKeyString('name')),
-                default => sprintf('%s (%d)', $this->getObfuscatedName($jsonBirthday->getKeyString('name')), $year - $dateYear),
-            });
-
-            $jsonBirthday->addValue('name_short', match (true) {
-                $dateYear === self::WITHOUT_YEAR => $this->getObfuscatedName($jsonBirthday->getKeyString('name_short')),
-                default => sprintf('%s (%d)', $this->getObfuscatedName($jsonBirthday->getKeyString('name_short')), $year - $dateYear),
-            });
-
-            $data[$dateYearMonthDay][] = $jsonBirthday->getArray();
-        }
-
-        ksort($data);
-
-        return $data;
-    }
-
-    /**
-     * Returns an obfuscated name.
-     *
-     * @param string $name
-     * @return string
-     */
-    private function getObfuscatedName(string $name): string
-    {
-        $name = str_replace('† ', '†', $name);
-
-        $parts = explode(' ', $name);
-
-        /* If the name consists of only one word, return it unchanged */
-        if (count($parts) == 1) {
-            return str_replace('†', '† ', $name);
-        }
-
-        $forename = array_shift($parts);
-
-        foreach ($parts as &$part) {
-            $part = $part[0].'.';
-        }
-
-        $obfuscatedName = implode(' ', [$forename, ...$parts]);
-
-        return str_replace('†', '† ', $obfuscatedName);
-    }
-
-    /**
-     * Returns the birthdays of the calendar from given pages.
-     *
-     * @param array<int, array<string|int, mixed>> $pages
-     * @return array<string, array<int, array<int|string, mixed>>>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws FunctionReplaceException
-     */
-    public function getBirthdaysFromPages(array $pages): array
-    {
-        $birthdays = [];
-
-        foreach ($pages as $page) {
-            $year = $this->getYearFromArray($page);
-            $month = $this->getMonthFromArray($page);
-            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
-        }
-
-        return $birthdays;
-    }
-
-    /**
-     * Returns the main calendar image for given identifier (calendar).
+     * Returns the photo set endpoint for given format.
      *
      * @param string $format
      * @return string
      */
-    public function getCalendarImageEndpoint(string $format = Image::FORMAT_JPG): string
+    public function getPhotoSetEndpoint(string $format = Format::HTML): string
     {
-        return sprintf(self::ENDPOINT_CALENDAR_IMAGE, $this->identifier, $format);
+        return sprintf(self::ENDPOINT_PHOTO_SET, $this->identifier, $format);
     }
 
     /**
-     * Returns the calendar endpoint for given format (calendar).
+     * Returns the photo set raw endpoint.
      *
-     * @param string $format
      * @return string
      */
-    public function getCalendarEndpoint(string $format = Format::HTML): string
+    public function getPhotoSetEndpointRaw(): string
     {
-        return sprintf(self::ENDPOINT_CALENDAR, $this->identifier, $format);
+        return sprintf(self::ENDPOINT_PHOTO_SET_RAW, $this->identifier);
     }
 
     /**
-     * Returns the calendar raw endpoint (calendar).
+     * Returns the absolute path to the photo set directory.
      *
      * @return string
      */
-    public function getCalendarEndpointRaw(): string
+    public function getPhotoSetPathAbsolute(): string
     {
-        return sprintf(self::ENDPOINT_CALENDAR_RAW, $this->identifier);
+        return sprintf(self::PATH_PHOTO_ABSOLUTE, $this->projectDir, $this->identifier);
     }
 
     /**
-     * Returns the absolute path to the calendar directory.
+     * Returns the relative path to the photo set directory.
      *
      * @return string
      */
-    public function getCalendarPathAbsolute(): string
+    public function getPhotoSetPathRelative(): string
     {
-        return sprintf(self::PATH_CALENDAR_ABSOLUTE, $this->projectDir, $this->identifier);
+        return sprintf(self::PATH_PHOTO_SET_RELATIVE, $this->identifier);
     }
 
     /**
-     * Returns the relative path to the calendar directory.
+     * Returns the absolute config path to the photo set directory.
      *
      * @return string
      */
-    public function getCalendarPathRelative(): string
-    {
-        return sprintf(self::PATH_CALENDAR_RELATIVE, $this->identifier);
-    }
-
-    /**
-     * Returns the absolute config path to the calendar directory.
-     *
-     * @return string
-     */
-    public function getCalendarConfigAbsolute(): string
+    public function getPhotoSetConfigAbsolute(): string
     {
         return sprintf(self::PATH_CONFIG_ABSOLUTE, $this->projectDir, $this->identifier);
     }
 
     /**
-     * Returns the relative config path to the calendar directory.
+     * Returns the relative config path to the photo set directory.
      *
      * @return string
      */
-    public function getCalendarConfigRelative(): string
+    public function getPhotoSetConfigRelative(): string
     {
         return sprintf(self::PATH_CONFIG_RELATIVE, $this->identifier);
     }
@@ -496,6 +277,7 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function isPublic(): bool
     {
@@ -529,75 +311,29 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getPages(): array|null
+    public function getPhotosForApi(string $format = Image::FORMAT_JPG): array|null
     {
-        $path = ['pages'];
+        $path = ['photos'];
 
         if (!$this->hasKey($path)) {
             return null;
         }
 
-        return $this->getKeyArrayJson($path);
-    }
+        $photos = [];
 
-    /**
-     * Returns the pages configs.
-     *
-     * @return Json[]|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getPagesForApi(string $format = Image::FORMAT_JPG): array|null
-    {
-        $path = ['pages'];
-
-        if (!$this->hasKey($path)) {
-            return null;
+        foreach ($this->getKeyArrayJson($path) as $photo) {
+            $photos[] = new Json($this->transformPhotoForApi($photo, $format));
         }
 
-        $pages = [];
-
-        foreach ($this->getKeyArrayJson($path) as $page) {
-            $pages[] = new Json($this->transformPageForApi($page, $format));
-        }
-
-        return $pages;
-    }
-
-    /**
-     * Returns the page config of given number.
-     *
-     * @param int $number
-     * @return Json|null
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    public function getPage(int $number): Json|null
-    {
-        $path = ['pages', (string) $number];
-
-        if (!$this->hasKey($path)) {
-            return null;
-        }
-
-        return $this->getKeyJson($path);
+        return $photos;
     }
 
     /**
      * Returns the page config of given number. Convert the properties for api response before.
      *
-     * @param int $number
+     * @param string $name
      * @param string $format
      * @return Json|null
      * @throws ArrayKeyNotFoundException
@@ -609,23 +345,23 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getPageForApi(int $number, string $format = Image::FORMAT_JPG): Json|null
+    public function getPhotoForApi(string $name, string $format = Image::FORMAT_JPG): Json|null
     {
-        $path = ['pages', (string) $number];
+        $path = ['photos', $name];
 
         if (!$this->hasKey($path)) {
             return null;
         }
 
-        $page = $this->getKeyJson($path);
+        $photo = $this->getKeyJson($path);
 
-        return $this->transformPageForApi($page, $format);
+        return $this->transformPhotoForApi($photo, $format);
     }
 
     /**
      * Returns the image config of given number. Convert the properties for api response before.
      *
-     * @param int $number
+     * @param string $name
      * @param string $format
      * @return Json|null
      * @throws ArrayKeyNotFoundException
@@ -639,19 +375,17 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getImageArray(int $number, string $format = Image::FORMAT_JPG): Json|null
+    public function getImageArray(string $name, string $format = Image::FORMAT_JPG): Json|null
     {
-        $page = $this->getPageForApi($number, $format);
+        $photo = $this->getPhotoForApi($name, $format);
 
-        if (is_null($page)) {
+        if (is_null($photo)) {
             return null;
         }
 
-        $image = $page->getArray();
+        $image = $photo->getArray();
 
         $imagePathAbsolute = $this->getImagePathAbsoluteFromSource($this->getSourceFromImageArray($image));
-        $year = $this->getYearFromArray($image);
-        $month = $this->getMonthFromArray($image);
 
         $colors = (new Color($imagePathAbsolute))->getMainColors();
 
@@ -659,15 +393,15 @@ class Config extends Json
         $image['coordinate_dms'] = $this->getCoordinateDms($image);
         $image['coordinate_decimal'] = $this->getCoordinateDecimal($image);
         $image['google_maps'] = $this->getGoogleMapsLink($image);
+        $image['year'] = $this->getYearFromArray($image);
+        $image['month'] = $this->getMonthFromArray($image);
+        $image['day'] = $this->getDayFromArray($image);
 
         $image = [
-            ...$this->getTitleAndSubtitleFromFirstPage(),
             ...$image,
             'identifier' => $this->identifier,
             'colors' => $colors,
             'color' => $colors[0],
-            'holidays' => $this->getHolidays($year, $month),
-            'birthdays' => $this->getBirthdays($year, $month),
         ];
 
         if (array_key_exists('url', $image)) {
@@ -678,9 +412,9 @@ class Config extends Json
     }
 
     /**
-     * Returns the image file for given number. If the source image does not exist, use the target image.
+     * Returns the image file for given name.
      *
-     * @param int $number
+     * @param string $name
      * @param string $imageType
      * @return File|string
      * @throws ArrayKeyNotFoundException
@@ -692,31 +426,21 @@ class Config extends Json
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getImageFile(int $number, string $imageType = CalendarStructure::IMAGE_TYPE_TARGET): File|string
+    public function getImageFile(string $name, string $imageType = CalendarStructure::IMAGE_TYPE_TARGET): File|string
     {
-        $configKeyPath = ['pages', (string) $number, $imageType];
+        $configKeyPath = ['photos', $name, $imageType];
 
         if (!$this->hasKey($configKeyPath)) {
-            return sprintf('Page with number "%d" does not exist', $number);
+            return sprintf('Photo with name "%s" does not exist', $name);
         }
 
         $target = $this->getKey($configKeyPath);
-
-        if (is_array($target)) {
-            $configKeyPath = ['pages', (string) $number, CalendarStructure::IMAGE_TYPE_TARGET];
-
-            if (!$this->hasKey($configKeyPath)) {
-                return sprintf('Page with number "%d" does not exist', $number);
-            }
-
-            $target = $this->getKey($configKeyPath);
-        }
 
         if (!is_string($target)) {
             return 'Returned value is not a string.';
         }
 
-        $imagePath = sprintf(CalendarBuilderService::PATH_IMAGE_RELATIVE, $this->identifier, $target);
+        $imagePath = sprintf(PhotoBuilderService::PATH_IMAGE_RELATIVE, $this->identifier, $target);
 
         $file = new File($imagePath, $this->projectDir);
 
@@ -728,7 +452,7 @@ class Config extends Json
     }
 
     /**
-     * Transform the given page container for api response.
+     * Transform the given photo container for api response.
      *
      * @param Json $page
      * @param string $format
@@ -739,42 +463,43 @@ class Config extends Json
      * @throws JsonException
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    private function transformPageForApi(Json $page, string $format = Image::FORMAT_JPG): Json
+    private function transformPhotoForApi(Json $page, string $format = Image::FORMAT_JPG): Json
     {
-        $pageArray = $page->getArray();
+        $photoArray = $page->getArray();
 
-        if (array_key_exists('page-title', $pageArray)) {
-            $pageArray['page_title'] = $pageArray['page-title'];
-            unset($pageArray['page-title']);
+        if (array_key_exists('photo-title', $photoArray)) {
+            $photoArray['photo_title'] = $photoArray['photo-title'];
+            unset($photoArray['photo-title']);
         }
 
-        if (array_key_exists('design', $pageArray)) {
-            unset($pageArray['design']);
+        if (array_key_exists('design', $photoArray)) {
+            unset($photoArray['design']);
         }
 
-        if (array_key_exists('source', $pageArray) && is_array($pageArray['source'])) {
-            unset($pageArray['source']);
+        if (array_key_exists('source', $photoArray) && is_array($photoArray['source'])) {
+            unset($photoArray['source']);
         }
 
         foreach (['title', 'subtitle'] as $key) {
-            if (array_key_exists($key, $pageArray)) {
-                if (!is_string($pageArray[$key]) && !is_int($pageArray[$key])) {
+            if (array_key_exists($key, $photoArray)) {
+                if (!is_string($photoArray[$key]) && !is_int($photoArray[$key])) {
                     throw new LogicException(sprintf('String expected for key "%s".', $key));
                 }
 
-                $pageArray[$key] = $this->stripString((string) $pageArray[$key]);
+                $photoArray[$key] = $this->stripString((string) $photoArray[$key]);
             }
         }
 
-        $month = $this->getMonthFromArray($pageArray);
+        $source = $this->getSourceFromArray($photoArray);
 
-        $pageArray = [
-            ...$pageArray,
-            'path' => sprintf(self::ENDPOINT_IMAGE, $this->identifier, $month, $format),
+        $photoArray = [
+            ...$photoArray,
+            'path' => sprintf(self::ENDPOINT_PHOTO, $this->identifier, $source),
         ];
 
-        return new Json($pageArray);
+        return new Json($photoArray);
     }
 
     /**
@@ -889,13 +614,14 @@ class Config extends Json
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     private function getConfig(): Json
     {
-        $pathCalendarAbsolute = sprintf(self::PATH_CALENDAR_ABSOLUTE, $this->projectDir, $this->identifier);
+        $pathPhotoAbsolute = sprintf(self::PATH_PHOTO_ABSOLUTE, $this->projectDir, $this->identifier);
 
-        if (!is_dir($pathCalendarAbsolute)) {
-            return new Json(['error' => sprintf('Calendar path "%s" does not exist', $pathCalendarAbsolute)]);
+        if (!is_dir($pathPhotoAbsolute)) {
+            return new Json(['error' => sprintf('Photo path "%s" does not exist', $pathPhotoAbsolute)]);
         }
 
         $configFileRelative = new File(sprintf(self::PATH_CONFIG_RELATIVE, $this->identifier), $this->projectDir);
@@ -930,32 +656,6 @@ class Config extends Json
         }
 
         return $string;
-    }
-
-    /**
-     * Returns the title and subtitle from the first page of the calendar.
-     *
-     * @return array{title?: string, subtitle?: string}
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     */
-    private function getTitleAndSubtitleFromFirstPage(): array
-    {
-        $firstPage = $this->getPage(0);
-
-        if (is_null($firstPage)) {
-            return [];
-        }
-
-        return [
-            'title' => $this->stripString($firstPage->getKeyString('title')),
-            'subtitle' => $this->stripString($firstPage->getKeyString('subtitle')),
-        ];
     }
 
     /**
@@ -1001,23 +701,64 @@ class Config extends Json
     }
 
     /**
-     * Returns the month from given image.
+     * Returns the month from given photo.
      *
-     * @param array<int|string, mixed> $image
+     * @param array<int|string, mixed> $photo
      * @return int
      */
-    private function getMonthFromArray(array $image): int
+    private function getMonthFromArray(array $photo): int
     {
-        if (!array_key_exists('month', $image)) {
-            throw new LogicException('Unable to determine the month of the image.');
+        if (!array_key_exists('month', $photo)) {
+            throw new LogicException('Unable to determine the month of the photo.');
         }
 
-        $month = $image['month'];
+        $month = $photo['month'];
 
         return match (true) {
             is_string($month) => (int) $month,
             is_int($month) => $month,
-            default => throw new LogicException('The month of the image is not an integer.'),
+            default => throw new LogicException('The month of the photo is not an integer.'),
+        };
+    }
+
+    /**
+     * Returns the day from given photo.
+     *
+     * @param array<int|string, mixed> $image
+     * @return int
+     */
+    private function getDayFromArray(array $image): int
+    {
+        if (!array_key_exists('day', $image)) {
+            throw new LogicException('Unable to determine the day of the photo.');
+        }
+
+        $day = $image['day'];
+
+        return match (true) {
+            is_string($day) => (int) $day,
+            is_int($day) => $day,
+            default => throw new LogicException('The day of the photo is not an integer.'),
+        };
+    }
+
+    /**
+     * Returns the source from given photo.
+     *
+     * @param array<int|string, mixed> $photo
+     * @return string
+     */
+    private function getSourceFromArray(array $photo): string
+    {
+        if (!array_key_exists('source', $photo)) {
+            throw new LogicException('Unable to determine the source of the photo.');
+        }
+
+        $source = $photo['source'];
+
+        return match (true) {
+            is_string($source) => $source,
+            default => throw new LogicException('The source of the photo is not a string.'),
         };
     }
 

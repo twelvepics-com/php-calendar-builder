@@ -31,4 +31,5 @@ phpstan.neon
 
 ###> own ###
 /data/calendar
+/data/photo
 ###< own ###
