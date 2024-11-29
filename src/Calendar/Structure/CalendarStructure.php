@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace App\Calendar\Structure;
 
 use App\Cache\RedisCache;
-use App\Calendar\Config\Config;
+use App\Calendar\Config\CalendarConfig;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use Ixnode\PhpContainer\File;
@@ -145,7 +145,7 @@ class CalendarStructure
         $calendars = [];
 
         foreach ($this->getIdentifiers() as $identifier) {
-            $config = new Config($identifier, $this->appKernel->getProjectDir());
+            $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
 
             if ($config->hasError()) {
                 throw new LogicException((string) $config->getError());
@@ -202,7 +202,7 @@ class CalendarStructure
      */
     public function getCalendar(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return null;
@@ -243,7 +243,7 @@ class CalendarStructure
      */
     public function getPages(string $identifier, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return null;
@@ -278,7 +278,7 @@ class CalendarStructure
      */
     public function getImage(string $identifier, int $number, string $format = Image::FORMAT_JPG): array|null
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return null;
@@ -319,7 +319,7 @@ class CalendarStructure
         string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
     ): File|string
     {
-        $config = new Config($identifier, $this->appKernel->getProjectDir());
+        $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
 
         if ($config->hasError()) {
             return (string) $config->getError();

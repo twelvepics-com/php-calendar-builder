@@ -36,7 +36,7 @@ use LogicException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Class Config
+ * Class CalendarConfig
  *
  * The class for calendar configuration
  *
@@ -45,7 +45,7 @@ use Symfony\Component\Yaml\Yaml;
  * @since 0.1.0 (2023-12-18) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class Config extends BaseConfig
+class CalendarConfig extends BaseConfig
 {
     final public const CONFIG_FILENAME = 'config.yml';
 
