@@ -13,16 +13,15 @@ declare(strict_types=1);
 
 namespace App\Calendar\Config;
 
+use App\Calendar\Config\Base\BaseConfig;
 use App\Calendar\Structure\CalendarStructure;
 use App\Constants\Format;
 use App\Constants\Service\Photo\PhotoBuilderService;
 use App\Objects\Color\Color;
-use App\Objects\Exif\ExifCoordinate;
 use DateTimeImmutable;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
-use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
@@ -46,7 +45,7 @@ use Symfony\Component\Yaml\Yaml;
  * @since 0.1.0 (2024-11-28) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class PhotoConfig extends Json
+class PhotoConfig extends BaseConfig
 {
     final public const CONFIG_FILENAME = 'config.yml';
 
@@ -503,109 +502,6 @@ class PhotoConfig extends Json
     }
 
     /**
-     * Returns the google maps link from given image.
-     *
-     * @param string $imagePath
-     * @param array<int|string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getTranslatedCoordinate(string $imagePath, array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (is_string($coordinate) && $coordinate !== 'auto') {
-            return $coordinate;
-        }
-
-        $coordinate = (new ExifCoordinate($imagePath))->getCoordinate();
-
-        if (is_null($coordinate)) {
-            return null;
-        }
-
-        return sprintf('%s, %s', $coordinate->getLatitude(), $coordinate->getLongitude());
-    }
-
-    /**
-     * Returns coordinate dms string.
-     *
-     * @param array<int|string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getCoordinateDms(array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (!is_string($coordinate) || $coordinate === 'auto') {
-            return null;
-        }
-
-        $coordinate = (new Coordinate($coordinate));
-
-        return sprintf('%s, %s', $coordinate->getLatitudeDMS(), $coordinate->getLongitudeDMS());
-    }
-
-    /**
-     * Returns coordinate decimal string.
-     *
-     * @param array<int|string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getCoordinateDecimal(array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (!is_string($coordinate) || $coordinate === 'auto') {
-            return null;
-        }
-
-        $coordinate = (new Coordinate($coordinate));
-
-        return sprintf('%s, %s', $coordinate->getLatitudeDecimal(), $coordinate->getLongitudeDecimal());
-    }
-
-    /**
-     * Returns the google maps link from given image.
-     *
-     * @param array<int|string, mixed> $image
-     * @return string|null
-     * @throws CaseUnsupportedException
-     * @throws ParserException
-     */
-    private function getGoogleMapsLink(array $image): string|null
-    {
-        if (!array_key_exists('coordinate', $image)) {
-            return null;
-        }
-
-        $coordinate = $image['coordinate'];
-
-        if (is_string($coordinate) && $coordinate !== 'auto') {
-            return (new Coordinate($coordinate))->getLinkGoogle();
-        }
-
-        return null;
-    }
-
-    /**
      * Reads the configuration file.
      *
      * @return Json
@@ -637,25 +533,6 @@ class PhotoConfig extends Json
         }
 
         return new Json($configArray);
-    }
-
-    /**
-     * Strip the given string.
-     *
-     * @param string $string
-     * @return string
-     */
-    private function stripString(string $string): string
-    {
-        $string = strip_tags($string);
-
-        $string = preg_replace('~ +~', ' ', $string);
-
-        if (!is_string($string)) {
-            throw new LogicException('Unable to replace subtitle string.');
-        }
-
-        return $string;
     }
 
     /**
