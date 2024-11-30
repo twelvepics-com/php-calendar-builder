@@ -353,7 +353,7 @@ class PhotoStructure
     {
         /* Disabled cache. */
         if (is_null($this->redisCache)) {
-            $image = new Image($file);
+            $image = new Image($file, ignoreOrientation: true);
 
             return $image->getImageString($width, $format, $quality);
         }
@@ -384,7 +384,7 @@ class PhotoStructure
         return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
             $item->expiresAfter(RedisCache::REDIS_ITEM_DEFAULT_LIFETIME);
 
-            $image = new Image($file);
+            $image = new Image($file, ignoreOrientation: true);
 
             if (!$image->isImage()) {
                 return null;

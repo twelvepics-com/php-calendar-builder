@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5a51979d3c6f4a6e1b1d2067deda887c",
+    "content-hash": "5baa4cb8c20fb7a1cbcf020e4c0e82c9",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2136,20 +2136,21 @@
         },
         {
             "name": "ixnode/php-container",
-            "version": "0.1.21",
+            "version": "0.1.24",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-container.git",
-                "reference": "382122ac9d53934ea567079f1138f9db8e373c99"
+                "reference": "86f3b13716367eb40c454799612f69040849049e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-container/zipball/382122ac9d53934ea567079f1138f9db8e373c99",
-                "reference": "382122ac9d53934ea567079f1138f9db8e373c99",
+                "url": "https://api.github.com/repos/ixnode/php-container/zipball/86f3b13716367eb40c454799612f69040849049e",
+                "reference": "86f3b13716367eb40c454799612f69040849049e",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
+                "ext-exif": "*",
                 "ext-gd": "*",
                 "ixnode/php-checker": "^0.1.8",
                 "ixnode/php-exception": "^0.1.19",
@@ -2196,9 +2197,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-container/issues",
-                "source": "https://github.com/ixnode/php-container/tree/0.1.21"
+                "source": "https://github.com/ixnode/php-container/tree/0.1.24"
             },
-            "time": "2023-12-29T14:28:43+00:00"
+            "time": "2024-11-30T16:40:32+00:00"
         },
         {
             "name": "ixnode/php-coordinate",
@@ -11077,7 +11078,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
@@ -11088,6 +11089,6 @@
         "ext-iconv": "*",
         "ext-redis": "*"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
 }
