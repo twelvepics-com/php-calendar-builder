@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
-### [0.1.22] - 2024-03-10
+### [0.1.23] - 2024-03-30
+
+* Add first version of photo set functionality (e.g. christmas calendar)
+  * Add photo display function including end point
+  * Fix version within docker setup
+  * Fix README.md manual
+  * Add photo identifier to api endpoint
+  * Add photo set overview css styles
+  * Refactoring
+
+### [0.1.22] - 2024-11-27
 
 * Disable redis cache for cli commands
 
