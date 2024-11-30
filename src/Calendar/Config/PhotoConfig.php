@@ -322,8 +322,12 @@ class PhotoConfig extends BaseConfig
 
         $photos = [];
 
-        foreach ($this->getKeyArrayJson($path) as $photo) {
-            $photos[] = new Json($this->transformPhotoForApi($photo, $format));
+        foreach ($this->getKeyArrayJson($path) as $identifier => $photo) {
+            $photos[] = new Json($this->transformPhotoForApi(
+                photo: $photo,
+                identifier: (string) $identifier,
+                format: $format
+            ));
         }
 
         return $photos;
@@ -333,6 +337,7 @@ class PhotoConfig extends BaseConfig
      * Returns the page config of given number. Convert the properties for api response before.
      *
      * @param string $name
+     * @param string $identifier
      * @param string $format
      * @return Json|null
      * @throws ArrayKeyNotFoundException
@@ -340,11 +345,11 @@ class PhotoConfig extends BaseConfig
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      */
-    public function getPhotoForApi(string $name, string $format = Image::FORMAT_JPG): Json|null
+    public function getPhotoForApi(string $name, string $identifier, string $format = Image::FORMAT_JPG): Json|null
     {
         $path = ['photos', $name];
 
@@ -354,13 +359,18 @@ class PhotoConfig extends BaseConfig
 
         $photo = $this->getKeyJson($path);
 
-        return $this->transformPhotoForApi($photo, $format);
+        return $this->transformPhotoForApi(
+            photo: $photo,
+            identifier: $identifier,
+            format: $format
+        );
     }
 
     /**
      * Returns the image config of given number. Convert the properties for api response before.
      *
      * @param string $name
+     * @param string $identifier
      * @param string $format
      * @return Json|null
      * @throws ArrayKeyNotFoundException
@@ -369,14 +379,18 @@ class PhotoConfig extends BaseConfig
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws ParserException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      */
-    public function getImageArray(string $name, string $format = Image::FORMAT_JPG): Json|null
+    public function getImageArray(string $name, string $identifier, string $format = Image::FORMAT_JPG): Json|null
     {
-        $photo = $this->getPhotoForApi($name, $format);
+        $photo = $this->getPhotoForApi(
+            name: $name,
+            identifier: $identifier,
+            format: $format
+        );
 
         if (is_null($photo)) {
             return null;
@@ -453,20 +467,23 @@ class PhotoConfig extends BaseConfig
     /**
      * Transform the given photo container for api response.
      *
-     * @param Json $page
+     * @param Json $photo
+     * @param string $identifier
      * @param string $format
      * @return Json
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    private function transformPhotoForApi(Json $page, string $format = Image::FORMAT_JPG): Json
+    private function transformPhotoForApi(Json $photo, string $identifier, string $format = Image::FORMAT_JPG): Json
     {
-        $photoArray = $page->getArray();
+        $photoArray = $photo->getArray();
+
+        $photoArray['identifier'] = $identifier;
 
         if (array_key_exists('photo-title', $photoArray)) {
             $photoArray['photo_title'] = $photoArray['photo-title'];

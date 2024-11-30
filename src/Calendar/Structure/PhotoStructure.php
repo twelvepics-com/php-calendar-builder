@@ -277,7 +277,11 @@ class PhotoStructure
             return null;
         }
 
-        $image = $config->getImageArray($name, $format);
+        $image = $config->getImageArray(
+            name: $name,
+            identifier: $identifier,
+            format: $format
+        );
 
         if (is_null($image)) {
             return null;
