@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
-### [0.1.23] - 2024-03-30
+### [0.1.24] - 2024-11-30
+
+* Add ignore orientation flag to Image class
+
+### [0.1.23] - 2024-11-30
 
 * Add first version of photo set functionality (e.g. christmas calendar)
   * Add photo display function including end point
