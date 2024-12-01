@@ -66,7 +66,11 @@ class CalendarBuilderService
 
     final public const IMAGE_JPEG = 'jpeg';
 
-    final public const DEFAULT_QR_CODE_VERSION = 5;
+    final public const QR_CODE_VERSION_5 = 5;
+
+    final public const QR_CODE_VERSION_6 = 6;
+
+    final public const QR_CODE_VERSION_DEFAULT = self::QR_CODE_VERSION_5;
 
     final public const ERROR_BACKGROUND_COLOR = [47, 141, 171];
 

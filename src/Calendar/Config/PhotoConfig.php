@@ -205,6 +205,30 @@ class PhotoConfig extends BaseConfig
     }
 
     /**
+     * Returns the photos.
+     *
+     * @return array<int|string, mixed>|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getPhotos(): array|null
+    {
+        $path = ['photos'];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        return $this->getKeyArray($path);
+    }
+
+    /**
      * Returns the photo set endpoint for given format.
      *
      * @param string $format

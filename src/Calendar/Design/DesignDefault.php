@@ -133,7 +133,7 @@ class DesignDefault extends DesignBase
         $this->positionDays = [];
 
         /* Set qr code version */
-        $this->qrCodeVersion = CalendarBuilderServiceConstants::DEFAULT_QR_CODE_VERSION;
+        $this->qrCodeVersion = CalendarBuilderServiceConstants::QR_CODE_VERSION_DEFAULT;
 
         /* Calculate sizes */
         $this->fontSizeTitle = $this->imageBuilder->getSize($this->fontSizeTitle);
