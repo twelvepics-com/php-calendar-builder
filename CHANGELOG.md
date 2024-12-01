@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.25] - 2024-12-01
+
+* Add photo set qr builder command
+
 ### [0.1.24] - 2024-11-30
 
 * Add ignore orientation flag to Image class
