@@ -22,6 +22,15 @@ use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QRCodeException;
 use chillerlan\QRCode\QROptions;
 use Exception;
+use GdImage;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
+use JsonException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -58,6 +67,23 @@ class QrCodeCommand extends Command
     final public const COMMAND_DESCRIPTION = 'Creates qr codes from given photo set';
 
     private const NAME_ARGUMENT_PHOTO_SET_IDENTIFIER = 'identifier';
+
+    private const PATH_PHOTO = 'data/photo';
+
+    private const PATH_QR_CARDS = 'cards';
+
+    private const PATH_QR_CODES = 'qr-codes';
+
+    private const TEMPLATE_QR_PAGE = '%s/page%d.png';
+
+    private const PATH_CARDS_QR_CODES = self::PATH_QR_CARDS.'/'.self::PATH_QR_CODES;
+
+    private OutputInterface $output;
+
+    private string|null $pathQrCodeOverview = null;
+
+    /** @var string[] $pathsQrCodePhotos */
+    private array $pathsQrCodePhotos = [];
 
     public function __construct(
         protected readonly KernelInterface $appKernel,
@@ -201,6 +227,302 @@ EOT
     }
 
     /**
+     * Build overview qr code
+     *
+     * @param string $identifier
+     * @return void
+     * @throws QRCodeDataException
+     * @throws QRCodeException
+     * @throws QRCodeOutputException
+     * @throws FileNotFoundException
+     */
+    private function buildQrCodeOverview(string $identifier): void
+    {
+        $pathQrCodes = $this->getPathQrCodes($identifier);
+
+        /* Build overview qr code. */
+        $this->pathQrCodeOverview = sprintf('%s/%s.png', $pathQrCodes, '0');
+        $this->buildQrCode(
+            path: $this->pathQrCodeOverview,
+            text: '+',
+            identifier: $identifier,
+        );
+
+        $this->output->writeln(
+            sprintf('Overview QR Code written to "%s".', $this->pathQrCodeOverview)
+        );
+    }
+
+    /**
+     * Returns the path of QR Codes.
+     *
+     * @throws FileNotFoundException
+     */
+    private function getPathQrCodes(string $identifier): string
+    {
+        $pathQrCodes = sprintf(
+            '%s/%s/%s/%s',
+            $this->appKernel->getProjectDir(),
+            self::PATH_PHOTO,
+            $identifier,
+            self::PATH_CARDS_QR_CODES
+        );
+
+        if (!file_exists($pathQrCodes)) {
+            mkdir($pathQrCodes, 0775, true);
+        }
+
+        if (!file_exists($pathQrCodes)) {
+            throw new FileNotFoundException($pathQrCodes);
+        }
+
+        return $pathQrCodes;
+    }
+
+    /**
+     * Returns the path of qr cards.
+     *
+     * @throws FileNotFoundException
+     */
+    private function getPathQrCards(string $identifier): string
+    {
+        $pathQrCards = sprintf(
+            '%s/%s/%s/%s',
+            $this->appKernel->getProjectDir(),
+            self::PATH_PHOTO,
+            $identifier,
+            self::PATH_QR_CARDS
+        );
+
+        if (!file_exists($pathQrCards)) {
+            mkdir($pathQrCards, 0775, true);
+        }
+
+        if (!file_exists($pathQrCards)) {
+            throw new FileNotFoundException($pathQrCards);
+        }
+
+        return $pathQrCards;
+    }
+
+    /**
+     * Build photo QR Codes
+     *
+     * @param string $identifier
+     * @return void
+     * @throws QRCodeDataException
+     * @throws QRCodeException
+     * @throws QRCodeOutputException
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     */
+    private function buildQrCodes(string $identifier): void
+    {
+        /* Get photo config. */
+        $photoConfig = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
+
+        $photos = $photoConfig->getPhotos();
+
+        $this->pathsQrCodePhotos = [];
+
+        /* No photos were found. */
+        if (is_null($photos)) {
+            return;
+        }
+
+        $pathQrCodes = $this->getPathQrCodes($identifier);
+
+        /* Build day QR Codes. */
+        foreach ($photos as $photoIdentifier => $photo) {
+            if (!is_array($photo)) {
+                throw new QRCodeException();
+            }
+
+            if (!array_key_exists('day', $photo)) {
+                throw new QRCodeException();
+            }
+
+            $pathImageQrCode = sprintf('%s/%s.png', $pathQrCodes, $photo['day']);
+
+            $this->buildQrCode(
+                path: $pathImageQrCode,
+                text: (string) $photo['day'],
+                identifier: $identifier,
+                photoIdentifier: (string) $photoIdentifier,
+            );
+
+            $this->pathsQrCodePhotos[] = $pathImageQrCode;
+
+            $this->output->writeln(
+                sprintf('QR Code "%d" written to "%s".', $photo['day'], $pathImageQrCode)
+            );
+        }
+    }
+
+    /**
+     * Add given file to QR page.
+     *
+     * @throws QRCodeException
+     */
+    private function addQrCodeToPage(string $file, GdImage $imagePage, int $posX, int $posY, int $width, int $height): void
+    {
+        /* Load the QR Code */
+        $imageQrCode = imagecreatefrompng($file);
+
+        if (!$imageQrCode instanceof GdImage) {
+            throw new QRCodeException();
+        }
+
+        /* Resize and place the QR Code. */
+        imagecopyresampled(
+            $imagePage,
+            $imageQrCode,
+            $posX,
+            $posY,
+            0,
+            0,
+            $width,
+            $height,
+            imagesx($imageQrCode),
+            imagesy($imageQrCode)
+        );
+        imagedestroy($imageQrCode); /* Free memory for the current QR Code. */
+    }
+
+    /**
+     * Create QR Page.
+     *
+     * @param string[] $pageFiles
+     * @throws QRCodeException
+     */
+    private function createQrPage(
+        int $pageWidth,
+        int $pageHeight,
+        array $pageFiles,
+        int $borderX,
+        int $borderY,
+        int $qrCodeTargetWidth,
+        int $qrCodeTargetHeight,
+        string $pathQrPage
+    ): void
+    {
+        /* Create image. */
+        $imagePage = imagecreatetruecolor($pageWidth, $pageHeight);
+
+        if (!$imagePage instanceof GdImage) {
+            throw new QRCodeException();
+        }
+
+        $backgroundColor = imagecolorallocate($imagePage, 255, 255, 255);
+
+        if (!is_int($backgroundColor)) {
+            throw new QRCodeException();
+        }
+
+        imagefill($imagePage, 0, 0, $backgroundColor);
+
+        foreach ($pageFiles as $index => $file) {
+            $col = $index % 3;
+            $row = floor($index / 3);
+
+            /* Calculate x and y positions. */
+            $posX = (int) ($col * $qrCodeTargetWidth) + $borderX;
+            $posY = (int) ($row * $qrCodeTargetHeight) + $borderY;
+
+            /* Add QR Code to QR page. */
+            $this->addQrCodeToPage(
+                file: $file,
+                imagePage: $imagePage,
+                posX: $posX,
+                posY: $posY,
+                width: $qrCodeTargetWidth,
+                height: $qrCodeTargetHeight,
+            );
+        }
+
+        /* Save the page. */
+        imagepng($imagePage, $pathQrPage);
+        imagedestroy($imagePage);
+
+        $this->output->writeln(
+            sprintf('QR Code Card successfully generated and saved in "%s".', $pathQrPage)
+        );
+    }
+
+    /**
+     * Builds qr cards.
+     *
+     * @throws FileNotFoundException
+     * @throws QRCodeException
+     */
+    private function buildQrCards(string $identifier): void
+    {
+        /* Define border. */
+        $borderX = 75;
+        $borderY = 75;
+
+        /* Define page dimensions (15cm x 10cm at 300 DPI = 1772x1181 pixels). */
+        $pageWidth = 1772;
+        $pageHeight = 1181;
+        $pageWidthInner = $pageWidth - 2 * $borderX;
+        $pageHeightInner = $pageHeight - 2 * $borderY;
+
+        /* Define QR Code size and margins. */
+        $qrCodeTargetWidth = (int) floor($pageWidthInner / 3);
+        $qrCodeTargetHeight = (int) floor($pageHeightInner / 2);
+
+        /* Define source QR code files. */
+        $pathQrCards = $this->getPathQrCards($identifier);
+
+        /* Get QR Code paths. */
+        $files = array_map(fn($qrCode) => sprintf('%s/%s/%s.png', $pathQrCards, self::PATH_QR_CODES, $qrCode), range(0, 24));
+
+        /* Page for the first QR Code (file 0). */
+        $pathQrPage = sprintf(self::TEMPLATE_QR_PAGE, $pathQrCards, 0);
+
+        /* Create QR Page. */
+        $this->createQrPage(
+            pageWidth: $pageWidth,
+            pageHeight: $pageHeight,
+            pageFiles: [$files[0]],
+            borderX: $borderX,
+            borderY: $borderY,
+            qrCodeTargetWidth: $qrCodeTargetWidth,
+            qrCodeTargetHeight: $qrCodeTargetHeight,
+            pathQrPage: $pathQrPage,
+        );
+
+        /* Process pages for the remaining QR Codes (1-24) */
+        $pages = array_chunk(array_slice($files, 1), 6); // 6 QR codes per page (3x2 layout)
+        foreach ($pages as $pageIndex => $pageFiles) {
+            /* Page for the first QR code (file index). */
+            $pathQrPage = sprintf(self::TEMPLATE_QR_PAGE, $pathQrCards, $pageIndex + 1);
+
+            /* Create QR Page. */
+            $this->createQrPage(
+                pageWidth: $pageWidth,
+                pageHeight: $pageHeight,
+                pageFiles: $pageFiles,
+                borderX: $borderX,
+                borderY: $borderY,
+                qrCodeTargetWidth: $qrCodeTargetWidth,
+                qrCodeTargetHeight: $qrCodeTargetHeight,
+                pathQrPage: $pathQrPage,
+            );
+        }
+
+        $this->output->writeln(
+            sprintf('%d QR Code cards were successfully generated and saved in "%s".', count($pages) + 1, $pathQrCards)
+        );
+    }
+
+    /**
      * Execute the commands.
      *
      * @param InputInterface $input
@@ -211,6 +533,8 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->output = $output;
+
         $identifier = $input->getArgument(self::NAME_ARGUMENT_PHOTO_SET_IDENTIFIER);
 
         if (!is_string($identifier)) {
@@ -218,43 +542,15 @@ EOT
             return Command::INVALID;
         }
 
-        /* Build overview qr code. */
-        $qrCodePath = sprintf('%s/%s/%s/%s.png', $this->appKernel->getProjectDir(), 'data/photo', $identifier, '0');
-        $this->buildQrCode(
-            path: $qrCodePath,
-            text: '+',
-            identifier: $identifier,
-        );
+        $this->buildQrCodeOverview($identifier);
+        $this->buildQrCodes($identifier);
 
-        /* Get photo config. */
-        $photoConfig = new PhotoConfig($identifier, $this->appKernel->getProjectDir());
-
-        $photos = $photoConfig->getPhotos();
-
-        /* No photos were found. */
-        if (is_null($photos)) {
+        if ($this->pathsQrCodePhotos === []) {
+            $output->writeln('Unable to build photo QR Codes.');
             return Command::FAILURE;
         }
 
-        /* Build day qr codes. */
-        foreach ($photos as $photoIdentifier => $photo) {
-            if (!is_array($photo)) {
-                throw new QRCodeException();
-            }
-
-            if (!array_key_exists('day', $photo)) {
-                throw new QRCodeException();
-            }
-
-            $qrCodePath = sprintf('%s/%s/%s/%s.png', $this->appKernel->getProjectDir(), 'data/photo', $identifier, $photo['day']);
-
-            $this->buildQrCode(
-                path: $qrCodePath,
-                text: (string) $photo['day'],
-                identifier: $identifier,
-                photoIdentifier: (string) $photoIdentifier,
-            );
-        }
+        $this->buildQrCards($identifier);
 
         return Command::SUCCESS;
     }
