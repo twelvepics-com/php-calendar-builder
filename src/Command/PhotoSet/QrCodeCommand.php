@@ -542,6 +542,7 @@ EOT
             return Command::INVALID;
         }
 
+        /* Write QR Codes. */
         $this->buildQrCodeOverview($identifier);
         $this->buildQrCodes($identifier);
 
@@ -550,6 +551,11 @@ EOT
             return Command::FAILURE;
         }
 
+        $this->output->writeln(
+            'All QR Codes written'
+        );
+
+        /* Write QR Code Cards. */
         $this->buildQrCards($identifier);
 
         return Command::SUCCESS;
