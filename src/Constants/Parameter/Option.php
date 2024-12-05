@@ -58,4 +58,7 @@ class Option
 
     /* New calendar */
     final public const CALENDAR_TYPE = 'calendar-type';
+
+    /* Holiday options */
+    final public const LOCALE = 'locale';
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5baa4cb8c20fb7a1cbcf020e4c0e82c9",
+    "content-hash": "b7eb70d82378fdb30e765d4aa4c0fbdf",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2451,6 +2451,77 @@
             "time": "2022-12-19T02:56:03+00:00"
         },
         {
+            "name": "ixnode/php-public-holiday",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ixnode/php-public-holiday.git",
+                "reference": "b2ec0d14e4ae389f44fba617775eb703ef09ad3c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ixnode/php-public-holiday/zipball/b2ec0d14e4ae389f44fba617775eb703ef09ad3c",
+                "reference": "b2ec0d14e4ae389f44fba617775eb703ef09ad3c",
+                "shasum": ""
+            },
+            "require": {
+                "adhocore/cli": "^v1.0.0",
+                "ext-calendar": "*",
+                "ixnode/php-timezone": "^0.1.25",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.13",
+                "ixnode/bash-version-manager": "^0.1.3",
+                "jetbrains/phpstorm-attributes": "^1.0",
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.9",
+                "phpunit/phpunit": "^9.5",
+                "povils/phpmnd": "^3.0",
+                "rector/rector": "^0.15.1"
+            },
+            "bin": [
+                "bin/php-public-holiday"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Ixnode\\PhpPublicHoliday\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Björn Hempel",
+                    "email": "bjoern@hempel.li",
+                    "homepage": "https://www.hempel.li/"
+                }
+            ],
+            "description": "This PHP package automatically generates holidays for a given year, considering both federal states and the country. It provides an easy-to-use interface to retrieve public holidays based on specific regions, ensuring accurate and up-to-date holiday information for all supported areas.",
+            "keywords": [
+                "calendar",
+                "country holiday",
+                "date",
+                "federal state holiday",
+                "holiday",
+                "holiday api",
+                "holiday data",
+                "holiday generator",
+                "php",
+                "public holiday",
+                "regional holiday",
+                "statutory holiday"
+            ],
+            "support": {
+                "issues": "https://github.com/ixnode/php-public-holiday/issues",
+                "source": "https://github.com/ixnode/php-public-holiday/tree/1.0.2"
+            },
+            "time": "2024-12-05T22:47:33+00:00"
+        },
+        {
             "name": "ixnode/php-size-byte",
             "version": "0.1.2",
             "source": {
@@ -2507,6 +2578,65 @@
                 "source": "https://github.com/ixnode/php-size-byte/tree/0.1.2"
             },
             "time": "2022-12-19T02:42:39+00:00"
+        },
+        {
+            "name": "ixnode/php-timezone",
+            "version": "0.1.25",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ixnode/php-timezone.git",
+                "reference": "7ced5b96cf056521e1aaa2161a0c5aff2c73aab2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ixnode/php-timezone/zipball/7ced5b96cf056521e1aaa2161a0c5aff2c73aab2",
+                "reference": "7ced5b96cf056521e1aaa2161a0c5aff2c73aab2",
+                "shasum": ""
+            },
+            "require": {
+                "ixnode/php-naming-conventions": "^0.1.1",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.13",
+                "ixnode/bash-version-manager": "^0.1.3",
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.9",
+                "phpunit/phpunit": "^9.5",
+                "povils/phpmnd": "^3.0",
+                "rector/rector": "^0.15.1"
+            },
+            "bin": [
+                "bin/php-timezone"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Ixnode\\PhpTimezone\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Björn Hempel",
+                    "email": "bjoern@hempel.li",
+                    "homepage": "https://www.hempel.li/"
+                }
+            ],
+            "description": "PHP Timezone - This library converts different timezone strings.",
+            "keywords": [
+                "conversion",
+                "php",
+                "timezone"
+            ],
+            "support": {
+                "issues": "https://github.com/ixnode/php-timezone/issues",
+                "source": "https://github.com/ixnode/php-timezone/tree/0.1.25"
+            },
+            "time": "2024-11-23T11:13:38+00:00"
         },
         {
             "name": "monolog/monolog",

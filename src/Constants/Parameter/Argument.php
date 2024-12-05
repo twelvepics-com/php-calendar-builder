@@ -22,9 +22,15 @@ namespace App\Constants\Parameter;
  */
 class Argument
 {
+    final public const CALENDAR = 'calendar';
+
     final public const CONFIG = 'config';
 
     final public const SOURCE = 'source';
 
     final public const TARGET = 'target';
+
+    /* Holiday arguments */
+    final public const COUNTRY = 'country';
+    final public const STATE = 'state';
 }

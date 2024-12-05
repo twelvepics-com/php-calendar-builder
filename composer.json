@@ -27,6 +27,7 @@
         "ixnode/php-container": "^0.1.24",
         "ixnode/php-coordinate": "*",
         "ixnode/php-exception": "^0.1.17",
+        "ixnode/php-public-holiday": "^1.0",
         "ixnode/php-size-byte": "^0.1.2",
         "symfony/cache": "6.3.*",
         "symfony/flex": "^2.4",
