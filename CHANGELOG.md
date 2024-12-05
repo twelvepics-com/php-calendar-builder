@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.26] - 2024-12-06
+
+* Add bin/console calendar:holiday command to add public holidays to calendar config
+* Add ErrorFileNotExists error class
+* Change calendar base date to string
+
 ### [0.1.25] - 2024-12-01
 
 * Add photo set qr builder command
