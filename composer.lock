@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d62358f0d441cc178c0c5bb3efe967dd",
+    "content-hash": "544feda801fcf8885d1d01e1df255f12",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2299,16 +2299,16 @@
         },
         {
             "name": "ixnode/php-gpx-reader",
-            "version": "0.1.1",
+            "version": "0.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-gpx-reader.git",
-                "reference": "6b3a92169b99c6faf95c78e705c242a918f7b9a9"
+                "reference": "cc543192a0d0f9ded0a8c0bc14904b723bc11307"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-gpx-reader/zipball/6b3a92169b99c6faf95c78e705c242a918f7b9a9",
-                "reference": "6b3a92169b99c6faf95c78e705c242a918f7b9a9",
+                "url": "https://api.github.com/repos/ixnode/php-gpx-reader/zipball/cc543192a0d0f9ded0a8c0bc14904b723bc11307",
+                "reference": "cc543192a0d0f9ded0a8c0bc14904b723bc11307",
                 "shasum": ""
             },
             "require": {
@@ -2320,7 +2320,7 @@
                 "ixnode/php-date-parser": "^1.0",
                 "ixnode/php-exception": "^0.1",
                 "ixnode/php-timezone": "^0.1.25",
-                "php": "^8.3"
+                "php": "^8.2"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.13",
@@ -2364,9 +2364,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-gpx-reader/issues",
-                "source": "https://github.com/ixnode/php-gpx-reader/tree/0.1.1"
+                "source": "https://github.com/ixnode/php-gpx-reader/tree/0.1.2"
             },
-            "time": "2024-12-07T18:41:12+00:00"
+            "time": "2024-12-07T23:03:59+00:00"
         },
         {
             "name": "ixnode/php-json-schema-validator",

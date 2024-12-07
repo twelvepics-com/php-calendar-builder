@@ -28,7 +28,7 @@
         "ixnode/php-container": "1.0.2",
         "ixnode/php-coordinate": "^1.0",
         "ixnode/php-exception": "^0.1.21",
-        "ixnode/php-gpx-reader": "^0.1.1",
+        "ixnode/php-gpx-reader": "^0.1.2",
         "ixnode/php-public-holiday": "^1.0",
         "ixnode/php-size-byte": "^0.1.2",
         "symfony/cache": "7.1.*",
