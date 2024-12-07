@@ -17,6 +17,7 @@ use App\Objects\Image\Image;
 use App\Objects\Image\ImageHolder;
 use App\Objects\Parameter\Base\BaseParameter;
 use DateTimeImmutable;
+use ImagickException;
 use Ixnode\PhpCliImage\CliImage;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
@@ -135,6 +136,23 @@ class Source extends BaseParameter
     }
 
     /**
+     * Get DateTimeImmutable object from given date.
+     */
+    private function getDateTimeImmutable(int|string $date): DateTimeImmutable
+    {
+        $dateTimeImmutable = match (true) {
+            ctype_digit((string) $date) => DateTimeImmutable::createFromFormat('U', (string) $date),
+            default => DateTimeImmutable::createFromFormat('Y-m-d', (string) $date)
+        };
+
+        if (!$dateTimeImmutable instanceof DateTimeImmutable) {
+            throw new LogicException(sprintf('Unable to parse DateTimeImmutable value: %s', $date));
+        }
+
+        return $dateTimeImmutable;
+    }
+
+    /**
      * Reads all holidays.
      *
      * @return void
@@ -154,11 +172,8 @@ class Source extends BaseParameter
             $holidays = $this->getConfig()->getKeyArray('holidays');
 
             foreach ($holidays as $date => $holiday) {
-                $dateImmutable = DateTimeImmutable::createFromFormat('U', (string)$date);
 
-                if (!$dateImmutable instanceof DateTimeImmutable) {
-                    throw new LogicException(sprintf('Invalid date "%s".', $date));
-                }
+                $dateImmutable = $this->getDateTimeImmutable($date);
 
                 if (is_string($holiday)) {
                     $holiday = [
@@ -229,11 +244,7 @@ class Source extends BaseParameter
                     $titleShort = $title;
                 }
 
-                $dateImmutable = DateTimeImmutable::createFromFormat('U', (string) $date);
-
-                if ((!$dateImmutable instanceof DateTimeImmutable)) {
-                    throw new LogicException(sprintf('Invalid date "%s".', $date));
-                }
+                $dateImmutable = $this->getDateTimeImmutable($date);
 
                 if (!is_string($titleShort)) {
                     throw new LogicException('Invalid title');
@@ -262,6 +273,8 @@ class Source extends BaseParameter
      * @throws JsonException
      * @throws TypeInvalidException
      * @throws ParserException
+     * @throws FunctionReplaceException
+     * @throws ImagickException
      */
     public function readParameter(InputInterface $input, int $sourceCliWidth = Image::CLI_IMAGE_WIDTH): void
     {
@@ -285,7 +298,11 @@ class Source extends BaseParameter
 
         $this->setImageHolder($imageHolder, $identifier);
 
-        $this->setCliImage(new CliImage($imageHolder->getImageString(), $sourceCliWidth));
+        $this->setCliImage(new CliImage(
+            image: $imageHolder->getImageString(),
+            width: $sourceCliWidth,
+            engineType: CliImage::ENGINE_IMAGICK
+        ));
 
         $this->readHolidays();
         $this->readBirthdays();

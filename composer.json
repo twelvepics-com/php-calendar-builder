@@ -21,22 +21,25 @@
         "ext-iconv": "*",
         "ext-redis": "*",
         "chillerlan/php-qrcode": "^4.3",
-        "ixnode/php-api-version-bundle": "^0.1.5",
-        "ixnode/php-checker": "^0.1.8",
-        "ixnode/php-cli-image": "*",
-        "ixnode/php-container": "^0.1.24",
-        "ixnode/php-coordinate": "*",
-        "ixnode/php-exception": "^0.1.17",
+        "doctrine/annotations": "^2.0",
+        "ixnode/php-api-version-bundle": "^0.1.29",
+        "ixnode/php-checker": "^0.1.9",
+        "ixnode/php-cli-image": "^1.0",
+        "ixnode/php-container": "1.0.2",
+        "ixnode/php-coordinate": "^1.0",
+        "ixnode/php-exception": "^0.1.21",
+        "ixnode/php-gpx-reader": "^0.1.1",
         "ixnode/php-public-holiday": "^1.0",
         "ixnode/php-size-byte": "^0.1.2",
-        "symfony/cache": "6.3.*",
+        "symfony/cache": "7.1.*",
         "symfony/flex": "^2.4",
-        "symfony/stopwatch": "6.3.*",
-        "symfony/yaml": "6.3.*"
+        "symfony/stopwatch": "7.1.*",
+        "symfony/yaml": "7.1.*"
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.4",
         "friendsofphp/php-cs-fixer": "^3.13",
+        "ixnode/bash-version-manager": "^0.1.10",
         "ixnode/php-branch-diagram-builder": "^1.2",
         "jetbrains/phpstorm-attributes": "^1.0",
         "phpmd/phpmd": "^2.13",
@@ -45,11 +48,11 @@
         "phpunit/phpunit": "^9",
         "povils/phpmnd": "^3.0",
         "rector/rector": "^0.15.2",
-        "symfony/browser-kit": "6.3.*",
-        "symfony/css-selector": "6.3.*",
-        "symfony/http-client": "6.3.*",
+        "symfony/browser-kit": "7.1.*",
+        "symfony/css-selector": "7.1.*",
+        "symfony/http-client": "7.1.*",
         "symfony/maker-bundle": "^1.48",
-        "symfony/phpunit-bridge": "^6.3"
+        "symfony/phpunit-bridge": "^7.1"
     },
     "config": {
         "allow-plugins": {
@@ -339,7 +342,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "6.3.*"
+            "require": "7.1.*"
         }
     }
 }

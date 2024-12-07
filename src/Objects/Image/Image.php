@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Objects\Image;
 
 use Exception;
+use ImagickException;
 use Ixnode\PhpCliImage\CliImage;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpSizeByte\SizeByte;
@@ -246,9 +247,14 @@ class Image
     /**
      * @return CliImage
      * @throws CaseUnsupportedException
+     * @throws ImagickException
      */
     public function getCliImage(): CliImage
     {
-        return new CliImage($this->imageString, self::CLI_IMAGE_WIDTH);
+        return new CliImage(
+            image: $this->imageString,
+            width: self::CLI_IMAGE_WIDTH,
+            engineType: CliImage::ENGINE_IMAGICK
+        );
     }
 }

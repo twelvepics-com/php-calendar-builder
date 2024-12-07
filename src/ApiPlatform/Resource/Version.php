@@ -27,7 +27,7 @@ use Ixnode\PhpApiVersionBundle\ApiPlatform\State\VersionProvider;
  */
 #[Get(
     openapiContext: [
-        'description' => VersionRoute::DESCRIPTION
+        'description' => VersionRoute::DESCRIPTION_GET
     ],
     provider: VersionProvider::class
 )]

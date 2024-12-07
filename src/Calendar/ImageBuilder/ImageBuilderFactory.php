@@ -28,6 +28,7 @@ use Ixnode\PhpException\File\FileNotFoundException;
 use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
@@ -61,6 +62,7 @@ readonly class ImageBuilderFactory
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getImageBuilder(InputInterface $input, Json $config = null): BaseImageBuilder
     {

@@ -16,7 +16,6 @@ namespace App\Objects\Exif;
 use Ixnode\PhpCoordinate\Coordinate;
 use Ixnode\PhpException\Case\CaseUnsupportedException;
 use Ixnode\PhpException\Parser\ParserException;
-use LogicException;
 
 /**
  * Class ExifCoordinate
@@ -27,8 +26,6 @@ use LogicException;
  */
 class ExifCoordinate
 {
-    private const MIN_LENGTH = 3;
-
     private Coordinate|null $coordinate = null;
 
     /**
@@ -63,14 +60,6 @@ class ExifCoordinate
 
         if (!preg_match('~(\-?[0-9]+)(/)([0-9]+)+~', $value, $matches)) {
             return intval($value);
-        }
-
-        if (count($matches) < self::MIN_LENGTH) {
-            throw new LogicException(sprintf('Unsupported calculation "%s".', $value));
-        }
-
-        if ($matches[2] !== '/') {
-            throw new LogicException(sprintf('Unsupported calculation "%s".', $matches[2]));
         }
 
         return intval($matches[1]) / (intval(intval($matches[3]) === 0 ? 1 : $matches[3]));
