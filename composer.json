@@ -1,7 +1,7 @@
 {
     "name": "twelvepics-com/php-calendar-builder",
     "description": "Provides a Calendar Builder API.",
-    "version": "0.1.26",
+    "version": "0.1.27",
     "type": "project",
     "license": "MIT",
     "authors": [

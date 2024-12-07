@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.27] - 2024-12-08
+
+* Update ixnode packages
+* Change CliImage to imagick
+
 ### [0.1.26] - 2024-12-06
 
 * Add bin/console calendar:holiday command to add public holidays to calendar config
