@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.28] - 2024-12-09
+
+* Update ixnode packages
+
 ### [0.1.27] - 2024-12-08
 
 * Update ixnode packages
