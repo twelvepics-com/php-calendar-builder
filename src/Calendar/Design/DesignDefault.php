@@ -151,7 +151,7 @@ class DesignDefault extends DesignBase
 
         $this->yCalendarBoxBottom = intval(floor($this->imageBuilder->getHeightTarget() * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
 
-        $this->valignImage = CalendarBuilderServiceConstants::VALIGN_TOP;
+        $this->valignImage = $this->getConfigurationValueString(KeyJson::IMAGE_VERTICAL_ALIGN) === 'bottom' ? CalendarBuilderServiceConstants::VALIGN_BOTTOM : CalendarBuilderServiceConstants::VALIGN_TOP;
         $this->url = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getUrl();
     }
 

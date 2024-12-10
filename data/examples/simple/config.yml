@@ -1,6 +1,7 @@
 name: 2024, Simple photo configuration
 date: 2024-12-02 14:50
 settings:
+    public: false
     output:
         quality: 100
         format: jpg

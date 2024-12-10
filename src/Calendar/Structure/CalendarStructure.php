@@ -180,7 +180,7 @@ class CalendarStructure
             $calendars[] = $calendar;
         }
 
-        usort($calendars, fn($item1, $item2) => $item2['date'] <=> $item1['date']);
+        usort($calendars, fn($item1, $item2) => $item2['name'] <=> $item1['name']);
 
         return $calendars;
     }
