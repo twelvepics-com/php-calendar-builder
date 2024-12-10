@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.29] - 2024-12-11
+
+* Read image-vertical-align config from config.yml
+
 ### [0.1.28] - 2024-12-09
 
 * Update ixnode packages
