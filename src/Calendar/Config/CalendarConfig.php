@@ -303,22 +303,25 @@ class CalendarConfig extends BaseConfig
 
         $birthdays = $this->getKeyArray($path);
 
-        foreach ($birthdays as $key => $birthday) {
+        foreach ($birthdays as $date => $birthday) {
             if (is_array($birthday) && array_key_exists('date', $birthday)) {
-                $key = $birthday['date'];
+                $date = $birthday['date'];
             }
 
-            if ($dateMonth !== date('m', (int) $key)) {
+            /* Normalize date to timestamp. */
+            $date = $this->parseDateOrTimestamp($date);
+
+            if ($dateMonth !== date('m', (int) $date)) {
                 continue;
             }
 
-            $dateYearMonthDay = sprintf('%d-', $year).date('m-d', (int) $key);
+            $dateYearMonthDay = sprintf('%d-', $year).date('m-d', (int) $date);
 
             if (!array_key_exists($dateYearMonthDay, $data)) {
                 $data[$dateYearMonthDay] = [];
             }
 
-            $dateYear = (int) date('Y', (int) $key);
+            $dateYear = (int) date('Y', (int) $date);
 
             if (is_string($birthday)) {
                 $birthday = [
@@ -383,6 +386,39 @@ class CalendarConfig extends BaseConfig
         $obfuscatedName = implode(' ', [$forename, ...$parts]);
 
         return str_replace('†', '† ', $obfuscatedName);
+    }
+
+    /**
+     * Parses the given date string and returns the timestamp.
+     *
+     * @param string|int $value
+     * @return int
+     */
+    private function parseDateOrTimestamp(string|int $value): int
+    {
+        $value = trim((string) $value);
+
+        /* Timestamp directly given. */
+        if (is_numeric($value) && (int) $value == $value) {
+            return (int) $value;
+        }
+
+        /* Convert Y-m-d to timestamp. */
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            [$year, $month, $day] = explode('-', $value);
+
+            if (checkdate((int) $month, (int) $day, (int) $year)) {
+                $timestamp = mktime(12, 0, 0, (int) $month, (int) $day, (int) $year);
+
+                if ($timestamp === false) {
+                    throw new LogicException('Unable to get timestamp.');
+                }
+
+                return $timestamp;
+            }
+        }
+
+        throw new LogicException('Invalid date or timestamp.');
     }
 
     /**

@@ -93,6 +93,7 @@ class ImageController extends BaseImageController
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
      */
@@ -123,6 +124,7 @@ class ImageController extends BaseImageController
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
      */
