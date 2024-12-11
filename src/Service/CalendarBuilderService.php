@@ -393,9 +393,10 @@ class CalendarBuilderService
 
             /* Get year and month */
             $month = intval($date->format('n'));
+            $year = intval($date->format('Y'));
 
-            /* Check holiday (month) → Skip if not equal */
-            if ($target->getMonth() !== $month) {
+            /* Check holiday (month && year) → Skip if not equal */
+            if ($target->getMonth() !== $month || $target->getYear() !== $year) {
                 continue;
             }
 
