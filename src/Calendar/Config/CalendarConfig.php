@@ -242,6 +242,9 @@ class CalendarConfig extends BaseConfig
         };
 
         foreach ($this->getKeyArray($path) as $key => $holiday) {
+            /* Normalize date to timestamp. */
+            $key = $this->parseDateOrTimestamp($key);
+
             if (!is_null($dateYearMonth) && $dateYearMonth !== date('Y-m', (int) $key)) {
                 continue;
             }
