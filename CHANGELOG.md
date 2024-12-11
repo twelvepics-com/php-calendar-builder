@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.32] - 2024-12-11
+
+* Do not add the holiday to the calendar if the year does not match.
+
 ### [0.1.31] - 2024-12-11
 
 * Note typical YAML parser timestamp returns (holidays).
