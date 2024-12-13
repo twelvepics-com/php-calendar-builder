@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.33] - 2024-12-13
+
+* Add "a" (auto) option for calendar view controller
+  * Option "a" shows the current calendar page
+
 ### [0.1.32] - 2024-12-11
 
 * Do not add the holiday to the calendar if the year does not match.
