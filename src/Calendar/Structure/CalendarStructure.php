@@ -293,6 +293,32 @@ class CalendarStructure
         return $image->getArray();
     }
 
+
+    /**
+     * Returns the year of the calendar.
+     *
+     * @param string $identifier
+     * @return int|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getYear(string $identifier): int|null
+    {
+        $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
+
+        if ($config->hasError()) {
+            return null;
+        }
+
+        return $config->getKeyInteger(['settings', 'defaults', 'year']);
+    }
+
     /**
      * Returns the image path.
      *

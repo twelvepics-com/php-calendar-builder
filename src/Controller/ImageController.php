@@ -184,6 +184,15 @@ class ImageController extends BaseImageController
         #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
     ): Response
     {
+        $year = $this->calendarStructure->getYear($identifier);
+
+        /* Use the current month if the year matches, otherwise use the overview page (0). */
+        if ($number === 'a') {
+            $yearCurrent = (int) date('Y');
+            $monthCurrent = (int) date('m');
+            $number = $year === $yearCurrent ? $monthCurrent : 0;
+        }
+
         if (!is_numeric($number)) {
             return $this->getErrorResponse(sprintf('The given number "%s" is not a number.', $number), $this->appKernel->getProjectDir());
         }
