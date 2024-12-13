@@ -33,6 +33,7 @@
         "ixnode/php-size-byte": "^0.1.2",
         "symfony/cache": "7.1.*",
         "symfony/flex": "^2.4",
+        "symfony/monolog-bundle": "*",
         "symfony/stopwatch": "7.1.*",
         "symfony/yaml": "7.1.*"
     },
