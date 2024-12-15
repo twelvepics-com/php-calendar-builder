@@ -26,6 +26,8 @@ class Argument
 
     final public const CONFIG = 'config';
 
+    final public const IMAGE = 'image';
+
     final public const SOURCE = 'source';
 
     final public const TARGET = 'target';

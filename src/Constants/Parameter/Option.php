@@ -39,6 +39,7 @@ class Option
     final public const SUBTITLE = 'subtitle';
     final public const URL = 'url';
     final public const COORDINATE = 'coordinate';
+    final public const IMAGE = 'image';
 
     /* Output options */
     final public const OUTPUT_FORMAT = 'format';

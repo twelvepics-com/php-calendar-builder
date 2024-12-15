@@ -15,12 +15,14 @@ namespace App\Command\Calendar;
 
 use App\Calendar\Config\CalendarConfig;
 use App\Command\Calendar\Base\BaseCalendarCommand;
+use App\Constants\Parameter\Option;
 use App\Utils\Card\QRCard;
 use Exception;
 use Ixnode\PhpCliImage\CliImage;
 use LogicException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class CreateOverviewCommand
@@ -48,6 +50,10 @@ class CreateOverviewCommand extends BaseCalendarCommand
         parent::configure();
 
         $this
+            ->addOption(Option::IMAGE, 'i', InputOption::VALUE_OPTIONAL, 'The image on the bottom', null)
+        ;
+
+        $this
             ->setHelp(
                 <<<'EOT'
 The <info>calendar:create-overview</info> command:
@@ -65,7 +71,6 @@ EOT
      */
     protected function doExecute(): int
     {
-        $path = 'data/calendar/e04916437c63/calendar.png';
         $data = $this->config->getReactViewerCalendarPageQrCode(CalendarConfig::PAGE_AUTO);
 
         $title = $this->config->getCalendarTitle();
@@ -75,10 +80,23 @@ EOT
             throw new LogicException('Title and subtitle are required.');
         }
 
+        $identifier = $this->config->getIdentifier();
+        $image = $this->input->getOption(Option::IMAGE);
+
+        if (!is_string($image) && !is_null($image)) {
+            throw new LogicException('Image must be a string');
+        }
+
+        $path = sprintf('data/calendar/%s/calendar.png', $identifier);
+        $imagePath = is_null($image) ? null : sprintf('data/calendar/%s/%s', $identifier, $image);
+
         $qrCard = new QRCard(
+            width: 2000,
+            height: 3000,
+            textScanMe: 'Scan mich!',
             textTitle: $title,
             textSubtitle: $subtitle,
-            textScanMe: 'Scan mich!',
+            imagePath: $imagePath,
             scale: 80,
             border: 1
         );
@@ -92,7 +110,7 @@ EOT
         $this->output->writeln(sprintf('QR Code height: %s', $qrCard->getHeight()));
 
         /* Print QR Code. */
-        $cliImage = new CliImage($imageStream, 160);
+        $cliImage = new CliImage($imageStream, 120);
         $this->output->writeln('');
         $this->output->writeln($cliImage->getAsciiString());
         $this->output->writeln('');

@@ -39,8 +39,6 @@ class QRCard
 
     private Imagick $qrCard;
 
-    private int $width = 2000, $height = 3000;
-
     private int $qrCodeBgX, $qrCodeBgY, $qrCodeBgWidth, $qrCodeBgHeight, $qrCodeBgRadius;
 
     private int $backgroundBottomY;
@@ -57,16 +55,25 @@ class QRCard
 
     private const COLOR_ALMOST_BLACKEST = [26, 26, 26];
 
-    private const COLOR_LIGHT_BLUE = [230, 230, 255];
+    private const COLOR_LIGHT_BLUE = [255, 255, 255];
+
+    private const BOTTOM_Y_PERCENT = 64;
+
+    private const SUBTITLE_Y_PERCENT = 95;
 
     private const FONT_SCAN_ME = 'data/font/OpenSansCondensed-Light.ttf';
+
+    private const FONT_TITLE = 'data/font/OpenSansCondensed-Bold.ttf';
 
     /**
      */
     public function __construct(
-        private readonly string $textTitle,
-        private readonly string $textSubtitle,
+        private readonly int $width,
+        private readonly int $height,
         private readonly string $textScanMe,
+        private readonly string|null $textTitle = null,
+        private readonly string|null $textSubtitle = null,
+        private readonly string|null $imagePath = null,
         private readonly int $scale = 20,
         private readonly int $border = 0,
     )
@@ -101,12 +108,6 @@ class QRCard
             'logoSpaceStartX' => 15,
             'logoSpaceStartY' => 15,
             'logoSpaceWidth' => 15,
-            'outputBase64' => false,
-            'quality' => 100,
-            'quietzoneSize' => $this->border,
-            'scale' => $this->scale,
-            'transparencyColor' => [255, 255, 255],
-            //'version' => 7,
             'moduleValues' => [
                 /* Set light points. */
                 QRMatrix::M_ALIGNMENT        => $dotLight,
@@ -135,6 +136,12 @@ class QRCard
                 QRMatrix::M_TIMING_DARK      => $dotDark,
                 QRMatrix::M_VERSION_DARK     => $dotDark,
             ],
+            'outputBase64' => false,
+            'quality' => 100,
+            'quietzoneSize' => $this->border,
+            'scale' => $this->scale,
+            'transparencyColor' => self::COLOR_WHITE,
+            //'version' => 7,
         ]);
     }
 
@@ -261,7 +268,7 @@ class QRCard
         $backgroundBottom->setFillColor(new ImagickPixel($this->getColor(self::COLOR_LIGHT_BLUE)));
 
         $backgroundBottomX = 0;
-        $this->backgroundBottomY = (int)floor($this->height * (3 / 5));
+        $this->backgroundBottomY = (int) floor($this->height * self::BOTTOM_Y_PERCENT / 100);
         $backgroundBottomWidth = $this->width;
         $backgroundBottomHeight = $this->height - $this->backgroundBottomY;
 
@@ -275,6 +282,16 @@ class QRCard
 
         /* Add bottom background. */
         $this->qrCard->drawImage($backgroundBottom);
+
+        /* Add image with 50% opacity. */
+        if (!is_null($this->imagePath)) {
+            $backgroundBottomImage = new Imagick($this->imagePath);
+            $backgroundBottomImage->resizeImage($backgroundBottomWidth, $backgroundBottomHeight, Imagick::FILTER_LANCZOS, 1);
+            $backgroundBottomImage->setImageAlphaChannel(Imagick::ALPHACHANNEL_OPAQUE);
+            $backgroundBottomImage->evaluateImage(Imagick::EVALUATE_DIVIDE, 1, Imagick::CHANNEL_ALPHA);
+
+            $this->qrCard->compositeImage($backgroundBottomImage, Imagick::COMPOSITE_OVER, $backgroundBottomX, $this->backgroundBottomY);
+        }
     }
 
     /**
@@ -398,13 +415,17 @@ class QRCard
      */
     private function addTitle(): void
     {
+        if (is_null($this->textTitle)) {
+            return;
+        }
+
         $textX = (int) floor($this->width / 2);
         $textY = (int) floor($this->height * (1 / 5));
 
         $drawText = new ImagickDraw();
-        $drawText->setFontSize($this->qrCodeBgRadius * 2);
+        $drawText->setFontSize($this->qrCodeBgRadius * 3);
         $drawText->setTextKerning((int) floor($this->qrCodeBgRadius / 2.));
-        $drawText->setFont(self::FONT_SCAN_ME);
+        $drawText->setFont(self::FONT_TITLE);
         $drawText->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
         $drawText->setTextAlignment(Imagick::ALIGN_CENTER);
         $drawText->annotation($textX, $textY, $this->textTitle);
@@ -421,9 +442,14 @@ class QRCard
      */
     private function addSubtitle(): void
     {
-        $textX = (int) floor($this->width / 2);
-        $textY = (int)floor($this->height * (4 / 5));
+        if (is_null($this->textSubtitle)) {
+            return;
+        }
 
+        $textX = (int) floor($this->width / 2);
+        $textY = (int) floor($this->height * (self::SUBTITLE_Y_PERCENT / 100));
+
+        /* Add subtitle. */
         $drawText = new ImagickDraw();
         $drawText->setFontSize($this->qrCodeBgRadius * 1.3);
         $drawText->setTextKerning((int) floor($this->qrCodeBgRadius / 2.));
@@ -432,6 +458,35 @@ class QRCard
         $drawText->setTextAlignment(Imagick::ALIGN_CENTER);
         $drawText->annotation($textX, $textY, $this->textSubtitle);
 
+        /* Get font size. */
+        $metrics = $this->qrCard->queryFontMetrics($drawText, $this->textSubtitle);
+        $textWidth = $metrics['textWidth'];
+        $textHeight = $metrics['textHeight'];
+
+        $boxHeight = (int) floor($textHeight * 1.2);
+        $boxWidth = (int) floor($textWidth + 4 * ($boxHeight - $textHeight));
+        $boxX = (int) floor(($this->width - $boxWidth) / 2);
+        $boxY = (int) floor($textY - $boxHeight * .75);
+        $boxRadius = (int) floor($this->qrCodeBgRadius / 4);
+
+        /* Create qr code background. */
+        $drawBox = new ImagickDraw();
+        $drawBox->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
+        $drawBox->setStrokeColor(new ImagickPixel($this->getColor(self::COLOR_BLACK)));
+        $drawBox->setStrokeWidth(1);
+        $drawBox->roundRectangle(
+            $boxX,
+            $boxY,
+            $boxX + $boxWidth,
+            $boxY + $boxHeight,
+            $boxRadius,
+            $boxRadius
+        );
+
+        /* Add box background. */
+        $this->qrCard->drawImage($drawBox);
+
+        /* Add text. */
         $this->qrCard->drawImage($drawText);
     }
 
