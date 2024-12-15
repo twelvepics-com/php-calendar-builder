@@ -24,6 +24,7 @@ use App\Objects\Parameter\ParameterWrapper;
 use App\Objects\Parameter\Target;
 use App\Service\CalendarBuilderService;
 use Exception;
+use ImagickException;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -33,6 +34,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Parser\ParserException;
 use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use JsonException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -285,8 +287,10 @@ EOT
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
      * @throws JsonException
-     * @throws TypeInvalidException
      * @throws ParserException
+     * @throws TypeInvalidException
+     * @throws ImagickException
+     * @throws FunctionReplaceException
      */
     private function init(): void
     {

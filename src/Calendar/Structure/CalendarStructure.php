@@ -158,11 +158,11 @@ class CalendarStructure
             $calendar = [
                 'identifier' => $config->getIdentifier(),
                 'url' => $config->getCalendarEndpoint($format),
-                'name' => $config->getCalendarName(),
+                'name' => $config->getName(),
                 'title' => $config->getCalendarTitle(),
                 'subtitle' => $config->getCalendarSubtitle(),
                 'image' => $config->getCalendarImageEndpoint(),
-                'date' => $config->getCalendarDate(),
+                'date' => $config->getDate(),
                 'public' => $config->isPublic(),
             ];
 
@@ -174,7 +174,7 @@ class CalendarStructure
             /* Add config paths if needed. */
             if ($withPaths) {
                 $calendar['path'] = $config->getCalendarPathRelative();
-                $calendar['config'] = $config->getCalendarConfigRelative();
+                $calendar['config'] = $config->getConfigPathRelative();
             }
 
             $calendars[] = $calendar;

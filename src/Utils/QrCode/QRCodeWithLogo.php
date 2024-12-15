@@ -20,6 +20,7 @@ use chillerlan\QRCode\Output\QRImage;
 use chillerlan\QRCode\QRCodeException;
 use chillerlan\Settings\SettingsContainerInterface;
 use GdImage;
+use LogicException;
 
 /**
  * Class QrCodeWithLogo
@@ -33,10 +34,13 @@ class QRCodeWithLogo extends QRImage
     public function __construct(
         SettingsContainerInterface $options,
         QRMatrix $matrix,
+        string $url,
         private readonly int $logoWidth = 150,
         private readonly int $logoHeight = 150
     )
     {
+        $this->$url = $url;
+
         parent::__construct($options, $matrix);
     }
 
@@ -116,9 +120,46 @@ class QRCodeWithLogo extends QRImage
         }
 
         /* Scale the logo and copy it over. */
-        imagecopyresampled($this->image, $imageLogo, ($logoScale - $logoWidth) / 2, ($logoScale - $logoHeight) / 2, 0, 0, $logoWidth, $logoHeight, $width, $height);
+        imagecopyresampled(
+            $this->image,
+            $imageLogo,
+            ($logoScale - $logoWidth) / 2,
+            ($logoScale - $logoHeight) / 2,
+            0,
+            0,
+            $logoWidth,
+            $logoHeight,
+            $width,
+            $height
+        );
 
         /* Returns the image. */
         return $this->getQrCode($file);
+    }
+
+    /**
+     * Returns the GdImage instance.
+     *
+     * @param string|null $file
+     * @param string|null $logo
+     * @return GdImage
+     * @throws QRCodeDataException
+     * @throws QRCodeException
+     * @throws QRCodeOutputException
+     */
+    public function getGdImage(string $file = null, string $logo = null): GdImage
+    {
+        $imageStream = $this->dump(
+            file: $file,
+            logo: $logo,
+        );
+
+        $image = imagecreatefromstring($imageStream);
+
+        if (!$image instanceof GdImage) {
+            throw new LogicException('Unable to build image.');
+        }
+
+        return $image;
     }
 }

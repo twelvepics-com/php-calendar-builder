@@ -19,8 +19,8 @@ use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
 use App\Objects\Color\Color;
 use DateTimeImmutable;
+use Ixnode\PhpContainer\Base\BaseImage;
 use Ixnode\PhpContainer\File;
-use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
 use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
 use Ixnode\PhpException\Case\CaseInvalidException;
@@ -44,6 +44,7 @@ use Symfony\Component\Yaml\Yaml;
  * @version 0.1.0 (2023-12-18)
  * @since 0.1.0 (2023-12-18) First version.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class CalendarConfig extends BaseConfig
 {
@@ -69,7 +70,27 @@ class CalendarConfig extends BaseConfig
 
     final public const ENDPOINT_IMAGE = '/v/%s/%s.%s';
 
+    final public const REACT_VIEWER_HOST = 'https://calendar.twelvepics.com';
+
+    final public const REACT_VIEWER_CALENDAR_OVERVIEW_RELATIVE = 'calendar.html?c=%s';
+
+    final public const REACT_VIEWER_CALENDAR_PAGE_RELATIVE = 'page.html?c=%s&m=%s';
+
+    final public const REACT_VIEWER_CALENDAR_OVERVIEW_ABSOLUTE = self::REACT_VIEWER_HOST.'/'.self::REACT_VIEWER_CALENDAR_OVERVIEW_RELATIVE;
+
+    final public const REACT_VIEWER_CALENDAR_PAGE_ABSOLUTE = self::REACT_VIEWER_HOST.'/'.self::REACT_VIEWER_CALENDAR_PAGE_RELATIVE;
+
     private const WITHOUT_YEAR = 2100;
+
+    private const YAML_CONFIG_INLINE = 4;
+
+    private const YAML_CONFIG_IDENT = 4;
+
+    private const PAGE_MIN = 0;
+
+    private const PAGE_MAX = 12;
+
+    final public const PAGE_AUTO = 'a';
 
     private string|null $error = null;
 
@@ -85,7 +106,10 @@ class CalendarConfig extends BaseConfig
      * @throws CaseInvalidException
      * @throws FunctionReplaceException
      */
-    public function __construct(private readonly string $identifier, private readonly string $projectDir)
+    public function __construct(
+        private readonly string $identifier,
+        private readonly string $projectDir
+    )
     {
         $config = $this->getConfig();
 
@@ -98,8 +122,6 @@ class CalendarConfig extends BaseConfig
 
     /**
      * Returns true if an error occurred while loading the configuration.
-     *
-     * @return bool
      */
     public function hasError(): bool
     {
@@ -107,7 +129,7 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
-     * @return string|null
+     * Returns an error if an error occurred while loading the configuration.
      */
     public function getError(): ?string
     {
@@ -115,9 +137,8 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
-     * Returns the name of the calendar. This is the title of the first page from the calendar.
+     * Returns the public state of the calendar.
      *
-     * @return string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
@@ -127,7 +148,38 @@ class CalendarConfig extends BaseConfig
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarName(): string
+    public function isPublic(): bool
+    {
+        $path = ['settings', 'public'];
+
+        if (!$this->hasKey($path)) {
+            return false;
+        }
+
+        return $this->getKeyBoolean($path);
+    }
+
+    /**
+     * Returns the identifier of the calendar.
+     */
+    public function getIdentifier(): string
+    {
+        return $this->identifier;
+    }
+
+    /**
+     * Returns the name of the calendar. This is the title of the first page from the calendar.
+     *
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getName(): string
     {
         $path = ['name'];
 
@@ -151,7 +203,7 @@ class CalendarConfig extends BaseConfig
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getCalendarDate(): string
+    public function getDate(): string
     {
         $path = ['date'];
 
@@ -245,11 +297,11 @@ class CalendarConfig extends BaseConfig
             /* Normalize date to timestamp. */
             $key = $this->parseDateOrTimestamp($key);
 
-            if (!is_null($dateYearMonth) && $dateYearMonth !== date('Y-m', (int) $key)) {
+            if (!is_null($dateYearMonth) && $dateYearMonth !== date('Y-m', $key)) {
                 continue;
             }
 
-            $date = date('Y-m-d', (int) $key);
+            $date = date('Y-m-d', $key);
 
             if (is_string($holiday)) {
                 $holiday = [
@@ -314,17 +366,17 @@ class CalendarConfig extends BaseConfig
             /* Normalize date to timestamp. */
             $date = $this->parseDateOrTimestamp($date);
 
-            if ($dateMonth !== date('m', (int) $date)) {
+            if ($dateMonth !== date('m', $date)) {
                 continue;
             }
 
-            $dateYearMonthDay = sprintf('%d-', $year).date('m-d', (int) $date);
+            $dateYearMonthDay = sprintf('%d-', $year).date('m-d', $date);
 
             if (!array_key_exists($dateYearMonthDay, $data)) {
                 $data[$dateYearMonthDay] = [];
             }
 
-            $dateYear = (int) date('Y', (int) $date);
+            $dateYear = (int) date('Y', $date);
 
             if (is_string($birthday)) {
                 $birthday = [
@@ -364,109 +416,15 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
-     * Returns an obfuscated name.
-     *
-     * @param string $name
-     * @return string
-     */
-    private function getObfuscatedName(string $name): string
-    {
-        $name = str_replace('† ', '†', $name);
-
-        $parts = explode(' ', $name);
-
-        /* If the name consists of only one word, return it unchanged */
-        if (count($parts) == 1) {
-            return str_replace('†', '† ', $name);
-        }
-
-        $forename = array_shift($parts);
-
-        foreach ($parts as &$part) {
-            $part = $part[0].'.';
-        }
-
-        $obfuscatedName = implode(' ', [$forename, ...$parts]);
-
-        return str_replace('†', '† ', $obfuscatedName);
-    }
-
-    /**
-     * Parses the given date string and returns the timestamp.
-     *
-     * @param string|int $value
-     * @return int
-     */
-    private function parseDateOrTimestamp(string|int $value): int
-    {
-        $value = trim((string) $value);
-
-        /* Timestamp directly given. */
-        if (is_numeric($value) && (int) $value == $value) {
-            return (int) $value;
-        }
-
-        /* Convert Y-m-d to timestamp. */
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-            [$year, $month, $day] = explode('-', $value);
-
-            if (checkdate((int) $month, (int) $day, (int) $year)) {
-                $timestamp = mktime(12, 0, 0, (int) $month, (int) $day, (int) $year);
-
-                if ($timestamp === false) {
-                    throw new LogicException('Unable to get timestamp.');
-                }
-
-                return $timestamp;
-            }
-        }
-
-        throw new LogicException('Invalid date or timestamp.');
-    }
-
-    /**
-     * Returns the birthdays of the calendar from given pages.
-     *
-     * @param array<int, array<string|int, mixed>> $pages
-     * @return array<string, array<int, array<int|string, mixed>>>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws FunctionReplaceException
-     */
-    public function getBirthdaysFromPages(array $pages): array
-    {
-        $birthdays = [];
-
-        foreach ($pages as $page) {
-            $year = $this->getYearFromArray($page);
-            $month = $this->getMonthFromArray($page);
-            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
-        }
-
-        return $birthdays;
-    }
-
-    /**
      * Returns the main calendar image for given identifier (calendar).
-     *
-     * @param string $format
-     * @return string
      */
-    public function getCalendarImageEndpoint(string $format = Image::FORMAT_JPG): string
+    public function getCalendarImageEndpoint(string $format = BaseImage::FORMAT_JPG): string
     {
         return sprintf(self::ENDPOINT_CALENDAR_IMAGE, $this->identifier, $format);
     }
 
     /**
      * Returns the calendar endpoint for given format (calendar).
-     *
-     * @param string $format
-     * @return string
      */
     public function getCalendarEndpoint(string $format = Format::HTML): string
     {
@@ -475,8 +433,6 @@ class CalendarConfig extends BaseConfig
 
     /**
      * Returns the calendar raw endpoint (calendar).
-     *
-     * @return string
      */
     public function getCalendarEndpointRaw(): string
     {
@@ -485,8 +441,6 @@ class CalendarConfig extends BaseConfig
 
     /**
      * Returns the absolute path to the calendar directory.
-     *
-     * @return string
      */
     public function getCalendarPathAbsolute(): string
     {
@@ -495,8 +449,6 @@ class CalendarConfig extends BaseConfig
 
     /**
      * Returns the relative path to the calendar directory.
-     *
-     * @return string
      */
     public function getCalendarPathRelative(): string
     {
@@ -505,55 +457,54 @@ class CalendarConfig extends BaseConfig
 
     /**
      * Returns the absolute config path to the calendar directory.
-     *
-     * @return string
      */
-    public function getCalendarConfigAbsolute(): string
+    public function getConfigPathAbsolute(): string
     {
         return sprintf(self::PATH_CONFIG_ABSOLUTE, $this->projectDir, $this->identifier);
     }
 
     /**
      * Returns the relative config path to the calendar directory.
-     *
-     * @return string
      */
-    public function getCalendarConfigRelative(): string
+    public function getConfigPathRelative(): string
     {
         return sprintf(self::PATH_CONFIG_RELATIVE, $this->identifier);
     }
 
     /**
-     * Returns the public state of the calendar.
-     *
-     * @return bool
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
+     * Returns the absolute react viewer calendar overview url.
      */
-    public function isPublic(): bool
+    public function getReactViewerCalendarOverviewAbsolute(): string
     {
-        $path = ['settings', 'public'];
-
-        if (!$this->hasKey($path)) {
-            return false;
-        }
-
-        return $this->getKeyBoolean($path);
+        return sprintf(self::REACT_VIEWER_CALENDAR_OVERVIEW_ABSOLUTE, $this->getIdentifier());
     }
 
     /**
-     * Returns the identifier of the calendar.
-     *
-     * @return string
+     * Returns the absolute react viewer calendar overview url.
      */
-    public function getIdentifier(): string
+    public function getReactViewerCalendarOverviewQrCode(): string
     {
-        return $this->identifier;
+        return $this->getReactViewerCalendarOverviewAbsolute();
+    }
+
+    /**
+     * Returns the absolute react viewer calendar overview url.
+     */
+    public function getReactViewerCalendarPageAbsolute(string|int $page): string
+    {
+        if (!$this->isPageValid($page)) {
+            throw new LogicException(sprintf('Page %s is not valid.', $page));
+        }
+
+        return sprintf(self::REACT_VIEWER_CALENDAR_PAGE_ABSOLUTE, $this->getIdentifier(), $page);
+    }
+
+    /**
+     * Returns the absolute react viewer calendar overview url.
+     */
+    public function getReactViewerCalendarPageQrCode(string|int $page): string
+    {
+        return $this->getReactViewerCalendarPageAbsolute($page);
     }
 
     /**
@@ -567,6 +518,7 @@ class CalendarConfig extends BaseConfig
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getPages(): array|null
     {
@@ -590,8 +542,9 @@ class CalendarConfig extends BaseConfig
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
-    public function getPagesForApi(string $format = Image::FORMAT_JPG): array|null
+    public function getPagesForApi(string $format = BaseImage::FORMAT_JPG): array|null
     {
         $path = ['pages'];
 
@@ -620,6 +573,7 @@ class CalendarConfig extends BaseConfig
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     public function getPage(int $number): Json|null
     {
@@ -647,7 +601,7 @@ class CalendarConfig extends BaseConfig
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getPageForApi(int $number, string $format = Image::FORMAT_JPG): Json|null
+    public function getPageForApi(int $number, string $format = BaseImage::FORMAT_JPG): Json|null
     {
         $path = ['pages', (string) $number];
 
@@ -677,7 +631,7 @@ class CalendarConfig extends BaseConfig
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    public function getImageArray(int $number, string $format = Image::FORMAT_JPG): Json|null
+    public function getImageArray(int $number, string $format = BaseImage::FORMAT_JPG): Json|null
     {
         $page = $this->getPageForApi($number, $format);
 
@@ -766,6 +720,143 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
+     * Returns the birthdays of the calendar from given pages.
+     *
+     * @param array<int, array<string|int, mixed>> $pages
+     * @return array<string, array<int, array<int|string, mixed>>>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getBirthdaysFromPages(array $pages): array
+    {
+        $birthdays = [];
+
+        foreach ($pages as $page) {
+            $year = $this->getYearFromArray($page);
+            $month = $this->getMonthFromArray($page);
+            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
+        }
+
+        return $birthdays;
+    }
+
+    /**
+     * Backups the current config file.
+     */
+    public function backupConfigFile(): bool
+    {
+        $configPath = $this->getConfigPathAbsolute();
+
+        /* Get the backup path */
+        $backupFile = $configPath.'.~'.date('Y-m-d_H-i-s');
+
+        /* Make backup of given file. */
+        return copy($configPath, $backupFile);
+    }
+
+    /**
+     * Writes the current config to config file.
+     *
+     * @param bool $backupConfigFile
+     * @return bool
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    public function writeConfigFile(bool $backupConfigFile = true): bool
+    {
+        /* Make backup of given file. */
+        if ($backupConfigFile) {
+            $success = $this->backupConfigFile();
+
+            /* Unable to back up config file. */
+            if (!$success) {
+                return false;
+            }
+        }
+
+        /* Builds the YAML data. */
+        $yamlData = Yaml::dump($this->getArray(), self::YAML_CONFIG_INLINE, self::YAML_CONFIG_IDENT);
+
+        /* Write new content to YAML path. */
+        $state = file_put_contents($this->getConfigPathAbsolute(), $yamlData);
+
+        /* Unable to write YAML file. */
+        if ($state === false) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+
+    /**
+     * Returns an obfuscated name.
+     *
+     * @param string $name
+     * @return string
+     */
+    private function getObfuscatedName(string $name): string
+    {
+        $name = str_replace('† ', '†', $name);
+
+        $parts = explode(' ', $name);
+
+        /* If the name consists of only one word, return it unchanged */
+        if (count($parts) == 1) {
+            return str_replace('†', '† ', $name);
+        }
+
+        $forename = array_shift($parts);
+
+        foreach ($parts as &$part) {
+            $part = $part[0].'.';
+        }
+
+        $obfuscatedName = implode(' ', [$forename, ...$parts]);
+
+        return str_replace('†', '† ', $obfuscatedName);
+    }
+
+    /**
+     * Parses the given date string and returns the timestamp.
+     *
+     * @param string|int $value
+     * @return int
+     */
+    private function parseDateOrTimestamp(string|int $value): int
+    {
+        $value = trim((string) $value);
+
+        /* Timestamp directly given. */
+        if (is_numeric($value) && (int) $value == $value) {
+            return (int) $value;
+        }
+
+        /* Convert Y-m-d to timestamp. */
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            [$year, $month, $day] = explode('-', $value);
+
+            if (checkdate((int) $month, (int) $day, (int) $year)) {
+                $timestamp = mktime(12, 0, 0, (int) $month, (int) $day, (int) $year);
+
+                if ($timestamp === false) {
+                    throw new LogicException('Unable to get timestamp.');
+                }
+
+                return $timestamp;
+            }
+        }
+
+        throw new LogicException('Invalid date or timestamp.');
+    }
+
+    /**
      * Transform the given page container for api response.
      *
      * @param Json $page
@@ -778,7 +869,7 @@ class CalendarConfig extends BaseConfig
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
      */
-    private function transformPageForApi(Json $page, string $format = Image::FORMAT_JPG): Json
+    private function transformPageForApi(Json $page, string $format = BaseImage::FORMAT_JPG): Json
     {
         $pageArray = $page->getArray();
 
@@ -858,6 +949,7 @@ class CalendarConfig extends BaseConfig
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
      */
@@ -944,8 +1036,43 @@ class CalendarConfig extends BaseConfig
      * @param string $source
      * @return string
      */
-    private function getImagePathAbsoluteFromSource(string $source): string
+    protected function getImagePathAbsoluteFromSource(string $source): string
     {
         return sprintf(self::PATH_IMAGE_ABSOLUTE, $this->projectDir, $this->identifier, $source);
+    }
+
+    /**
+     * Returns the relative image path from the given source.
+     *
+     * @param string $source
+     * @return string
+     */
+    protected function getImagePathRelativeFromSource(string $source): string
+    {
+        return sprintf(self::PATH_IMAGE_RELATIVE, $this->identifier, $source);
+    }
+
+    /**
+     * Checks if the given page is valid. Valid cases:
+     *
+     * - 0 - 12
+     * - '0' - '12'
+     * - 'a'
+     */
+    private function isPageValid(int|string $page): bool
+    {
+        /* 'a' (auto) is allowed */
+        if ($page === self::PAGE_AUTO) {
+            return true;
+        }
+
+        /* Only numerical values allowed. */
+        if (!ctype_digit((string) $page)) {
+            return false;
+        }
+
+        $page = (int) $page;
+
+        return $page >= self::PAGE_MIN && $page <= self::PAGE_MAX;
     }
 }

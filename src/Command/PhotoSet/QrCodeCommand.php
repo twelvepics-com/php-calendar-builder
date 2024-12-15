@@ -217,7 +217,8 @@ EOT
 
         $qrCodeWithLogo = new QRCodeWithLogo(
             options: $qrOption,
-            matrix: $qrCode->getMatrix($url),
+            matrix: $qrCode->getQRMatrix(),
+            url: $url,
             logoWidth: 10,
             logoHeight: 10
         );
