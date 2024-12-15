@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.36] - 2024-12-15
+
+* Add image to QR Code Builder (Calendar)
+
 ### [0.1.35] - 2024-12-15
 
+* Add QR Code Builder (Calendar)
 * Refactoring
 
 ### [0.1.34] - 2024-12-13
