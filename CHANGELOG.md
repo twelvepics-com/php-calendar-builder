@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.38] - 2024-12-19
+
+* Optimize design of overview QRCard
+* Add new output directory overview
+
 ### [0.1.37] - 2024-12-19
 
 * Add ixnode/php-container version 1.0.15
