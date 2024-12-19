@@ -25,22 +25,22 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Class CreateOverviewCommand
+ * Class CreateOverviewQrCodeCommand
  *
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2024-12-13)
  * @since 0.1.0 (2024-12-13) First version.
- * @example bin/console calendar:create-overview e04916437c63'
+ * @example bin/console calendar:create-overview-qr-code e04916437c63'
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
     description: self::COMMAND_DESCRIPTION
 )]
-class CreateOverviewCommand extends BaseCalendarCommand
+class CreateOverviewQrCodeCommand extends BaseCalendarCommand
 {
-    final public const COMMAND_NAME = 'calendar:create-overview';
+    final public const COMMAND_NAME = 'calendar:create-overview-qr-code';
 
-    final public const COMMAND_DESCRIPTION = 'Creates the overview qr code of the calendar.';
+    final public const COMMAND_DESCRIPTION = 'Creates the overview QRrCard with qr code of the calendar.';
 
     /**
      * Configures the command.
@@ -112,7 +112,7 @@ EOT
         $this->output->writeln(sprintf('QR Code height: %s', $qrCard->getHeight()));
 
         /* Print QR Code. */
-        $cliImage = new CliImage($imageStream, 120);
+        $cliImage = new CliImage($imageStream, 80);
         $this->output->writeln('');
         $this->output->writeln($cliImage->getAsciiString());
         $this->output->writeln('');
