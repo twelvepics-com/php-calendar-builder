@@ -30,7 +30,8 @@ use Symfony\Component\Console\Input\InputOption;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2024-12-13)
  * @since 0.1.0 (2024-12-13) First version.
- * @example bin/console calendar:create-overview-qr-code e04916437c63'
+ * @example bin/console calendar:create-overview-qr-code e04916437c63
+ * @example bin/console calendar:create-overview-qr-code e04916437c63 -i 02.png
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
@@ -56,9 +57,9 @@ class CreateOverviewQrCodeCommand extends BaseCalendarCommand
         $this
             ->setHelp(
                 <<<'EOT'
-The <info>calendar:create-overview</info> command:
+The <info>calendar:create-overview-qr-code</info> command:
   <info>php %command.full_name%</info>
-Creates the overview qr code of the calendar.
+Creates the overview QRrCard with qr code of the calendar.
 EOT
             );
     }

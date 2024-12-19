@@ -58,7 +58,7 @@ abstract class BaseCalendarCommand extends Command
      */
     public function __construct(
         #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir
+        protected readonly string $projectDir
     )
     {
         parent::__construct();
