@@ -621,6 +621,7 @@ class DesignDefault extends DesignBase
             'scale' => $scale,
             'markupDark' => '#fff',
             'markupLight' => '#f00',
+            'imageBase64' => false,
         ];
 
         /* Get blob from qrCode image */

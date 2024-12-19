@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2ea6561571d75d726c71cadea752dc2a",
+    "content-hash": "d5108d2852cd4f4c519336cf0ee106f6",
     "packages": [
         {
             "name": "adhocore/cli",
@@ -2053,28 +2053,31 @@
         },
         {
             "name": "ixnode/php-container",
-            "version": "1.0.2",
+            "version": "1.0.15",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ixnode/php-container.git",
-                "reference": "70cac6cbb75d032dc3af7058891ae3de138e47a7"
+                "reference": "9ca0079328dbb18d8bd156644eae7a9b17839250"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ixnode/php-container/zipball/70cac6cbb75d032dc3af7058891ae3de138e47a7",
-                "reference": "70cac6cbb75d032dc3af7058891ae3de138e47a7",
+                "url": "https://api.github.com/repos/ixnode/php-container/zipball/9ca0079328dbb18d8bd156644eae7a9b17839250",
+                "reference": "9ca0079328dbb18d8bd156644eae7a9b17839250",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-exif": "*",
+                "ext-fileinfo": "*",
                 "ext-gd": "*",
+                "ext-posix": "*",
                 "ixnode/php-checker": "^0.1.9",
                 "ixnode/php-coordinate": "^1.0",
                 "ixnode/php-exception": "^0.1.22",
                 "ixnode/php-naming-conventions": "^0.1.1",
                 "ixnode/php-size-byte": "^0.1.2",
-                "php": "^8.0"
+                "php": "^8.0",
+                "symfony/yaml": "7.1.*"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.13",
@@ -2115,9 +2118,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ixnode/php-container/issues",
-                "source": "https://github.com/ixnode/php-container/tree/1.0.2"
+                "source": "https://github.com/ixnode/php-container/tree/1.0.15"
             },
-            "time": "2024-12-07T22:09:22+00:00"
+            "time": "2024-12-19T13:07:39+00:00"
         },
         {
             "name": "ixnode/php-coordinate",

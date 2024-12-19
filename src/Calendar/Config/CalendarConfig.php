@@ -215,6 +215,30 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
+     * Returns the default year of the calendar.
+     *
+     * @return int
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getYear(): int
+    {
+        $path = ['settings', 'defaults', 'year'];
+
+        if (!$this->hasKey($path)) {
+            return (int) date('Y');
+        }
+
+        return $this->getKeyInteger($path);
+    }
+
+    /**
      * Returns the title of the calendar. This is the title of the first page from the calendar.
      *
      * @return string|null
@@ -330,6 +354,39 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
+     * Returns the holidays of the calendar for all pages.
+     *
+     * @return array<string, array<int|string, mixed>>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getHolidaysAll(): array
+    {
+        $pages = $this->getPages();
+
+        if (is_null($pages)) {
+            return [];
+        }
+
+        $holidays = [];
+
+        foreach ($pages as $page) {
+            $year = $page->getKeyInteger('year');
+            $month = $page->getKeyInteger('month');
+
+            $holidays = [...$holidays, ...$this->getHolidays($year, $month)];
+        }
+
+        return $holidays;
+    }
+
+    /**
      * Returns the holidays of the calendar.
      *
      * @return array<string, array<int, array<int|string, mixed>>>
@@ -413,6 +470,66 @@ class CalendarConfig extends BaseConfig
         ksort($data);
 
         return $data;
+    }
+
+    /**
+     * Returns the birthdays of the calendar from given pages.
+     *
+     * @param array<int, array<string|int, mixed>> $pages
+     * @return array<string, array<int, array<int|string, mixed>>>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getBirthdaysFromPages(array $pages): array
+    {
+        $birthdays = [];
+
+        foreach ($pages as $page) {
+            $year = $this->getYearFromArray($page);
+            $month = $this->getMonthFromArray($page);
+            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
+        }
+
+        return $birthdays;
+    }
+
+    /**
+     * Returns the birthdays of the calendar for all pages.
+     *
+     * @return array<string, array<int, array<int|string, mixed>>>
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     */
+    public function getBirthdaysAll(): array
+    {
+        $pages = $this->getPages();
+
+        if (is_null($pages)) {
+            return [];
+        }
+
+        $birthdays = [];
+
+        foreach ($pages as $page) {
+            $year = $page->getKeyInteger('year');
+            $month = $page->getKeyInteger('month');
+
+            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
+        }
+
+        return $birthdays;
     }
 
     /**
@@ -717,33 +834,6 @@ class CalendarConfig extends BaseConfig
         }
 
         return $file;
-    }
-
-    /**
-     * Returns the birthdays of the calendar from given pages.
-     *
-     * @param array<int, array<string|int, mixed>> $pages
-     * @return array<string, array<int, array<int|string, mixed>>>
-     * @throws ArrayKeyNotFoundException
-     * @throws CaseInvalidException
-     * @throws FileNotFoundException
-     * @throws FileNotReadableException
-     * @throws FunctionJsonEncodeException
-     * @throws JsonException
-     * @throws TypeInvalidException
-     * @throws FunctionReplaceException
-     */
-    public function getBirthdaysFromPages(array $pages): array
-    {
-        $birthdays = [];
-
-        foreach ($pages as $page) {
-            $year = $this->getYearFromArray($page);
-            $month = $this->getMonthFromArray($page);
-            $birthdays = [...$birthdays, ...$this->getBirthdays($year, $month)];
-        }
-
-        return $birthdays;
     }
 
     /**

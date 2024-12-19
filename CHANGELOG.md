@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.37] - 2024-12-19
+
+* Add ixnode/php-container version 1.0.15
+* Add bin/console ls command to show detailed information about a calendar or calendar structure
+* Add more CalendarConfig properties (getters)
+* Fix QRCode builder to version 5.x (Use option imageBase64 with false)
+
 ### [0.1.36] - 2024-12-15
 
 * Add image to QR Code Builder (Calendar)
@@ -14,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### [0.1.35] - 2024-12-15
 
 * Add QR Code Builder (Calendar)
+* Update chillerlan/php-qrcode extension to version 5
 * Refactoring
 
 ### [0.1.34] - 2024-12-13

@@ -315,6 +315,7 @@ EOT
      * @throws FunctionJsonEncodeException
      * @throws JsonException
      * @throws TypeInvalidException
+     * @throws FunctionReplaceException
      */
     private function getDesignConfig(): Json
     {

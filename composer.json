@@ -1,7 +1,7 @@
 {
     "name": "twelvepics-com/php-calendar-builder",
     "description": "Provides a Calendar Builder API.",
-    "version": "0.1.36",
+    "version": "0.1.37",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -26,7 +26,7 @@
         "ixnode/php-api-version-bundle": "^0.1.29",
         "ixnode/php-checker": "^0.1.9",
         "ixnode/php-cli-image": "^1.0",
-        "ixnode/php-container": "1.0.2",
+        "ixnode/php-container": "^1.0",
         "ixnode/php-coordinate": "^1.0",
         "ixnode/php-exception": "^0.1.21",
         "ixnode/php-gpx-reader": "^0.1.3",
