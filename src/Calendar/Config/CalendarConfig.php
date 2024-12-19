@@ -287,6 +287,54 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
+     * Returns the country code.
+     *
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getHolidayCountryCode(): string|null
+    {
+        $path = ['settings', 'holiday', 'country-code'];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        return $this->getKeyString($path);
+    }
+
+    /**
+     * Returns the state code.
+     *
+     * @return string|null
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
+     * @throws JsonException
+     * @throws TypeInvalidException
+     */
+    public function getHolidayStateCode(): string|null
+    {
+        $path = ['settings', 'holiday', 'state-code'];
+
+        if (!$this->hasKey($path)) {
+            return null;
+        }
+
+        return $this->getKeyString($path);
+    }
+
+    /**
      * Returns the holidays of the calendar.
      *
      * @param int|null $year

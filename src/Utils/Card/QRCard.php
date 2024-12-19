@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Utils\Card;
 
+use App\Calendar\Config\CalendarConfig;
 use App\Utils\QrCode\QRGdImageRounded;
 use chillerlan\QRCode\Data\QRMatrix;
 use chillerlan\QRCode\Output\QROutputInterface;
@@ -24,6 +25,13 @@ use ImagickDrawException;
 use ImagickException;
 use ImagickPixel;
 use ImagickPixelException;
+use Ixnode\PhpException\ArrayType\ArrayKeyNotFoundException;
+use Ixnode\PhpException\Case\CaseInvalidException;
+use Ixnode\PhpException\File\FileNotFoundException;
+use Ixnode\PhpException\File\FileNotReadableException;
+use Ixnode\PhpException\Function\FunctionJsonEncodeException;
+use Ixnode\PhpException\Type\TypeInvalidException;
+use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
 use LogicException;
 
 /**
@@ -74,6 +82,7 @@ class QRCard
         private readonly string|null $textTitle = null,
         private readonly string|null $textSubtitle = null,
         private readonly string|null $imagePath = null,
+        private readonly CalendarConfig|null $calendarConfig = null,
         private readonly int $scale = 20,
         private readonly int $border = 0,
     )
@@ -177,7 +186,7 @@ class QRCard
         $this->addBackground();
         $this->addQrCode($data, $file);
         $this->addScanMe();
-        $this->addTitle();
+        $this->addTitleAndHeadline();
         $this->addSubtitle();
 
         return $this->qrCard->getImageBlob();
@@ -313,7 +322,7 @@ class QRCard
         /* Calculate qr code sizes. */
         $qrCodeWidthSource = $qrCodeOverlay->getImageWidth();
         $qrCodeHeightSource = $qrCodeOverlay->getImageHeight();
-        $qrCodeHeightTarget = (int) floor($this->height / 3);
+        $qrCodeHeightTarget = (int) floor($this->height / 3 - $this->scale / 2);
         $qrCodeWidthTarget = (int) floor(($qrCodeWidthSource / $qrCodeHeightSource) * $qrCodeHeightTarget);
 
         /* Calculate qr code background sizes. */
@@ -407,30 +416,88 @@ class QRCard
     }
 
     /**
-     * Add title.
+     * Add main title and headline "Kalender".
      *
      * @throws ImagickDrawException
      * @throws ImagickException
      * @throws ImagickPixelException
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws TypeInvalidException
+     * @throws FunctionReplaceException
+     * @throws \JsonException
      */
-    private function addTitle(): void
+    private function addTitleAndHeadline(): void
     {
         if (is_null($this->textTitle)) {
             return;
         }
 
-        $textX = (int) floor($this->width / 2);
-        $textY = (int) floor($this->height * (1 / 5));
+        /* Build calendar subtitle. */
+//        $subtitle = 'Kalender | ';
+//        $subtitle .= implode(' | ', array_map(fn($n) => str_pad((string)$n, 2, '0', STR_PAD_LEFT), range(1, 12)));
+        $subtitle = 'Kalender';
 
-        $drawText = new ImagickDraw();
-        $drawText->setFontSize($this->qrCodeBgRadius * 3);
-        $drawText->setTextKerning((int) floor($this->qrCodeBgRadius / 2.));
-        $drawText->setFont(self::FONT_TITLE);
-        $drawText->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
-        $drawText->setTextAlignment(Imagick::ALIGN_CENTER);
-        $drawText->annotation($textX, $textY, $this->textTitle);
+        /* Main title configuration. */
+        $drawTitle = new ImagickDraw();
+        $drawTitle->setFontSize($this->qrCodeBgRadius * 3);
+        $drawTitle->setTextKerning((int) floor($this->qrCodeBgRadius / 2.));
+        $drawTitle->setFont(self::FONT_TITLE);
+        $drawTitle->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
+        $drawTitle->setTextAlignment(Imagick::ALIGN_CENTER);
 
-        $this->qrCard->drawImage($drawText);
+        /* Subtitle configuration. */
+        $drawSubtitle = new ImagickDraw();
+        $drawSubtitle->setFontSize($this->qrCodeBgRadius * 1.);
+        $drawSubtitle->setFont(self::FONT_TITLE);
+        $drawSubtitle->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
+        $drawSubtitle->setTextAlignment(Imagick::ALIGN_CENTER);
+
+        /* Get font size. */
+        $metricsTitle = $this->qrCard->queryFontMetrics($drawSubtitle, $this->textTitle);
+        $titleWidth = (int) floor($metricsTitle['textWidth'] * 1.8);
+        $titleHeight = (int) floor($metricsTitle['textHeight'] * 1.8);
+
+        /* Get font size. */
+        $metricsSubtitle = $this->qrCard->queryFontMetrics($drawSubtitle, $subtitle);
+        $subtitleHeight = (int) floor($metricsSubtitle['textHeight'] * 1.8);
+
+        /* Calculate position. */
+        $titleX = (int) floor($this->width / 2);
+        $titleY = (int) floor($this->height * (1 / 5));
+
+        /* Calculate position. */
+        $subtitleX = $titleX;
+        $subtitleY = $titleY + $subtitleHeight;
+
+        $drawTitle->annotation($titleX, $titleY, $this->textTitle);
+        $this->qrCard->drawImage($drawTitle);
+
+        $drawSubtitle->annotation($subtitleX, $subtitleY, $subtitle);
+        $this->qrCard->drawImage($drawSubtitle);
+
+        if (!is_null($this->calendarConfig)) {
+            $stateCountry = sprintf('%s-%s', $this->calendarConfig->getHolidayCountryCode(), $this->calendarConfig->getHolidayStateCode());
+
+            $drawStateCountry = new ImagickDraw();
+            $drawStateCountry->setFontSize($this->qrCodeBgRadius * .5);
+            $drawStateCountry->setFont(self::FONT_SCAN_ME);
+            $drawStateCountry->setFillColor(new ImagickPixel($this->getColor(self::COLOR_WHITE)));
+
+            /* Get font size. */
+            $metricsStateCountry = $this->qrCard->queryFontMetrics($drawStateCountry, $stateCountry);
+            $stateCountryHeight = (int) floor($metricsStateCountry['textHeight'] * 1.8);
+
+            /* Calculate position. */
+            $stateCountryX = (int) floor($titleX + $titleWidth + $stateCountryHeight / 2);
+            $stateCountryY = (int) floor($titleY - $titleHeight + $stateCountryHeight / 3);
+
+            $drawStateCountry->annotation($stateCountryX, $stateCountryY, $stateCountry);
+            $this->qrCard->drawImage($drawStateCountry);
+        }
     }
 
     /**

@@ -87,7 +87,8 @@ EOT
             throw new LogicException('Image must be a string');
         }
 
-        $path = sprintf('data/calendar/%s/calendar.png', $identifier);
+        $path = sprintf('data/calendar/%s/overview/qr-code.png', $identifier);
+        $directory = dirname($path);
         $imagePath = is_null($image) ? null : sprintf('data/calendar/%s/%s', $identifier, $image);
 
         $qrCard = new QRCard(
@@ -97,6 +98,7 @@ EOT
             textTitle: $title,
             textSubtitle: $subtitle,
             imagePath: $imagePath,
+            calendarConfig: $this->config,
             scale: 80,
             border: 1
         );
@@ -114,6 +116,15 @@ EOT
         $this->output->writeln('');
         $this->output->writeln($cliImage->getAsciiString());
         $this->output->writeln('');
+
+        if (!file_exists($directory)) {
+            $success = mkdir($directory, 0775, true);
+
+            if (!$success) {
+                $this->output->writeln(sprintf('<error>%s</error>', sprintf('Could not create directory "%s".', $directory)));
+                return Command::FAILURE;
+            }
+        }
 
         /* Write QR card. */
         $success = file_put_contents($path, $imageStream);
