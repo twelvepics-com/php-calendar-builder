@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.39] - 2024-12-19
+
+* QRCard command refactoring
+* Add calendar:create-overview-image command
+
 ### [0.1.38] - 2024-12-19
 
 * Optimize design of overview QRCard
