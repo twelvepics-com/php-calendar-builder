@@ -32,6 +32,7 @@ use Ixnode\PhpException\File\FileNotReadableException;
 use Ixnode\PhpException\Function\FunctionJsonEncodeException;
 use Ixnode\PhpException\Type\TypeInvalidException;
 use Ixnode\PhpNamingConventions\Exception\FunctionReplaceException;
+use JsonException;
 use LogicException;
 
 /**
@@ -173,9 +174,17 @@ class QRCard
     /**
      * Renders the qr code.
      *
+     * @throws ArrayKeyNotFoundException
+     * @throws CaseInvalidException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
+     * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws ImagickDrawException
      * @throws ImagickException
      * @throws ImagickPixelException
+     * @throws TypeInvalidException
+     * @throws JsonException
      */
     public function render(
         ?string $data = null,
@@ -428,7 +437,7 @@ class QRCard
      * @throws FunctionJsonEncodeException
      * @throws TypeInvalidException
      * @throws FunctionReplaceException
-     * @throws \JsonException
+     * @throws JsonException
      */
     private function addTitleAndHeadline(): void
     {

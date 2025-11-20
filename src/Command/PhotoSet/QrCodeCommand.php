@@ -15,9 +15,12 @@ namespace App\Command\PhotoSet;
 
 use App\Calendar\Config\PhotoConfig;
 use App\Utils\QrCode\QRCodeWithLogo;
+use App\Utils\QrCode\QRGdImageRounded;
+use chillerlan\QRCode\Common\EccLevel;
 use chillerlan\QRCode\Data\QRCodeDataException;
 use chillerlan\QRCode\Data\QRMatrix;
 use chillerlan\QRCode\Output\QRCodeOutputException;
+use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QRCodeException;
 use chillerlan\QRCode\QROptions;
@@ -84,6 +87,12 @@ class QrCodeCommand extends Command
 
     /** @var string[] $pathsQrCodePhotos */
     private array $pathsQrCodePhotos = [];
+
+    private const COLOR_WHITE = [255, 255, 255];
+
+    private const COLOR_BLACK = [0, 0, 0];
+
+    private const COLOR_DARK_BLUE = [0, 0, 127];
 
     public function __construct(
         protected readonly KernelInterface $appKernel,
@@ -185,23 +194,67 @@ EOT
         /* Wanted width (and height) of qrCode */
         $width = 800;
 
+        $border = 2;
+
         /* Calculate scale of qrCode */
         $scale = intval(ceil($width / $matrixLength));
 
+        /* Assign colors. */
+        $dotLight = self::COLOR_WHITE;
+        $dotDark = self::COLOR_BLACK;
+        $finderLight = self::COLOR_WHITE;
+        $finderDark = self::COLOR_DARK_BLUE;
+
         /* Set options for qrCode */
         $options = [
-            'addQuietzone' => true,
-            'eccLevel' => QRCode::ECC_H,
-            'markupDark' => '#000',
-            'markupLight' => '#fff',
-            'outputType' => QRCode::OUTPUT_IMAGICK,
-            'scale' => $scale,
-            'version' => 8,
-            'imageTransparent' => true,
+            'outputType' => QROutputInterface::CUSTOM,
+            'outputInterface' => QRGdImageRounded::class,
+            'addLogoSpace' => (bool)$logo,
+            'addQuietzone' => $border > 0,
+            'bgColor' => self::COLOR_WHITE,
+            'circleRadius' => 0.45,
             'drawCircularModules' => true,
-            'circleRadius' => 0.1,
-            'keepAsSquare' => [QRMatrix::M_FINDER, QRMatrix::M_FINDER_DOT],
-            'imageBase64' => false,
+            'eccLevel' => EccLevel::H,
+            'imageTransparent' => true,
+            'keepAsSquare' => [],
+            'logoSpaceHeight' => 15,
+            'logoSpaceStartX' => 15,
+            'logoSpaceStartY' => 15,
+            'logoSpaceWidth' => 15,
+            'moduleValues' => [
+                /* Set light points. */
+                QRMatrix::M_ALIGNMENT        => $dotLight,
+                QRMatrix::M_DARKMODULE_LIGHT => $dotLight,
+                QRMatrix::M_DATA             => $dotLight,
+                QRMatrix::M_FINDER           => $finderLight,
+                QRMatrix::M_FINDER_DOT_LIGHT => $finderLight,
+                QRMatrix::M_FORMAT           => $dotLight,
+                QRMatrix::M_LOGO             => $dotLight,
+                QRMatrix::M_NULL             => $dotLight,
+                QRMatrix::M_QUIETZONE        => $dotLight,
+                QRMatrix::M_SEPARATOR        => $dotLight,
+                QRMatrix::M_TIMING           => $dotLight,
+                QRMatrix::M_VERSION          => $dotLight,
+
+                /* Set dark points. */
+                QRMatrix::M_ALIGNMENT_DARK   => $dotDark,
+                QRMatrix::M_DARKMODULE       => $dotDark,
+                QRMatrix::M_DATA_DARK        => $dotDark,
+                QRMatrix::M_FINDER_DARK      => $finderDark,
+                QRMatrix::M_FINDER_DOT       => $finderDark,
+                QRMatrix::M_FORMAT_DARK      => $dotDark,
+                QRMatrix::M_LOGO_DARK        => $dotDark,
+                QRMatrix::M_QUIETZONE_DARK   => $dotDark,
+                QRMatrix::M_SEPARATOR_DARK   => $dotDark,
+                QRMatrix::M_TIMING_DARK      => $dotDark,
+                QRMatrix::M_VERSION_DARK     => $dotDark,
+            ],
+            'outputBase64' => false,
+            'quality' => 100,
+            'quietzoneSize' => $border,
+            'scale' => $scale,
+            'transparencyColor' => self::COLOR_WHITE,
+            'version' => 8,
         ];
 
         $url = match (true) {
@@ -210,21 +263,50 @@ EOT
         };
 
         /* Build options. */
-        $qrOption = new QROptions($options);
+        $qrOptions = new QROptions($options);
 
         /* Build qr code instance. */
-        $qrCode = new QRCode($qrOption);
+        $qrCode = new QRCode($qrOptions);
 
-        $qrCodeWithLogo = new QRCodeWithLogo(
-            options: $qrOption,
-            matrix: $qrCode->getQRMatrix(),
-            url: $url,
-            logoWidth: 10,
-            logoHeight: 10
-        );
+        $matrix = $qrCode->getQRMatrix();
 
-        /* Get blob from qrCode image */
-        $qrCodeWithLogo->dump(file: $path, logo: $logo);
+        $matrix->setLogoSpace(10, 10);
+
+        $qrCode->render($url, $path);
+
+        $qrImage = imagecreatefrompng($path);
+
+        if ($logo) {
+            $logoImage = imagecreatefromstring($logo);
+
+            $qrWidth  = imagesx($qrImage);
+            $qrHeight = imagesy($qrImage);
+
+            $logoWidth  = imagesx($logoImage);
+            $logoHeight = imagesy($logoImage);
+
+            $targetWidth  = (int)($qrWidth * 0.15);
+            $targetHeight = (int)($logoHeight * ($targetWidth / $logoWidth));
+
+            $dstX = (int)(($qrWidth  - $targetWidth)/2) - $logoWidth * 2;
+            $dstY = (int)(($qrHeight - $targetHeight)/2) - $logoHeight * 2;
+
+            // Logo einfügen
+            imagecopyresampled(
+                $qrImage,
+                $logoImage,
+                $dstX, $dstY,
+                0, 0,
+                $targetWidth, $targetHeight,
+                $logoWidth,  $logoHeight
+            );
+
+            imagepng($qrImage, $path);
+
+            imagedestroy($logoImage);
+        }
+
+        imagedestroy($qrImage);
     }
 
     /**
