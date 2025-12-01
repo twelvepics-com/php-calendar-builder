@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.40] - 2025-12-02
+
+* Fix photo-set:qr-code command with new QRCode version
+
 ### [0.1.39] - 2024-12-19
 
 * QRCard command refactoring
