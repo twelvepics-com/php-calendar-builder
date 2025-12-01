@@ -94,6 +94,8 @@ class QrCodeCommand extends Command
 
     private const COLOR_DARK_BLUE = [0, 0, 127];
 
+    private const FONT_TITLE = 'data/font/OpenSansCondensed-Bold.ttf';
+
     public function __construct(
         protected readonly KernelInterface $appKernel,
     )
@@ -254,7 +256,7 @@ EOT
             'quietzoneSize' => $border,
             'scale' => $scale,
             'transparencyColor' => self::COLOR_WHITE,
-            'version' => 8,
+            'version' => 7,
         ];
 
         $url = match (true) {
@@ -285,13 +287,13 @@ EOT
             $logoWidth  = imagesx($logoImage);
             $logoHeight = imagesy($logoImage);
 
-            $targetWidth  = (int)($qrWidth * 0.15);
-            $targetHeight = (int)($logoHeight * ($targetWidth / $logoWidth));
+            $targetWidth  = (int) ($qrWidth * 0.2);
+            $targetHeight = (int) ($logoHeight * ($targetWidth / $logoWidth));
 
-            $dstX = (int)(($qrWidth  - $targetWidth)/2) - $logoWidth * 2;
-            $dstY = (int)(($qrHeight - $targetHeight)/2) - $logoHeight * 2;
+            $dstX = (int) (($qrWidth  - $targetWidth) / 2);
+            $dstY = (int) (($qrHeight - $targetHeight) / 2);
 
-            // Logo einfügen
+            /* Add logo. */
             imagecopyresampled(
                 $qrImage,
                 $logoImage,
@@ -492,7 +494,8 @@ EOT
         int $borderY,
         int $qrCodeTargetWidth,
         int $qrCodeTargetHeight,
-        string $pathQrPage
+        string $pathQrPage,
+        bool $landscape,
     ): void
     {
         /* Create image. */
@@ -510,23 +513,98 @@ EOT
 
         imagefill($imagePage, 0, 0, $backgroundColor);
 
-        foreach ($pageFiles as $index => $file) {
-            $col = $index % 3;
-            $row = floor($index / 3);
+        if (count($pageFiles) === 1) {
+            $file = $pageFiles[0];
 
-            /* Calculate x and y positions. */
-            $posX = (int) ($col * $qrCodeTargetWidth) + $borderX;
-            $posY = (int) ($row * $qrCodeTargetHeight) + $borderY;
+            // Titel & Untertitel
+            $title    = "2025";
+            $subtitle = "Weihnachtskalender";
 
-            /* Add QR Code to QR page. */
+            // Footer
+            $footer = "für Isa";
+
+            // TTF-Font
+            $fontPath = self::FONT_TITLE;
+
+            // Schriftgrößen
+            $titleFontSize    = 64;
+            $subtitleFontSize = 40;
+            $footerFontSize   = $subtitleFontSize; // wie Untertitel
+
+            // Farben
+            $black = imagecolorallocate($imagePage, 0, 0, 0);
+
+            // QR-Position wie bisher
+            $qrX = (int)(($pageWidth  - $qrCodeTargetWidth)  / 2);
+            $qrY = (int)(($pageHeight - $qrCodeTargetHeight) / 2);
+
+            // ---- TEXT POSITION BERECHNEN ----
+
+            // Bounding-Boxes ermitteln
+            $titleBox    = imagettfbbox($titleFontSize, 0, $fontPath, $title);
+            $subtitleBox = imagettfbbox($subtitleFontSize, 0, $fontPath, $subtitle);
+            $footerBox   = imagettfbbox($footerFontSize, 0, $fontPath, $footer);
+
+            $titleWidth     = $titleBox[2] - $titleBox[0];
+            $titleHeight    = $titleBox[1] - $titleBox[7];
+
+            $subtitleWidth  = $subtitleBox[2] - $subtitleBox[0];
+            $subtitleHeight = $subtitleBox[1] - $subtitleBox[7];
+
+            $footerWidth    = $footerBox[2] - $footerBox[0];
+            $footerHeight   = $footerBox[1] - $footerBox[7];
+
+            // Abstände
+            $gapTitleToSubtitle = 10;
+            $gapSubtitleToQr    = 60;    // Titel weiter hoch setzen
+            $gapQrToFooter      = 60;    // Abstand QR → Footer
+
+            // Titel/Untertitel Y-Positionen
+            $subtitleY = (int)($qrY - $gapSubtitleToQr);
+            $titleY    = (int)($subtitleY - $gapTitleToSubtitle - $subtitleHeight);
+
+            // Footer Y-Position (unter dem QR-Code)
+            $footerY = (int)($qrY + $qrCodeTargetHeight + $gapQrToFooter);
+
+            // X für Zentrierung
+            $titleX    = (int)(($pageWidth - $titleWidth) / 2);
+            $subtitleX = (int)(($pageWidth - $subtitleWidth) / 2);
+            $footerX   = (int)(($pageWidth - $footerWidth) / 2);
+
+            // ---- TEXT ZEICHNEN ----
+            imagettftext($imagePage, $titleFontSize,    0, $titleX,    $titleY,    $black, $fontPath, $title);
+            imagettftext($imagePage, $subtitleFontSize, 0, $subtitleX, $subtitleY, $black, $fontPath, $subtitle);
+            imagettftext($imagePage, $footerFontSize,   0, $footerX,   $footerY,   $black, $fontPath, $footer);
+
+            // ---- QR CODE EINSETZEN ----
             $this->addQrCodeToPage(
                 file: $file,
                 imagePage: $imagePage,
-                posX: $posX,
-                posY: $posY,
+                posX: $qrX,
+                posY: $qrY,
                 width: $qrCodeTargetWidth,
                 height: $qrCodeTargetHeight,
             );
+        } else {
+            foreach ($pageFiles as $index => $file) {
+                $cols = $landscape ? 3 : 2;
+                $col = $index % $cols;
+                $row = floor($index / $cols);
+
+                /* Calculate x and y positions. */
+                $posX = (int)($col * $qrCodeTargetWidth) + $borderX;
+                $posY = (int)($row * $qrCodeTargetHeight) + $borderY;
+
+                /* Add QR Code to QR page. */
+                $this->addQrCodeToPage(
+                    file: $file,
+                    imagePage: $imagePage,
+                    posX: $posX,
+                    posY: $posY,
+                    width: $qrCodeTargetWidth,
+                    height: $qrCodeTargetHeight,
+                );
+            }
         }
 
         /* Save the page. */
@@ -544,21 +622,21 @@ EOT
      * @throws FileNotFoundException
      * @throws QRCodeException
      */
-    private function buildQrCards(string $identifier): void
+    private function buildQrCards(string $identifier, bool $landscape): void
     {
         /* Define border. */
         $borderX = 75;
         $borderY = 75;
 
         /* Define page dimensions (15cm x 10cm at 300 DPI = 1772x1181 pixels). */
-        $pageWidth = 1772;
-        $pageHeight = 1181;
+        $pageWidth = $landscape ? 1772 : 1181;
+        $pageHeight = $landscape ? 1181 : 1772;
         $pageWidthInner = $pageWidth - 2 * $borderX;
         $pageHeightInner = $pageHeight - 2 * $borderY;
 
         /* Define QR Code size and margins. */
-        $qrCodeTargetWidth = (int) floor($pageWidthInner / 3);
-        $qrCodeTargetHeight = (int) floor($pageHeightInner / 2);
+        $qrCodeTargetWidth = (int) floor($pageWidthInner / ($landscape ? 3 : 2));
+        $qrCodeTargetHeight = (int) floor($pageHeightInner / ($landscape ? 2 : 3));
 
         /* Define source QR code files. */
         $pathQrCards = $this->getPathQrCards($identifier);
@@ -573,16 +651,19 @@ EOT
         $this->createQrPage(
             pageWidth: $pageWidth,
             pageHeight: $pageHeight,
-            pageFiles: [$files[0]],
+            pageFiles: [array_shift($files)],
             borderX: $borderX,
             borderY: $borderY,
             qrCodeTargetWidth: $qrCodeTargetWidth,
             qrCodeTargetHeight: $qrCodeTargetHeight,
             pathQrPage: $pathQrPage,
+            landscape: $landscape,
         );
 
+        shuffle($files);
+
         /* Process pages for the remaining QR Codes (1-24) */
-        $pages = array_chunk(array_slice($files, 1), 6); // 6 QR codes per page (3x2 layout)
+        $pages = array_chunk($files, 6); // 6 QR codes per page (2x3 or 3x2 layout)
         foreach ($pages as $pageIndex => $pageFiles) {
             /* Page for the first QR code (file index). */
             $pathQrPage = sprintf(self::TEMPLATE_QR_PAGE, $pathQrCards, $pageIndex + 1);
@@ -597,6 +678,7 @@ EOT
                 qrCodeTargetWidth: $qrCodeTargetWidth,
                 qrCodeTargetHeight: $qrCodeTargetHeight,
                 pathQrPage: $pathQrPage,
+                landscape: $landscape,
             );
         }
 
@@ -639,7 +721,7 @@ EOT
         );
 
         /* Write QR Code Cards. */
-        $this->buildQrCards($identifier);
+        $this->buildQrCards($identifier, false);
 
         return Command::SUCCESS;
     }
