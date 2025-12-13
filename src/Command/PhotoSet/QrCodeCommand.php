@@ -209,20 +209,29 @@ EOT
 
         /* Set options for qrCode */
         $options = [
+            'eccLevel' => EccLevel::H,
+            'addQuietzone' => $border > 0,
+            'version' => 7,
+            'scale' => $scale,
+            'outputBase64' => false,
+            'quality' => 100,
+
             'outputType' => QROutputInterface::CUSTOM,
             'outputInterface' => QRGdImageRounded::class,
-            'addLogoSpace' => (bool)$logo,
-            'addQuietzone' => $border > 0,
+            'transparencyColor' => self::COLOR_WHITE,
             'bgColor' => self::COLOR_WHITE,
+
+            'quietzoneSize' => $border,
+            'addLogoSpace' => (bool)$logo,
             'circleRadius' => 0.45,
             'drawCircularModules' => true,
-            'eccLevel' => EccLevel::H,
             'imageTransparent' => true,
             'keepAsSquare' => [],
             'logoSpaceHeight' => 15,
             'logoSpaceStartX' => 15,
             'logoSpaceStartY' => 15,
             'logoSpaceWidth' => 15,
+
             'moduleValues' => [
                 /* Set light points. */
                 QRMatrix::M_ALIGNMENT        => $dotLight,
@@ -251,12 +260,6 @@ EOT
                 QRMatrix::M_TIMING_DARK      => $dotDark,
                 QRMatrix::M_VERSION_DARK     => $dotDark,
             ],
-            'outputBase64' => false,
-            'quality' => 100,
-            'quietzoneSize' => $border,
-            'scale' => $scale,
-            'transparencyColor' => self::COLOR_WHITE,
-            'version' => 7,
         ];
 
         $url = match (true) {

@@ -17,6 +17,10 @@ use App\Calendar\Design\Base\DesignBase;
 use App\Constants\Color;
 use App\Constants\KeyJson;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
+use App\Utils\QrCode\QRGdImageRounded;
+use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Data\QRMatrix;
+use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Exception;
@@ -43,6 +47,10 @@ use LogicException;
  */
 class DesignDefault extends DesignBase
 {
+    private const COLOR_RED = [255, 0, 0];
+
+    private const COLOR_WHITE = [255, 255, 255];
+
     /**
      * Configures the default configuration for the current design.
      *
@@ -601,7 +609,7 @@ class DesignDefault extends DesignBase
     protected function addQrCode(): void
     {
         /* Set background color */
-        $backgroundColor = [255, 0, 0];
+        $backgroundColor = self::COLOR_RED;
 
         /* Matrix length of qrCode */
         $matrixLength = 37;
@@ -612,16 +620,56 @@ class DesignDefault extends DesignBase
         /* Calculate scale of qrCode */
         $scale = intval(ceil($width / $matrixLength));
 
+        /* Assign colors. */
+        $dotLight = self::COLOR_RED;
+        $dotDark = self::COLOR_WHITE;
+        $finderLight = self::COLOR_RED;
+        $finderDark = self::COLOR_WHITE;
+
         /* Set options for qrCode */
         $options = [
-            'eccLevel' => QRCode::ECC_H,
-            'outputType' => QRCode::OUTPUT_IMAGICK,
-            'version' => $this->qrCodeVersion,
+            'eccLevel' => EccLevel::H,
             'addQuietzone' => false,
+            'version' => $this->qrCodeVersion,
             'scale' => $scale,
-            'markupDark' => '#fff',
-            'markupLight' => '#f00',
-            'imageBase64' => false,
+            'outputBase64' => false,
+            'quality' => 100,
+
+            'outputType' => QROutputInterface::CUSTOM,
+            'outputInterface' => QRGdImageRounded::class,
+            'transparencyColor' => self::COLOR_RED,
+            'bgColor' => self::COLOR_RED,
+
+            'circleRadius' => .1,
+
+            'moduleValues' => [
+                /* Set light points. */
+                QRMatrix::M_ALIGNMENT        => $dotLight,
+                QRMatrix::M_DARKMODULE_LIGHT => $dotLight,
+                QRMatrix::M_DATA             => $dotLight,
+                QRMatrix::M_FINDER           => $finderLight,
+                QRMatrix::M_FINDER_DOT_LIGHT => $finderLight,
+                QRMatrix::M_FORMAT           => $dotLight,
+                QRMatrix::M_LOGO             => $dotLight,
+                QRMatrix::M_NULL             => $dotLight,
+                QRMatrix::M_QUIETZONE        => $dotLight,
+                QRMatrix::M_SEPARATOR        => $dotLight,
+                QRMatrix::M_TIMING           => $dotLight,
+                QRMatrix::M_VERSION          => $dotLight,
+
+                /* Set dark points. */
+                QRMatrix::M_ALIGNMENT_DARK   => $dotDark,
+                QRMatrix::M_DARKMODULE       => $dotDark,
+                QRMatrix::M_DATA_DARK        => $dotDark,
+                QRMatrix::M_FINDER_DARK      => $finderDark,
+                QRMatrix::M_FINDER_DOT       => $finderDark,
+                QRMatrix::M_FORMAT_DARK      => $dotDark,
+                QRMatrix::M_LOGO_DARK        => $dotDark,
+                QRMatrix::M_QUIETZONE_DARK   => $dotDark,
+                QRMatrix::M_SEPARATOR_DARK   => $dotDark,
+                QRMatrix::M_TIMING_DARK      => $dotDark,
+                QRMatrix::M_VERSION_DARK     => $dotDark,
+            ],
         ];
 
         /* Get blob from qrCode image */

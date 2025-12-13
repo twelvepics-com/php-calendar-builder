@@ -50,7 +50,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2023-11-06)
  * @since 0.1.0 (2023-11-06) First version.
- * @example bin/console calendar:page-build data/calendar/bcb37ef651a1814c091c8a24d8f550ee/DSC03740.png --year 2024 --month 1 --page-title 'Scotland, Edinburgh' --title Edinburgh --subtitle 'With love' --coordinate '55.948815, -3.193105'
+ * @example bin/console calendar:page-build data/calendar/d8ab64f9b90b/00.jpg --year 2024 --month 1 --page-title 'Scotland, Edinburgh' --title Edinburgh --subtitle 'With love' --coordinate '55.948815, -3.193105'
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
