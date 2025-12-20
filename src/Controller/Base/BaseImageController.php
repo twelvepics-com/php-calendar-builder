@@ -19,6 +19,8 @@ use App\Constants\Conversion;
 use App\Constants\Event;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
+use DateInvalidTimeZoneException;
+use DateMalformedStringException;
 use GdImage;
 use Ixnode\PhpApiVersionBundle\Utils\Version\Version;
 use Ixnode\PhpContainer\File;
@@ -375,16 +377,19 @@ class BaseImageController extends AbstractController
      * @param int|null $quality
      * @param string $format
      * @param string $imageType
+     * @param int|null $impression
      * @return Response
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
+     * @throws DateInvalidTimeZoneException
+     * @throws DateMalformedStringException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws InvalidArgumentException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      */
     protected function doShowPageAsImage(
         string $identifier,
@@ -392,10 +397,11 @@ class BaseImageController extends AbstractController
         int|null $width,
         int|null $quality,
         string $format,
-        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
+        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET,
+        int $impression = null
     ): Response
     {
-        $file = $this->calendarStructure->getImageFile($identifier, $number, $imageType);
+        $file = $this->calendarStructure->getImageFile($identifier, $number, $imageType, $impression);
 
         if (!$file instanceof File) {
             return $this->getErrorResponse($file, $this->appKernel->getProjectDir());

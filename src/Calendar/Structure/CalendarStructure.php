@@ -17,6 +17,9 @@ use App\Cache\RedisCache;
 use App\Calendar\Config\CalendarConfig;
 use App\Constants\Format;
 use App\Constants\Service\Calendar\CalendarBuilderService;
+use DateInvalidTimeZoneException;
+use DateMalformedStringException;
+use Ixnode\PhpContainer\Base\BaseImage;
 use Ixnode\PhpContainer\File;
 use Ixnode\PhpContainer\Image;
 use Ixnode\PhpContainer\Json;
@@ -329,20 +332,22 @@ class CalendarStructure
      * @param string $identifier
      * @param int $number
      * @param string $imageType
+     * @param int|null $impression
      * @return File|string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      */
     public function getImageFile(
         string $identifier,
         int $number,
-        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET
+        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET,
+        int $impression = null
     ): File|string
     {
         $config = new CalendarConfig($identifier, $this->appKernel->getProjectDir());
@@ -351,7 +356,11 @@ class CalendarStructure
             return (string) $config->getError();
         }
 
-        $imageFile = $config->getImageFile($number, $imageType);
+        $imageFile = $config->getImageFile(
+            number: $number,
+            imageType: $imageType,
+            impression: $impression
+        );
 
         /* String means an error occurred. */
         if (is_string($imageFile)) {
@@ -372,17 +381,21 @@ class CalendarStructure
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws InvalidArgumentException
+     * @throws DateInvalidTimeZoneException
+     * @throws DateMalformedStringException
+     * @throws FileNotFoundException
+     * @throws FileNotReadableException
      */
     public function getImageStringFromCache(
         File $file,
         int|null $width,
         int|null $quality,
-        string $format = Image::FORMAT_JPG
+        string $format = BaseImage::FORMAT_JPG
     ): string|null
     {
         /* Disabled cache. */
         if (is_null($this->redisCache)) {
-            $image = new Image($file);
+            $image = new Image(image: $file, ignoreOrientation: true);
 
             return $image->getImageString($width, $format, $quality);
         }
@@ -407,13 +420,13 @@ class CalendarStructure
         File $file,
         int|null $width,
         int|null $quality,
-        string $format = Image::FORMAT_JPG
+        string $format = BaseImage::FORMAT_JPG
     ): callable
     {
         return function (ItemInterface $item) use ($file, $width, $format, $quality): string|null {
             $item->expiresAfter(RedisCache::REDIS_ITEM_DEFAULT_LIFETIME);
 
-            $image = new Image($file);
+            $image = new Image(image: $file, ignoreOrientation: true);
 
             if (!$image->isImage()) {
                 return null;

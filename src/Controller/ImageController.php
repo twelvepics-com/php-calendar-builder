@@ -179,9 +179,10 @@ class ImageController extends BaseImageController
         string $identifier,
         int|string $number,
         string $format = Image::FORMAT_JPG,
+        #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET,
         #[MapQueryParameter] int|null $width = null,
         #[MapQueryParameter] int|null $quality = null,
-        #[MapQueryParameter] string $type = CalendarStructure::IMAGE_TYPE_TARGET
+        #[MapQueryParameter] string $impression = null,
     ): Response
     {
         $year = $this->calendarStructure->getYear($identifier);
@@ -211,7 +212,21 @@ class ImageController extends BaseImageController
             return $this->getErrorResponse(sprintf('The given image format "%s" is not supported yet. Add more if needed.', $type), $this->appKernel->getProjectDir());
         }
 
-        return $this->doShowPageAsImage($identifier, $number, $width, $quality, $format, $type);
+        $impression = match (true) {
+            is_null($impression) => null,
+            is_numeric($impression) => (int) $impression,
+            default => throw new LogicException(sprintf('Impression "%s" not supported yet.', $impression))
+        };
+
+        return $this->doShowPageAsImage(
+            identifier: $identifier,
+            number: $number,
+            width: $width,
+            quality: $quality,
+            format: $format,
+            imageType: $type,
+            impression: $impression,
+        );
     }
 
     /**

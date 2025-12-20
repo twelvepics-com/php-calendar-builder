@@ -835,23 +835,31 @@ class CalendarConfig extends BaseConfig
     }
 
     /**
-     * Returns the image file for given number. If the source image does not exist, use the target image.
+     * Returns the image file for the given number. If the source image does not exist, use the target image.
      *
      * @param int $number
      * @param string $imageType
+     * @param int|null $impression
      * @return File|string
      * @throws ArrayKeyNotFoundException
      * @throws CaseInvalidException
      * @throws FileNotFoundException
      * @throws FileNotReadableException
      * @throws FunctionJsonEncodeException
+     * @throws FunctionReplaceException
      * @throws JsonException
      * @throws TypeInvalidException
-     * @throws FunctionReplaceException
      */
-    public function getImageFile(int $number, string $imageType = CalendarStructure::IMAGE_TYPE_TARGET): File|string
+    public function getImageFile(
+        int $number,
+        string $imageType = CalendarStructure::IMAGE_TYPE_TARGET,
+        int $impression = null
+    ): File|string
     {
-        $configKeyPath = ['pages', (string) $number, $imageType];
+        $configKeyPath = match(true) {
+            !is_null($impression) => ['pages', (string) $number, 'impressions', (string) $impression],
+            default => ['pages', (string) $number, $imageType],
+        };
 
         if (!$this->hasKey($configKeyPath)) {
             return sprintf('Page with number "%d" does not exist', $number);
