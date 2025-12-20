@@ -36,6 +36,8 @@ class KeyJson
 
     final public const CALENDAR_BOX_BACKGROUND_TRANSPARENCY = 'calendar-box-background-transparency';
 
+    final public const CALENDAR_BOX_BOTTOM_BORDER_TOP_ADD = 'calendar-box-bottom-border-top-add';
+
     final public const IMAGE_VERTICAL_ALIGN = 'image-vertical-align';
 
     final public const TEXT = 'text';

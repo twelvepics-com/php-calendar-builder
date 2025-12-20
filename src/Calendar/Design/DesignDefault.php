@@ -19,7 +19,10 @@ use App\Constants\KeyJson;
 use App\Constants\Service\Calendar\CalendarBuilderService as CalendarBuilderServiceConstants;
 use App\Utils\QrCode\QRGdImageRounded;
 use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Common\MaskPattern;
+use chillerlan\QRCode\Common\Version;
 use chillerlan\QRCode\Data\QRMatrix;
+use chillerlan\QRCode\Output\QRImagick;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -64,6 +67,9 @@ class DesignDefault extends DesignBase
         /* settings.defaults.design.config.calendar-box-background-transparency */
         $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BACKGROUND_TRANSPARENCY, 60);
 
+        /* settings.defaults.design.config.calendar-box-bottom-border-top-add */
+        $this->addDefaultConfiguration(KeyJson::CALENDAR_BOX_BOTTOM_BORDER_TOP_ADD, 0);
+
         /* settings.defaults.design.config.image-vertical-align */
         $this->addDefaultConfiguration(KeyJson::IMAGE_VERTICAL_ALIGN, 'top');
     }
@@ -104,9 +110,9 @@ class DesignDefault extends DesignBase
 
     protected int $qrCodeVersion = 5;
 
-    protected int $widthQrCode = 250;
+    protected int $widthQrCode = 300;
 
-    protected int $heightQrCode = 250;
+    protected int $heightQrCode = 300;
 
 
 
@@ -116,6 +122,8 @@ class DesignDefault extends DesignBase
     protected int $valignImage;
 
     protected int $yCalendarBoxBottom;
+
+    protected int $yCalendarBoxBottomBorderTopAdd;
 
     protected string $url;
 
@@ -157,7 +165,8 @@ class DesignDefault extends DesignBase
         $this->widthQrCode = $this->imageBuilder->getSize($this->widthQrCode);
         $this->dayDistance = $this->imageBuilder->getSize($this->dayDistance);
 
-        $this->yCalendarBoxBottom = intval(floor($this->imageBuilder->getHeightTarget() * (1 - self::CALENDAR_BOX_BOTTOM_SIZE)));
+        $this->yCalendarBoxBottom = (int) floor($this->imageBuilder->getHeightTarget() * (1 - self::CALENDAR_BOX_BOTTOM_SIZE));
+        $this->yCalendarBoxBottomBorderTopAdd = $this->getConfigurationValueInteger(KeyJson::CALENDAR_BOX_BOTTOM_BORDER_TOP_ADD);
 
         $this->valignImage = $this->getConfigurationValueString(KeyJson::IMAGE_VERTICAL_ALIGN) === 'bottom' ? CalendarBuilderServiceConstants::VALIGN_BOTTOM : CalendarBuilderServiceConstants::VALIGN_TOP;
         $this->url = $this->imageBuilder->getCalendarBuilderService()->getParameterTarget()->getUrl();
@@ -177,7 +186,7 @@ class DesignDefault extends DesignBase
         /* Adds the main image */
         $this->addImage();
 
-        /* Add calendar area */
+        /* Add a calendar area */
         $this->addRectangle();
 
         /* Add title, position, etc. */
@@ -266,14 +275,14 @@ class DesignDefault extends DesignBase
     }
 
     /**
-     * Add bottom calendar box.
+     * Add a bottom calendar box.
      */
     protected function addRectangle(): void
     {
         /* Add fullscreen rectangle to image. */
         $this->imageBuilder->addRectangle(
             0,
-            $this->yCalendarBoxBottom,
+            $this->yCalendarBoxBottom - $this->yCalendarBoxBottomBorderTopAdd,
             $this->imageBuilder->getWidthTarget(),
             $this->imageBuilder->getHeightTarget(),
             Color::BLACK_TRANSPARENCY
@@ -332,7 +341,7 @@ class DesignDefault extends DesignBase
             $this->fontSizePosition,
             Color::WHITE,
             $xPosition,
-            $yPosition,
+            $yPosition - $this->yCalendarBoxBottomBorderTopAdd,
             $anglePosition
         );
     }
@@ -615,7 +624,7 @@ class DesignDefault extends DesignBase
         $matrixLength = 37;
 
         /* Wanted width (and height) of qrCode */
-        $width = 800;
+        $width = 900;
 
         /* Calculate scale of qrCode */
         $scale = intval(ceil($width / $matrixLength));
@@ -626,54 +635,96 @@ class DesignDefault extends DesignBase
         $finderLight = self::COLOR_RED;
         $finderDark = self::COLOR_WHITE;
 
-        /* Set options for qrCode */
-        $options = [
-            'eccLevel' => EccLevel::H,
-            'addQuietzone' => false,
-            'version' => $this->qrCodeVersion,
-            'scale' => $scale,
-            'outputBase64' => false,
-            'quality' => 100,
+        $options = new QROptions();
 
-            'outputType' => QROutputInterface::CUSTOM,
-            'outputInterface' => QRGdImageRounded::class,
-            'transparencyColor' => self::COLOR_RED,
-            'bgColor' => self::COLOR_RED,
+        /* QR Code specific settings */
+        $options->version = $this->qrCodeVersion;
+	    $options->versionMin = 1;
+	    $options->versionMax = 40;
+        $options->eccLevel = EccLevel::H;
+	    $options->maskPattern = MaskPattern::AUTO;
+        $options->addQuietzone = false;
+	    $options->quietzoneSize = 4;
+	    /* General output settings */
+        $options->outputType = QROutputInterface::CUSTOM;
+        $options->outputInterface = QRGdImageRounded::class;
+	    $options->returnResource = false;
+	    $options->cachefile = null;
+        $options->outputBase64 = false;
+	    $options->eol = PHP_EOL;
+	    /* Common visual modifications */
+        $options->bgColor = self::COLOR_RED;
+	    $options->invertMatrix = false;
+	    $options->drawLightModules = true;
+	    $options->drawCircularModules = false;
+	    $options->circleRadius = 0.45;
+	    $options->keepAsSquare = [];
+	    $options->connectPaths = false;
+	    $options->excludeFromConnect = [];
+        $options->moduleValues = [
+            /* Set light points. */
+            QRMatrix::M_ALIGNMENT        => $dotLight,
+            QRMatrix::M_DARKMODULE_LIGHT => $dotLight,
+            QRMatrix::M_DATA             => $dotLight,
+            QRMatrix::M_FINDER           => $finderLight,
+            QRMatrix::M_FINDER_DOT_LIGHT => $finderLight,
+            QRMatrix::M_FORMAT           => $dotLight,
+            QRMatrix::M_LOGO             => $dotLight,
+            QRMatrix::M_NULL             => $dotLight,
+            QRMatrix::M_QUIETZONE        => $dotLight,
+            QRMatrix::M_SEPARATOR        => $dotLight,
+            QRMatrix::M_TIMING           => $dotLight,
+            QRMatrix::M_VERSION          => $dotLight,
 
-            'circleRadius' => .1,
-
-            'moduleValues' => [
-                /* Set light points. */
-                QRMatrix::M_ALIGNMENT        => $dotLight,
-                QRMatrix::M_DARKMODULE_LIGHT => $dotLight,
-                QRMatrix::M_DATA             => $dotLight,
-                QRMatrix::M_FINDER           => $finderLight,
-                QRMatrix::M_FINDER_DOT_LIGHT => $finderLight,
-                QRMatrix::M_FORMAT           => $dotLight,
-                QRMatrix::M_LOGO             => $dotLight,
-                QRMatrix::M_NULL             => $dotLight,
-                QRMatrix::M_QUIETZONE        => $dotLight,
-                QRMatrix::M_SEPARATOR        => $dotLight,
-                QRMatrix::M_TIMING           => $dotLight,
-                QRMatrix::M_VERSION          => $dotLight,
-
-                /* Set dark points. */
-                QRMatrix::M_ALIGNMENT_DARK   => $dotDark,
-                QRMatrix::M_DARKMODULE       => $dotDark,
-                QRMatrix::M_DATA_DARK        => $dotDark,
-                QRMatrix::M_FINDER_DARK      => $finderDark,
-                QRMatrix::M_FINDER_DOT       => $finderDark,
-                QRMatrix::M_FORMAT_DARK      => $dotDark,
-                QRMatrix::M_LOGO_DARK        => $dotDark,
-                QRMatrix::M_QUIETZONE_DARK   => $dotDark,
-                QRMatrix::M_SEPARATOR_DARK   => $dotDark,
-                QRMatrix::M_TIMING_DARK      => $dotDark,
-                QRMatrix::M_VERSION_DARK     => $dotDark,
-            ],
+            /* Set dark points. */
+            QRMatrix::M_ALIGNMENT_DARK   => $dotDark,
+            QRMatrix::M_DARKMODULE       => $dotDark,
+            QRMatrix::M_DATA_DARK        => $dotDark,
+            QRMatrix::M_FINDER_DARK      => $finderDark,
+            QRMatrix::M_FINDER_DOT       => $finderDark,
+            QRMatrix::M_FORMAT_DARK      => $dotDark,
+            QRMatrix::M_LOGO_DARK        => $dotDark,
+            QRMatrix::M_QUIETZONE_DARK   => $dotDark,
+            QRMatrix::M_SEPARATOR_DARK   => $dotDark,
+            QRMatrix::M_TIMING_DARK      => $dotDark,
+            QRMatrix::M_VERSION_DARK     => $dotDark,
         ];
+	    $options->addLogoSpace = false;
+	    $options->logoSpaceWidth = null;
+	    $options->logoSpaceHeight = null;
+	    $options->logoSpaceStartX = null;
+	    $options->logoSpaceStartY = null;
+	    /* Common raster image settings (QRGdImage, QRImagick) */
+        $options->scale = $scale;
+	    $options->imageTransparent = false;
+        $options->transparencyColor = self::COLOR_RED;
+	    $options->quality = -1;
+	    /* QRGdImage settings */
+	    $options->gdImageUseUpscale = true;
+	    /* QRImagick settings */
+	    $options->imagickFormat = 'png32';
+	    /* Common markup output settings (QRMarkupSVG, QRMarkupHTML) */
+	    $options->cssClass = 'qrcode';
+        /* QRMarkupSVG settings */
+        $options->svgAddXmlHeader = true;
+        $options->svgDefs = '';
+        $options->svgPreserveAspectRatio = 'xMidYMid';
+        $options->svgUseFillAttributes = true;
+        /* QRStringText settings */
+        $options->textLineStart = '';
+        /* QRStringJSON settings */
+        $options->jsonFlags = JSON_THROW_ON_ERROR;
+        $options->jsonAsBooleans = false;
+        /* QRFpdf settings */
+        $options->fpdfMeasureUnit = 'pt';
+        /* QR Code reader settings */
+        $options->readerUseImagickIfAvailable = false;
+        $options->readerGrayscale = false;
+        $options->readerInvertColors = false;
+        $options->readerIncreaseContrast = false;
 
         /* Get blob from qrCode image */
-        $qrCodeBlob = (new QRCode(new QROptions($options)))->render($this->url);
+        $qrCodeBlob = (new QRCode($options))->render($this->url);
 
         if (!is_string($qrCodeBlob)) {
             throw new LogicException('$qrCodeBlob must be a string');
