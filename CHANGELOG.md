@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changelogs
 
+### [0.1.41] - 2025-12-21
+
+* Add impression parameter
+* Add move-x parameter to command calendar:create-overview-qr-code
+* Fix QRCode to new version on calendar pages
+* Update symfony from 7.1 to 7.2; Update ixnode/php-container
+
 ### [0.1.40] - 2025-12-02
 
 * Fix photo-set:qr-code command with new QRCode version
