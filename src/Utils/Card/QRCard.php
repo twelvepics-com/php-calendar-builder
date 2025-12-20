@@ -86,6 +86,7 @@ class QRCard
         private readonly CalendarConfig|null $calendarConfig = null,
         private readonly int $scale = 20,
         private readonly int $border = 0,
+        private readonly int $moveY = 0,
     )
     {
         $this->init();
@@ -217,7 +218,7 @@ class QRCard
 
         $drawPattern = new ImagickDraw();
 
-        $drawPattern->setFillColor(new ImagickPixel($this->getColor(self::COLOR_ALMOST_BLACKER))); // Leicht helleres Schwarz
+        $drawPattern->setFillColor(new ImagickPixel($this->getColor(self::COLOR_ALMOST_BLACKER)));
         $drawPattern->polygon([
             [
                 'x' => 0,
@@ -303,12 +304,25 @@ class QRCard
 
         /* Add image with 50% opacity. */
         if (!is_null($this->imagePath)) {
+
+            /* Load image. */
             $backgroundBottomImage = new Imagick($this->imagePath);
             $backgroundBottomImage->resizeImage($backgroundBottomWidth, $backgroundBottomHeight, Imagick::FILTER_LANCZOS, 1);
+
+            if ($this->moveY > 0) {
+                /* Get top 1px row. */
+                $topSlice = clone $backgroundBottomImage;
+                $topSlice->cropImage($backgroundBottomImage->getImageWidth(), 1, 0, 0);
+                $topSlice->resizeImage($backgroundBottomImage->getImageWidth(), $this->moveY, Imagick::FILTER_POINT, 1);
+
+                /* Composite slice at top. */
+                $this->qrCard->compositeImage($topSlice, Imagick::COMPOSITE_OVER, $backgroundBottomX, $this->backgroundBottomY);
+            }
+
+            /* Composite actual image below. */
             $backgroundBottomImage->setImageAlphaChannel(Imagick::ALPHACHANNEL_OPAQUE);
             $backgroundBottomImage->evaluateImage(Imagick::EVALUATE_DIVIDE, 1, Imagick::CHANNEL_ALPHA);
-
-            $this->qrCard->compositeImage($backgroundBottomImage, Imagick::COMPOSITE_OVER, $backgroundBottomX, $this->backgroundBottomY);
+            $this->qrCard->compositeImage($backgroundBottomImage, Imagick::COMPOSITE_OVER, $backgroundBottomX, $this->backgroundBottomY + $this->moveY);
         }
     }
 

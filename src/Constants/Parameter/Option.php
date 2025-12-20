@@ -41,6 +41,8 @@ class Option
     final public const COORDINATE = 'coordinate';
     final public const IMAGE = 'image';
 
+    final public const MOVE_Y = 'move-y';
+
     /* Output options */
     final public const OUTPUT_FORMAT = 'format';
     final public const OUTPUT_QUALITY = 'quality';

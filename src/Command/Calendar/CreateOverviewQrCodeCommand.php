@@ -30,8 +30,9 @@ use Symfony\Component\Console\Input\InputOption;
  * @author Björn Hempel <bjoern@hempel.li>
  * @version 0.1.0 (2024-12-13)
  * @since 0.1.0 (2024-12-13) First version.
- * @example bin/console calendar:create-overview-qr-code e04916437c63
- * @example bin/console calendar:create-overview-qr-code e04916437c63 -i 02.png
+ * @example bin/console calendar:create-overview-qr-code e04916437c63 # Empty image on the bottom
+ * @example bin/console calendar:create-overview-qr-code e04916437c63 -i 02.png # With image on the bottom
+ * @example bin/console calendar:create-overview-qr-code e04916437c63 -i 02.png -m 50 # With moved image on the bottom
  */
 #[AsCommand(
     name: self::COMMAND_NAME,
@@ -52,6 +53,7 @@ class CreateOverviewQrCodeCommand extends BaseCalendarCommand
 
         $this
             ->addOption(Option::IMAGE, 'i', InputOption::VALUE_OPTIONAL, 'The image on the bottom', null)
+            ->addOption(Option::MOVE_Y, 'm', InputOption::VALUE_OPTIONAL, 'Move y position (image on the bottom)', null)
         ;
 
         $this
@@ -83,6 +85,13 @@ EOT
 
         $identifier = $this->config->getIdentifier();
         $image = $this->input->getOption(Option::IMAGE);
+        $moveY = $this->input->getOption(Option::MOVE_Y);
+
+        $moveY = match (true) {
+            is_null($moveY) => 0,
+            is_numeric($moveY) => (int) $moveY,
+            default => throw new LogicException('Move y must be a integer.'),
+        };
 
         if (!is_string($image) && !is_null($image)) {
             throw new LogicException('Image must be a string');
@@ -101,7 +110,8 @@ EOT
             imagePath: $imagePath,
             calendarConfig: $this->config,
             scale: 80,
-            border: 1
+            border: 1,
+            moveY: $moveY,
         );
 
         /* Get image properties. */
